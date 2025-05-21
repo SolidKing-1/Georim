@@ -8,7 +8,6 @@ import {
   Easing,
   TextInput,
   FlatList,
-  ImageBackground,
   TouchableOpacity,
   Dimensions,
 } from "react-native";
@@ -72,21 +71,34 @@ export default function DashboardScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const navSlideAnim = useRef(new Animated.Value(100)).current;
   const [activeTab, setActiveTab] = useState("Explore");
-  const renderEvent = ({ item }) => (
-    <View style={styles.eventItem}>
-      <Image source={item.image} style={styles.eventImage} />
-      <View style={styles.eventInfo}>
-        <Text style={styles.eventTitle}>{item.title}</Text>
-        <Text
-          style={styles.eventDate}
-        >{`${item.date} - ${item.location}`}</Text>
-        <Text style={styles.eventPrice}>{item.price}</Text>
+  const [favs, setFavs] = useState<Record<string, boolean>>({});
+
+  const toggleFav = (id: string) => {
+    setFavs((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const renderEvent = ({ item }) => {
+    const isFav = favs[item.id] || false;
+    return (
+      <View style={styles.eventItem}>
+        <Image source={item.image} style={styles.eventImage} />
+        <View style={styles.eventInfo}>
+          <Text style={styles.eventTitle}>{item.title}</Text>
+          <Text style={styles.eventDate}>
+            {`${item.date} - ${item.location}`}
+          </Text>
+          <Text style={styles.eventPrice}>{item.price}</Text>
+        </View>
+        <TouchableOpacity onPress={() => toggleFav(item.id)}>
+          <Ionicons
+            name={isFav ? "heart" : "heart-outline"}
+            size={24}
+            color="#A259FF"
+          />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity>
-        <Ionicons name="heart-outline" size={24} color="#A259FF" />
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
 
   useEffect(() => {
     Animated.timing(navSlideAnim, {
