@@ -8,12 +8,13 @@ declare module "*.jpg" {
   export default value;
 }
 
-declare module "react-native-vector-icons/Ionicons" {
+// global.d.ts or declaration.d.ts
+declare module "react-native-vector-icons/*" {
+  const content: any;
+  export default content;
+}
+declare module "react-native-community/*" {
   const content: any;
   export default content;
 }
 
-declare module "react-native-vector-icons/MaterialIcons" {
-  const content: any;
-  export default content;
-}
