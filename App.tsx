@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Dashboard: undefined;
   CreateEvent: undefined;
   EventSuccess: undefined;
+  EventDetails: { event: any };
 };
 
 import React from "react";

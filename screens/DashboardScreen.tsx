@@ -77,7 +77,16 @@ export default function DashboardScreen() {
     setFavs((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const renderEvent = ({ item }) => {
+  type Event = {
+    id: string;
+    title: string;
+    date: string;
+    location: string;
+    price: string;
+    image: any;
+  };
+
+  const renderEvent = ({ item }: { item: Event }) => {
     const isFav = favs[item.id] || false;
     return (
       <View style={styles.eventItem}>
