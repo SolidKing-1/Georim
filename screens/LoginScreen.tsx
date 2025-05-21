@@ -12,6 +12,7 @@ import Logo from "../assets/Authentication.jpg";
 import Company from "../assets/Company_icon.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
+import { useGoogleAuth } from "../components/useGoogleAuth";
 
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -23,6 +24,13 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showPassword, setShowPassword] = useState(false);
+
+  // Handle Google OAuth
+  const { promptAsync, request } = useGoogleAuth((data) => {
+    // Handle login success, e.g., save token, navigate, etc.
+    console.log("Google login success:", data);
+    navigation.navigate("Dashboard"); // or wherever you want
+  });
 
   return (
     <KeyboardAvoidingView
@@ -92,7 +100,11 @@ export default function LoginScreen() {
             <Text style={styles.orText}>OR</Text>
 
             {/* Google Button */}
-            <TouchableOpacity style={styles.googleButton}>
+            <TouchableOpacity
+              style={styles.googleButton}
+              disabled={!request}
+              onPress={() => promptAsync()}
+            >
               <Image source={GoogleIcon} style={styles.googleLogo} />
               <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>

@@ -16,12 +16,19 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import { Platform, KeyboardAvoidingView } from "react-native";
+import { useGoogleAuth } from "../components/useGoogleAuth";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
 export default function SignUpScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showPassword, setShowPassword] = useState(false);
+
+  const { promptAsync, request } = useGoogleAuth((data) => {
+    // Handle signup success, e.g., save token, navigate, etc.
+    console.log("Google signup success:", data);
+    navigation.navigate("Dashboard"); // or wherever you want
+  });
 
   return (
     <KeyboardAvoidingView
@@ -113,7 +120,11 @@ export default function SignUpScreen() {
           <Text style={styles.orText}>OR</Text>
 
           {/* Google Button */}
-          <TouchableOpacity style={styles.googleButton}>
+          <TouchableOpacity
+            style={styles.googleButton}
+            disabled={!request}
+            onPress={() => promptAsync()}
+          >
             <Image source={GoogleIcon} style={styles.googleLogo} />
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </TouchableOpacity>

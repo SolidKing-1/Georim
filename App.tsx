@@ -4,6 +4,7 @@ export type RootStackParamList = {
   SignUp: undefined;
   Dashboard: undefined;
   CreateEvent: undefined;
+  EventSuccess: undefined;
 };
 
 import React from "react";
@@ -13,6 +14,7 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import CreateEventScreen from "./screens/CreateEvent";
+import EventSuccessScreen from "./screens/EventSuccessScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -27,6 +29,11 @@ export default function App() {
         <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
+        <Stack.Screen
+          name="EventSuccess"
+          component={EventSuccessScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
