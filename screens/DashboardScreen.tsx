@@ -7,6 +7,8 @@ import {
   Animated,
   Easing,
   TextInput,
+  FlatList,
+  ImageBackground,
   TouchableOpacity,
   Dimensions,
 } from "react-native";
@@ -15,11 +17,11 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import LocationIcon from "react-native-vector-icons/Feather";
 import DownArrow from "react-native-vector-icons/Entypo";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import Home from "../assets/home.png";
 import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
-
 
 const { width } = Dimensions.get("window");
 // Slideshow images
@@ -30,7 +32,38 @@ const slideshowImages = [
   require("../assets/slide4.jpg"),
 ];
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Dashboard">;
+// Dummy data for events
+const events = [
+  {
+    id: "1",
+    title: "Ruston Fest!!! - Revival",
+    date: "Sat, May 17",
+    location: "LA Tech Basketball Stadium",
+    price: "Free",
+    image: require("../assets/ruston-fest.png"),
+  },
+  {
+    id: "2",
+    title: "Dembele Calculus - Education",
+    date: "May 17 - Dec 1",
+    location: "Grambling, Carver Hall 234",
+    price: "Free",
+    image: require("../assets/calculus.png"),
+  },
+  {
+    id: "3",
+    title: "Karaoke - Live Singing",
+    date: "Fri, June 11",
+    location: "Grambling, McDinning",
+    price: "$30",
+    image: require("../assets/karaoke.png"),
+  },
+];
+
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "Dashboard"
+>;
 export default function DashboardScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -39,7 +72,21 @@ export default function DashboardScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const navSlideAnim = useRef(new Animated.Value(100)).current;
   const [activeTab, setActiveTab] = useState("Explore");
-
+  const renderEvent = ({ item }) => (
+    <View style={styles.eventItem}>
+      <Image source={item.image} style={styles.eventImage} />
+      <View style={styles.eventInfo}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        <Text
+          style={styles.eventDate}
+        >{`${item.date} - ${item.location}`}</Text>
+        <Text style={styles.eventPrice}>{item.price}</Text>
+      </View>
+      <TouchableOpacity>
+        <Ionicons name="heart-outline" size={24} color="#A259FF" />
+      </TouchableOpacity>
+    </View>
+  );
 
   useEffect(() => {
     Animated.timing(navSlideAnim, {
@@ -47,9 +94,7 @@ export default function DashboardScreen() {
       duration: 500,
       useNativeDriver: true,
     }).start();
-    
   }, []);
-
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -169,6 +214,17 @@ export default function DashboardScreen() {
             />
           </View>
         </View>
+      </View>
+
+      {/* Events Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Close To Me</Text>
+        <FlatList
+          data={events}
+          keyExtractor={(item) => item.id}
+          renderItem={renderEvent}
+          contentContainerStyle={styles.eventsList}
+        />
       </View>
 
       {/* Bottom Navigation Bar */}
@@ -525,4 +581,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: -2,
   },
+
+  section: { marginTop: 16 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
+
+  eventsList: { paddingHorizontal: 16, paddingBottom: 80 },
+  eventItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  eventImage: { width: 60, height: 60, borderRadius: 8 },
+  eventInfo: { flex: 1, marginLeft: 12 },
+  eventTitle: { fontSize: 16, fontWeight: "500" },
+  eventDate: { fontSize: 12, color: "#666", marginTop: 2 },
+  eventPrice: { fontSize: 12, color: "#000", marginTop: 2 },
 });
