@@ -83,7 +83,11 @@ export default function DashboardScreen() {
       <View style={styles.eventItem}>
         <Image source={item.image} style={styles.eventImage} />
         <View style={styles.eventInfo}>
-          <Text style={styles.eventTitle}>{item.title}</Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("EventDetails", { event: item })}
+          >
+            <Text style={styles.eventTitle}>{item.title}</Text>
+          </TouchableOpacity>
           <Text style={styles.eventDate}>
             {`${item.date} - ${item.location}`}
           </Text>
