@@ -100,6 +100,7 @@ export default function CheckinScreen() {
     section: event.section,
   }));
 
+<<<<<<< HEAD
   type EventItem = {
     id: string;
     title: string;
@@ -113,6 +114,8 @@ export default function CheckinScreen() {
   };
 
   const renderEvent = ({ item }: { item: EventItem }) => (
+=======
+>>>>>>> 1fb8e488cec40c9a147dd8fff247edfea25a4725
   const renderEvent = ({ item }: { item: Event }) => (
     <View style={styles.eventItem}>
       <Image source={item.image} style={styles.eventImage} />
