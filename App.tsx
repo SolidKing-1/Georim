@@ -18,6 +18,7 @@ import DashboardScreen from "./screens/DashboardScreen";
 import CreateEventScreen from "./screens/CreateEvent";
 import EventSuccessScreen from "./screens/EventSuccessScreen";
 import VerifyLocation from "./screens/VerifyLocation";
+import CheckinScreen from "./screens/CheckinScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -38,6 +39,7 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
+        <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
