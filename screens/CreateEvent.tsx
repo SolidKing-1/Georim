@@ -24,18 +24,22 @@ const { width } = Dimensions.get("window");
 
 // Constants
 const categoryOptions = [
-  "Education",
+  "Religious",
   "Entertainment",
-  "Sports",
-  "Business",
-  "Other",
+  "Education",
+  "Corporate",
 ];
-const visibilityOptions = ["Public", "Private", "Invite Only"];
+const visibilityOptions = ["Public - Anyone can view and register", "Private - Only invited guests can view and register"];
 const recurrenceOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
 const steps = ["basic", "datetime", "location", "image", "additional"];
 
+type RootStackParamList = {
+  EventSuccess: undefined;
+  // add other routes if needed
+};
+
 export default function CreateEventScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<import('@react-navigation/native').NavigationProp<RootStackParamList>>();
 
   // State Management
   const [step, setStep] = useState(0);
@@ -65,7 +69,7 @@ export default function CreateEventScreen() {
   const [geofence, setGeofence] = useState(50);
 
   // Image State
-  const [eventImage, setEventImage] = useState(null);
+  const [eventImage, setEventImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
 
   // Additional Info State
   const [additionalDescription, setAdditionalDescription] = useState("");
@@ -73,7 +77,11 @@ export default function CreateEventScreen() {
   // Animation
   const cardAnim = useRef(new Animated.Value(0)).current;
 
-  const animateCard = (direction) => {
+  interface AnimateCardDirection {
+    (direction: number): void;
+  }
+
+  const animateCard: AnimateCardDirection = (direction) => {
     Animated.sequence([
       Animated.timing(cardAnim, {
         toValue: direction * width,
@@ -454,11 +462,11 @@ export default function CreateEventScreen() {
             {/* File Info Row */}
             <View style={styles.fileInfoRow}>
               <Text style={{ color: "#555", flex: 1 }}>
-                {eventImage ? eventImage.name : "No selected File"}
+                {eventImage ? eventImage.fileName || eventImage.uri : "No selected File"}
               </Text>
               {eventImage && (
                 <TouchableOpacity onPress={() => setEventImage(null)}>
-                  <Icon name="trash-outline" size={20} color="#d11a2a" />
+                  <Ionicons name="trash-outline" size={20} color="#d11a2a" />
                 </TouchableOpacity>
               )}
             </View>

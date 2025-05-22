@@ -7,6 +7,8 @@ export type RootStackParamList = {
   EventSuccess: undefined;
   EventDetails: { event: any };
   VerifyLocation: undefined;
+  CheckinScreen: undefined;
+  Cancelpage: undefined;
 };
 
 import React from "react";
@@ -19,6 +21,7 @@ import CreateEventScreen from "./screens/CreateEvent";
 import EventSuccessScreen from "./screens/EventSuccessScreen";
 import VerifyLocation from "./screens/VerifyLocation";
 import CheckinScreen from "./screens/CheckinScreen";
+import Cancelpage from "./screens/Cancelpage"; // Import the Cancelpage screen
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -40,6 +43,11 @@ export default function App() {
         />
         <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
         <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
+        <Stack.Screen
+          name="Cancelpage"
+          component={Cancelpage}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

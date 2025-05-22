@@ -65,8 +65,22 @@ const events = [
 
 const sections = ["Ongoing", "Today", "Upcoming"];
 
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+type RootStackParamList = {
+  Dashboard: undefined;
+  Explore: undefined;
+  CheckinScreen: undefined;
+  Account: undefined;
+  EventDetails: undefined;
+  VerifyLocation: undefined;
+  CreateEvent: undefined;
+  Cancelpage: undefined;
+};
+
 export default function CheckinScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [activeTab, setActiveTab] = useState("Check-In");
   const navSlideAnim = useRef(new Animated.Value(100)).current;
 
@@ -85,7 +99,19 @@ export default function CheckinScreen() {
     section: event.section,
   }));
 
-  const renderEvent = ({ item }) => (
+  type EventItem = {
+    id: string;
+    title: string;
+    date: string;
+    location: string;
+    price: string;
+    image: any;
+    section: string;
+    key?: string;
+    type?: string;
+  };
+
+  const renderEvent = ({ item }: { item: EventItem }) => (
     <View style={styles.eventItem}>
       <Image source={item.image} style={styles.eventImage} />
       <View style={styles.eventInfo}>
@@ -109,7 +135,12 @@ export default function CheckinScreen() {
             >
               <Text style={styles.checkinText}>Check In</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelBtn}>
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => {
+                navigation.navigate("Cancelpage");
+              }}
+            >
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -119,7 +150,11 @@ export default function CheckinScreen() {
   );
 
   // Section headers for FlatList
-  const renderSectionHeader = (section) => (
+  interface SectionHeaderProps {
+    section: string;
+  }
+
+  const renderSectionHeader = (section: SectionHeaderProps["section"]) => (
     <Text style={styles.sectionTitle}>{section}</Text>
   );
 
@@ -147,9 +182,9 @@ export default function CheckinScreen() {
       <FlatList
         data={groupedEvents}
         renderItem={({ item }) =>
-          item.type === "header"
+          "type" in item && item.type === "header"
             ? renderSectionHeader(item.section)
-            : renderEvent({ item })
+            : renderEvent({ item: item as EventItem })
         }
         keyExtractor={(item) => item.key || item.section}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: 120 }]}
@@ -425,7 +460,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    shadowColor: "#000", // iOS shadow
+    shadowColor: "#000", 
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -453,7 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    zIndex: 1,
+    zIndex: 0,
   },
 
   floatingButton: {

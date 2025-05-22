@@ -410,7 +410,6 @@ export default function DashboardScreen() {
         {/* Check-In Tab */}
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => navigation.navigate("VerifyLocation")}
           onPress={() => {
             setActiveTab("Check-In");
             navigation.navigate("CheckinScreen");
