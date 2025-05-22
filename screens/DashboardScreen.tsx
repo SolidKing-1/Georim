@@ -21,6 +21,10 @@ import Home from "../assets/home.png";
 import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
+import * as Location from "expo-location";
+import Constants from "expo-constants";
+
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
 const { width } = Dimensions.get("window");
 // Slideshow images
@@ -143,6 +147,37 @@ export default function DashboardScreen() {
 
     return () => clearInterval(interval);
   }, [currentIndex, nextIndex]);
+
+  useEffect(() => {
+    (async () => {
+      // Check if permission already granted
+      let { status } = await Location.getForegroundPermissionsAsync();
+      if (status !== "granted") {
+        let { status: askStatus } =
+          await Location.requestForegroundPermissionsAsync();
+        if (askStatus !== "granted") {
+          alert(
+            "Location permission is required for this app to work properly."
+          );
+          return;
+        }
+      }
+      // Get current location
+      let location = await Location.getCurrentPositionAsync({});
+      // Send to backend
+      fetch(`${BACKEND_URL}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // Add auth token if needed
+        },
+        body: JSON.stringify({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        }),
+      });
+    })();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -317,7 +352,7 @@ export default function DashboardScreen() {
         {/* Check-In Tab */}
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab("Check-In")}
+          onPress={() => navigation.navigate("VerifyLocation")}
         >
           <Image
             source={TicketIcon}
@@ -373,8 +408,10 @@ export default function DashboardScreen() {
           onPress={() => navigation.navigate("CreateEvent")}
         >
           <Text style={styles.plusText}>+</Text>
+          {/* Create label */}
         </TouchableOpacity>
       </View>
+      <Text style={styles.createLabel}>Create</Text>
     </View>
   );
 }
@@ -605,6 +642,18 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: "bold",
     marginTop: -2,
+  },
+
+  createLabel: {
+    position: "absolute",
+    bottom: 37, 
+    left: "47%",
+    transform: [{ translateX: -16 }],
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "600",
+    textAlign: "center",
+    width: 50,
   },
 
   section: { marginTop: 16 },

@@ -6,6 +6,7 @@ export type RootStackParamList = {
   CreateEvent: undefined;
   EventSuccess: undefined;
   EventDetails: { event: any };
+  VerifyLocation: undefined;
 };
 
 import React from "react";
@@ -16,6 +17,7 @@ import SignUpScreen from "./screens/SignUpScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import CreateEventScreen from "./screens/CreateEvent";
 import EventSuccessScreen from "./screens/EventSuccessScreen";
+import VerifyLocation from "./screens/VerifyLocation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -35,6 +37,7 @@ export default function App() {
           component={EventSuccessScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -69,8 +69,7 @@ export default function CreateEventScreen() {
     "Daily",
     "Weekly",
     "Monthly",
-    "Weekdays Only",
-    "Weekends Only",
+    "Yearly",
   ];
   const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
 
@@ -596,6 +595,7 @@ const styles = StyleSheet.create({
 
   scrollContainer: {
     padding: 20,
+    paddingTop: 0,
     paddingBottom: 100, // room for nav bar
   },
 
@@ -606,6 +606,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     marginBottom: 24,
     paddingLeft: 12,
+    paddingTop: 10,
+
   },
 
   createTitle: {
