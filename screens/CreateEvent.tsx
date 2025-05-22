@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Animated,
-  Easing,
   ScrollView,
   TextInput,
   Image,
@@ -13,36 +12,103 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import DownArrow from "react-native-vector-icons/Entypo";
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
+import * as ImagePicker from "expo-image-picker";
 
 const { width } = Dimensions.get("window");
 
+// Constants
+const categoryOptions = [
+  "Education",
+  "Entertainment",
+  "Sports",
+  "Business",
+  "Other",
+];
+const visibilityOptions = ["Public", "Private", "Invite Only"];
+const recurrenceOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
+const steps = ["basic", "datetime", "location", "image", "additional"];
+
 export default function CreateEventScreen() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation();
+
+  // State Management
+  const [step, setStep] = useState(0);
   const [category, setCategory] = useState("");
   const [visibility, setVisibility] = useState("");
+  const [showCategoryOptions, setShowCategoryOptions] = useState(false);
+  const [showVisibilityOptions, setShowVisibilityOptions] = useState(false);
+  const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
+
+  // Date & Time States
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [startTime, setStartTime] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
+  // Recurring Event States
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] = useState("Daily");
+  const [untilDate, setUntilDate] = useState(new Date());
+  const [showUntilDatePicker, setShowUntilDatePicker] = useState(false);
+
+  // Location State
   const [geofence, setGeofence] = useState(50);
 
-  return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Top Header */}
-        <View style={styles.topRow}>
-          <Text style={styles.createTitle}>Create A New Event</Text>
-          <Image
-            source={New_Event}
-            style={styles.headerImage}
-            resizeMode="contain"
-          />
-        </View>
+  // Image State
+  const [eventImage, setEventImage] = useState(null);
 
-        {/* Card 1: Basic Information */}
-        <View style={styles.card}>
-          <Text style={styles.cardHeader}>Basic Information</Text>
+  // Additional Info State
+  const [additionalDescription, setAdditionalDescription] = useState("");
+
+  // Animation
+  const cardAnim = useRef(new Animated.Value(0)).current;
+
+  const animateCard = (direction) => {
+    Animated.sequence([
+      Animated.timing(cardAnim, {
+        toValue: direction * width,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardAnim, {
+        toValue: 0,
+        duration: 0,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Image Picker
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setEventImage(result.assets[0]);
+    }
+  };
+
+  // Card Renderer
+  const renderCard = () => {
+    switch (steps[step]) {
+      case "basic":
+        return (
+          <View style={styles.card}>
+            <Text style={styles.cardHeader}>Basic Information</Text>
 
             {/* Title */}
             <Text style={styles.inputLabel}>Title</Text>
@@ -531,7 +597,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingLeft: 12,
     paddingTop: 10,
-
   },
 
   createTitle: {

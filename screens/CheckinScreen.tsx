@@ -90,9 +90,7 @@ export default function CheckinScreen() {
       <Image source={item.image} style={styles.eventImage} />
       <View style={styles.eventInfo}>
         <View style={styles.eventMainInfo}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("EventDetails", { event: item })}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate("EventDetails")}>
             <Text style={styles.eventTitle}>{item.title}</Text>
           </TouchableOpacity>
           <Text style={styles.eventDate}>
@@ -102,7 +100,13 @@ export default function CheckinScreen() {
         <View style={styles.eventBottom}>
           <Text style={styles.eventPrice}>{item.price}</Text>
           <View style={styles.buttonGroup}>
-            <TouchableOpacity style={styles.checkinBtn}>
+            <TouchableOpacity
+              style={styles.checkinBtn}
+              onPress={() => {
+                setActiveTab("Check-In");
+                navigation.navigate("VerifyLocation");
+              }}
+            >
               <Text style={styles.checkinText}>Check In</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.cancelBtn}>
@@ -163,7 +167,10 @@ export default function CheckinScreen() {
         {/* Home Tab */}
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab("Home")}
+          onPress={() => {
+            setActiveTab("Home");
+            navigation.navigate("Dashboard");
+          }}
         >
           <Image
             source={Home}
