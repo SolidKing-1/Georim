@@ -61,6 +61,62 @@ const events = [
     price: "$30",
     image: require("../assets/karaoke.png"),
   },
+  {
+    id: "4",
+    title: "Tech Expo 2025",
+    date: "Mon, July 7",
+    location: "Tech Park, Ruston",
+    price: "$10",
+    image: require("../assets/karaoke.png"),
+  },
+  {
+    id: "5",
+    title: "Jazz Night",
+    date: "Sat, July 12",
+    location: "Downtown Ruston",
+    price: "$15",
+    image: require("../assets/karaoke.png"),
+  },
+  {
+    id: "6",
+    title: "Startup Pitch",
+    date: "Wed, Aug 2",
+    location: "Innovation Hub",
+    price: "Free",
+    image: require("../assets/ruston-fest.png"),
+  },
+  {
+    id: "7",
+    title: "Food Truck Festival",
+    date: "Sun, Aug 15",
+    location: "Ruston Park",
+    price: "$5",
+    image: require("../assets/karaoke.png"),
+  },
+  {
+    id: "8",
+    title: "Coding Bootcamp",
+    date: "Sep 1 - Sep 30",
+    location: "Online",
+    price: "$99",
+    image: require("../assets/calculus.png"),
+  },
+  {
+    id: "9",
+    title: "Art & Craft Fair",
+    date: "Sat, Oct 10",
+    location: "Community Center",
+    price: "Free",
+    image: require("../assets/calculus.png"),
+  },
+  {
+    id: "10",
+    title: "Movie Under the Stars",
+    date: "Fri, Oct 24",
+    location: "Ruston Green",
+    price: "$8",
+    image: require("../assets/karaoke.png"),
+  },
 ];
 
 type NavigationProp = NativeStackNavigationProp<
@@ -109,7 +165,7 @@ export default function DashboardScreen() {
         <TouchableOpacity onPress={() => toggleFav(item.id)}>
           <Ionicons
             name={isFav ? "heart" : "heart-outline"}
-            size={24}
+            size={20}
             color="#A259FF"
           />
         </TouchableOpacity>
@@ -284,6 +340,8 @@ export default function DashboardScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderEvent}
           contentContainerStyle={styles.eventsList}
+          showsVerticalScrollIndicator={false}
+          style={{ maxHeight: 320, marginBottom: 0 }} // adjust maxHeight as needed
         />
       </View>
 
@@ -353,6 +411,10 @@ export default function DashboardScreen() {
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => navigation.navigate("VerifyLocation")}
+          onPress={() => {
+            setActiveTab("Check-In");
+            navigation.navigate("CheckinScreen");
+          }}
         >
           <Image
             source={TicketIcon}
@@ -646,7 +708,7 @@ const styles = StyleSheet.create({
 
   createLabel: {
     position: "absolute",
-    bottom: 37, 
+    bottom: 37,
     left: "47%",
     transform: [{ translateX: -16 }],
     fontSize: 14,

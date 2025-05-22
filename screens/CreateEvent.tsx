@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
+  Animated,
   ScrollView,
   TextInput,
   Image,
@@ -10,114 +11,103 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
-  Animated,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import DownArrow from "react-native-vector-icons/Entypo";
+import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
-import Icon from "react-native-vector-icons/Ionicons"; // For bin icon
-import Ionicons from "react-native-vector-icons/Ionicons"; // Add this import
-import { useNavigation, NavigationProp } from "@react-navigation/native";
-type RootStackParamList = {
-  EventSuccess: undefined;
-};
 
 const { width } = Dimensions.get("window");
 
+// Constants
+const categoryOptions = [
+  "Education",
+  "Entertainment",
+  "Sports",
+  "Business",
+  "Other",
+];
+const visibilityOptions = ["Public", "Private", "Invite Only"];
+const recurrenceOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
+const steps = ["basic", "datetime", "location", "image", "additional"];
+
 export default function CreateEventScreen() {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const navigation = useNavigation();
+
+  // State Management
+  const [step, setStep] = useState(0);
   const [category, setCategory] = useState("");
   const [visibility, setVisibility] = useState("");
-  const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrence, setRecurrence] = useState("Daily");
-  const [geofence, setGeofence] = useState(50);
+  const [showCategoryOptions, setShowCategoryOptions] = useState(false);
+  const [showVisibilityOptions, setShowVisibilityOptions] = useState(false);
+  const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
+
+  // Date & Time States
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
   const [startTime, setStartTime] = useState(new Date());
   const [endTime, setEndTime] = useState(new Date());
-  const [untilDate, setUntilDate] = useState(new Date());
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
+  // Recurring Event States
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrence, setRecurrence] = useState("Daily");
+  const [untilDate, setUntilDate] = useState(new Date());
   const [showUntilDatePicker, setShowUntilDatePicker] = useState(false);
-  const [eventImage, setEventImage] = useState<{
-    uri: string;
-    name: string;
-  } | null>(null);
+
+  // Location State
+  const [geofence, setGeofence] = useState(50);
+
+  // Image State
+  const [eventImage, setEventImage] = useState(null);
+
+  // Additional Info State
   const [additionalDescription, setAdditionalDescription] = useState("");
 
-  const [step, setStep] = useState(0);
-  const steps = ["basic", "datetime", "location", "image", "additional"];
+  // Animation
+  const cardAnim = useRef(new Animated.Value(0)).current;
 
-  const categoryOptions = [
-    "Religious",
-    "Entertainment",
-    "Corporate",
-    "Educational",
-  ];
-  const visibilityOptions = [
-    "Public - Anyone can find and register",
-    "Private - Invitees only",
-  ];
-
-  const [showCategoryOptions, setShowCategoryOptions] = useState(false);
-  const [showVisibilityOptions, setShowVisibilityOptions] = useState(false);
-  const recurrenceOptions = [
-    "Daily",
-    "Weekly",
-    "Monthly",
-    "Yearly",
-  ];
-  const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
-
-  // Image picker handler
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      setEventImage({
-        uri: asset.uri,
-        name: asset.fileName || asset.uri.split("/").pop() || "Selected Image",
-      });
-    }
-  };
-
-  const [cardAnim] = useState(new Animated.Value(0));
-
-  const animateCard = (direction = 1) => {
+  const animateCard = (direction) => {
     Animated.sequence([
       Animated.timing(cardAnim, {
-        toValue: direction * -50,
+        toValue: direction * width,
         duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardAnim, {
-        toValue: direction * 50,
-        duration: 0,
         useNativeDriver: true,
       }),
       Animated.timing(cardAnim, {
         toValue: 0,
-        duration: 200,
+        duration: 0,
         useNativeDriver: true,
       }),
     ]).start();
   };
 
+  // Image Picker
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setEventImage(result.assets[0]);
+    }
+  };
+
+  // Card Renderer
   const renderCard = () => {
     switch (steps[step]) {
       case "basic":
         return (
           <View style={styles.card}>
-            {/* Basic Information */}
             <Text style={styles.cardHeader}>Basic Information</Text>
 
             {/* Title */}
@@ -607,7 +597,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingLeft: 12,
     paddingTop: 10,
-
   },
 
   createTitle: {
