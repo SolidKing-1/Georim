@@ -14,6 +14,7 @@ import Home from "../assets/home.png";
 import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
+import { Event } from "../types/event";
 
 const events = [
   {
@@ -112,11 +113,14 @@ export default function CheckinScreen() {
   };
 
   const renderEvent = ({ item }: { item: EventItem }) => (
+  const renderEvent = ({ item }: { item: Event }) => (
     <View style={styles.eventItem}>
       <Image source={item.image} style={styles.eventImage} />
       <View style={styles.eventInfo}>
         <View style={styles.eventMainInfo}>
-          <TouchableOpacity onPress={() => navigation.navigate("EventDetails")}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("EventDetails", { event: item })}
+          >
             <Text style={styles.eventTitle}>{item.title}</Text>
           </TouchableOpacity>
           <Text style={styles.eventDate}>
