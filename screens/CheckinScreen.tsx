@@ -100,7 +100,6 @@ export default function CheckinScreen() {
     section: event.section,
   }));
 
-<<<<<<< HEAD
   type EventItem = {
     id: string;
     title: string;
@@ -113,9 +112,6 @@ export default function CheckinScreen() {
     type?: string;
   };
 
-  const renderEvent = ({ item }: { item: EventItem }) => (
-=======
->>>>>>> 1fb8e488cec40c9a147dd8fff247edfea25a4725
   const renderEvent = ({ item }: { item: Event }) => (
     <View style={styles.eventItem}>
       <Image source={item.image} style={styles.eventImage} />
@@ -467,7 +463,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    shadowColor: "#000", 
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

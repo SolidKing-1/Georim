@@ -8,7 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -29,10 +29,15 @@ interface EventDetails {
   attendees?: number;
 }
 
+// Define the navigation param list
+type RootStackParamList = {
+  EventDetailsScreen: { event: EventDetails };
+};
+
 export default function EventDetailsScreen() {
   const navigation = useNavigation();
-  const route = useRoute();
-  const event = route.params?.event as EventDetails;
+  const route = useRoute<RouteProp<RootStackParamList, "EventDetailsScreen">>();
+  const event = route.params?.event;
 
   // Default coordinates if not provided
   const coordinates = {
