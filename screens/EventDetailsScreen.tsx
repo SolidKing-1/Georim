@@ -14,7 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-// Add TypeScript interface for the event props
+// Update EventDetails to include status
 interface EventDetails {
   id: string;
   title: string;
@@ -27,6 +27,7 @@ interface EventDetails {
   latitude?: number;
   longitude?: number;
   attendees?: number;
+  status?: "Registered" | "Checked-In";
 }
 
 // Define the navigation param list
@@ -37,7 +38,7 @@ type RootStackParamList = {
 export default function EventDetailsScreen() {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<RootStackParamList, "EventDetailsScreen">>();
-  const event = route.params?.event;
+  const event = route.params?.event as EventDetails;
 
   // Default coordinates if not provided
   const coordinates = {
@@ -108,10 +109,20 @@ export default function EventDetailsScreen() {
         </View>
       </View>
 
-      {/* Register Button */}
-      <TouchableOpacity style={styles.registerButton}>
-        <Text style={styles.registerText}>Register</Text>
-      </TouchableOpacity>
+      {/* Check-In/Checked-In Button */}
+      {event.status === "Registered" ? (
+        <TouchableOpacity style={styles.registerButton}>
+          <Text style={styles.registerText}>Check-In</Text>
+        </TouchableOpacity>
+      ) : event.status === "Checked-In" ? (
+        <View style={[styles.registerButton, { backgroundColor: "#18C964" }]}>
+          <Text style={styles.registerText}>Checked-In</Text>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.registerButton}>
+          <Text style={styles.registerText}>Register</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
