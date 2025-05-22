@@ -19,6 +19,7 @@ import CreateEventScreen from "./screens/CreateEvent";
 import EventSuccessScreen from "./screens/EventSuccessScreen";
 import VerifyLocation from "./screens/VerifyLocation";
 import CheckinScreen from "./screens/CheckinScreen";
+import EventDetailsScreen from "./screens/EventDetailsScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -40,6 +41,7 @@ export default function App() {
         />
         <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
         <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
+        <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
