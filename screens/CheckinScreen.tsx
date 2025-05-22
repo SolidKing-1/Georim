@@ -89,19 +89,28 @@ export default function CheckinScreen() {
     <View style={styles.eventItem}>
       <Image source={item.image} style={styles.eventImage} />
       <View style={styles.eventInfo}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("EventDetails", { event: item })}
-        >
-          <Text style={styles.eventTitle}>{item.title}</Text>
-        </TouchableOpacity>
-        <Text style={styles.eventDate}>
-          {item.date} - {item.location}
-        </Text>
-        <Text style={styles.eventPrice}>{item.price}</Text>
+        <View style={styles.eventMainInfo}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("EventDetails", { event: item })}
+          >
+            <Text style={styles.eventTitle}>{item.title}</Text>
+          </TouchableOpacity>
+          <Text style={styles.eventDate}>
+            {item.date} - {item.location}
+          </Text>
+        </View>
+        <View style={styles.eventBottom}>
+          <Text style={styles.eventPrice}>{item.price}</Text>
+          <View style={styles.buttonGroup}>
+            <TouchableOpacity style={styles.checkinBtn}>
+              <Text style={styles.checkinText}>Check In</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-      <TouchableOpacity style={styles.checkinBtn}>
-        <Text style={styles.checkinText}>Check In</Text>
-      </TouchableOpacity>
     </View>
   );
 
@@ -141,7 +150,7 @@ export default function CheckinScreen() {
         keyExtractor={(item) => item.key || item.section}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
-        style={{ maxHeight: 460, marginBottom: 0 }}
+        style={{ maxHeight: 500, marginBottom: 0 }}
       />
 
       {/* Bottom Navigation Bar */}
@@ -294,7 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "#FFFFFF",
-    marginBottom: 24,
+    marginBottom: -10,
     paddingLeft: 12,
   },
   illustration: {
@@ -305,7 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#7F00FF",
     paddingVertical: 10,
     paddingHorizontal: 16,
-    marginTop: 10,
+    marginTop: 0,
   },
   registeredText: {
     color: "#fff",
@@ -313,20 +322,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   sectionTitle: {
-    fontWeight: "bold",
-    fontSize: 16,
-    marginTop: 18,
+    fontWeight: "600",
+    fontSize: 18,
+    marginTop: 6,
     marginBottom: 6,
     marginLeft: 12,
   },
   eventItem: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start", // changed from center
     backgroundColor: "#fff",
-    marginHorizontal: 8,
-    marginBottom: 10,
+    marginHorizontal: 0,
+    marginBottom: 8,
     borderRadius: 8,
-    padding: 8,
+    padding: 6,
     elevation: 1,
     shadowColor: "#000",
     shadowOpacity: 0.04,
@@ -341,30 +350,56 @@ const styles = StyleSheet.create({
   },
   eventInfo: {
     flex: 1,
-    justifyContent: "center",
+    marginLeft: 10,
+  },
+  eventMainInfo: {
+    marginBottom: 4,
   },
   eventTitle: {
-    fontWeight: "bold",
-    fontSize: 14,
+    fontWeight: "500",
+    fontSize: 16,
+    marginBottom: 2,
   },
   eventDate: {
     fontSize: 12,
     color: "#444",
-    marginTop: 2,
+  },
+  eventBottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 4,
   },
   eventPrice: {
     fontSize: 12,
     color: "#000",
-    marginTop: 2,
+  },
+  buttonGroup: {
+    flexDirection: "row",
+    gap: 8,
   },
   checkinBtn: {
     backgroundColor: "#18C964",
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    alignSelf: "flex-start",
+    minWidth: 65,
+    alignItems: "center",
+  },
+  cancelBtn: {
+    backgroundColor: "#FF0000",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    minWidth: 65,
+    alignItems: "center",
   },
   checkinText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  cancelText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 12,
