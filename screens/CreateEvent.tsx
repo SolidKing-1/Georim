@@ -3,6 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
+  Animated,
+  Easing,
   ScrollView,
   TextInput,
   Image,
@@ -10,19 +12,10 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
-  Animated,
 } from "react-native";
 import DownArrow from "react-native-vector-icons/Entypo";
 import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import * as ImagePicker from "expo-image-picker";
-import Icon from "react-native-vector-icons/Ionicons"; // For bin icon
-import Ionicons from "react-native-vector-icons/Ionicons"; // Add this import
-import { useNavigation, NavigationProp } from "@react-navigation/native";
-type RootStackParamList = {
-  EventSuccess: undefined;
-};
 
 const { width } = Dimensions.get("window");
 
@@ -33,92 +26,23 @@ export default function CreateEventScreen() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrence, setRecurrence] = useState("Daily");
   const [geofence, setGeofence] = useState(50);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date());
-  const [untilDate, setUntilDate] = useState(new Date());
-  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
-  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-  const [showUntilDatePicker, setShowUntilDatePicker] = useState(false);
-  const [eventImage, setEventImage] = useState<{
-    uri: string;
-    name: string;
-  } | null>(null);
-  const [additionalDescription, setAdditionalDescription] = useState("");
 
-  const [step, setStep] = useState(0);
-  const steps = ["basic", "datetime", "location", "image", "additional"];
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Top Header */}
+        <View style={styles.topRow}>
+          <Text style={styles.createTitle}>Create A New Event</Text>
+          <Image
+            source={New_Event}
+            style={styles.headerImage}
+            resizeMode="contain"
+          />
+        </View>
 
-  const categoryOptions = [
-    "Religious",
-    "Entertainment",
-    "Corporate",
-    "Educational",
-  ];
-  const visibilityOptions = [
-    "Public - Anyone can find and register",
-    "Private - Invitees only",
-  ];
-
-  const [showCategoryOptions, setShowCategoryOptions] = useState(false);
-  const [showVisibilityOptions, setShowVisibilityOptions] = useState(false);
-  const recurrenceOptions = [
-    "Daily",
-    "Weekly",
-    "Monthly",
-    "Yearly",
-  ];
-  const [showRecurrenceOptions, setShowRecurrenceOptions] = useState(false);
-
-  // Image picker handler
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.7,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const asset = result.assets[0];
-      setEventImage({
-        uri: asset.uri,
-        name: asset.fileName || asset.uri.split("/").pop() || "Selected Image",
-      });
-    }
-  };
-
-  const [cardAnim] = useState(new Animated.Value(0));
-
-  const animateCard = (direction = 1) => {
-    Animated.sequence([
-      Animated.timing(cardAnim, {
-        toValue: direction * -50,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardAnim, {
-        toValue: direction * 50,
-        duration: 0,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  };
-
-  const renderCard = () => {
-    switch (steps[step]) {
-      case "basic":
-        return (
-          <View style={styles.card}>
-            {/* Basic Information */}
-            <Text style={styles.cardHeader}>Basic Information</Text>
+        {/* Card 1: Basic Information */}
+        <View style={styles.card}>
+          <Text style={styles.cardHeader}>Basic Information</Text>
 
             {/* Title */}
             <Text style={styles.inputLabel}>Title</Text>
