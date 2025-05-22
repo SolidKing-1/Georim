@@ -73,7 +73,7 @@ type RootStackParamList = {
   Explore: undefined;
   CheckinScreen: undefined;
   Account: undefined;
-  EventDetails: undefined;
+  EventDetails: { event: Event };
   VerifyLocation: undefined;
   CreateEvent: undefined;
   Cancelpage: undefined;
