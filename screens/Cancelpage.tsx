@@ -1,33 +1,52 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
-import { RootStackParamList } from "../App"; // Adjust the path to where RootStackParamList is defined
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, Image } from "react-native";
+import {
+  useNavigation,
+  useRoute,
+  NavigationProp,
+  RouteProp,
+} from "@react-navigation/native";
+
+type Event = {
+  title: string;
+
+  // add other event properties if needed
+};
+
+type RootStackParamList = {
+  CheckinScreen: undefined;
+  Cancelpage: { event?: Event };
+  // add other screens here if needed
+};
 
 export default function Cancelpage() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, "Cancelpage">>();
+  const event = route.params?.event;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigation.navigate("CheckinScreen");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
       {/* Success Message */}
       <Text style={styles.title}>Event Canceled</Text>
       <Text style={styles.description}>
-        You have successfully canceled your registered event.
+        {event
+          ? `You have successfully canceled your registration for ${event.title}.`
+          : "You have successfully canceled your registered event."}
       </Text>
 
       {/* Graphic/Image */}
       <Image
-        source={require("../assets/CancelPage.jpg")} // Ensure this path is correct
+        source={require("../assets/CancelPage.jpg")}
         style={styles.image}
         resizeMode="contain"
       />
-
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Text style={styles.buttonText}>Go Back</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -56,16 +75,5 @@ const styles = StyleSheet.create({
     width: 500,
     height: 350,
     marginBottom: 30,
-  },
-  backButton: {
-    backgroundColor: "#7F00FF",
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
   },
 });

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
@@ -14,7 +16,6 @@ import { Ionicons } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
-// Add TypeScript interface for the event props
 interface EventDetails {
   id: string;
   title: string;
@@ -27,24 +28,40 @@ interface EventDetails {
   latitude?: number;
   longitude?: number;
   attendees?: number;
+  status?: "Registered" | "Checked-In";
 }
 
-// Define the navigation param list
 type RootStackParamList = {
   EventDetailsScreen: { event: EventDetails };
+  PaymentScreen: { event: EventDetails };
 };
 
 export default function EventDetailsScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<
+      import("@react-navigation/native").NavigationProp<RootStackParamList>
+    >();
   const route = useRoute<RouteProp<RootStackParamList, "EventDetailsScreen">>();
-  const event = route.params?.event;
+  const event = route.params?.event as EventDetails;
 
-  // Default coordinates if not provided
+  const [showModal, setShowModal] = useState(false);
+
   const coordinates = {
     latitude: event.latitude || 29.4436,
     longitude: event.longitude || -96.9436,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
+  };
+
+  const handleRegister = () => {
+    if (event.price.toLowerCase() === "free") {
+      setShowModal(true);
+      event.status = "Registered";
+      // Here you could also update event.status if you want
+    } else {
+      // Handle paid event registration logic
+      navigation.navigate("PaymentScreen", { event });
+    }
   };
 
   return (
@@ -100,18 +117,84 @@ export default function EventDetailsScreen() {
       <View style={styles.section}>
         <View style={styles.attendeesContainer}>
           <View style={styles.avatarStack}>
-            {/* Add 3-4 overlapping circular avatars here */}
+            {/* Overlapping circular avatars */}
+            <Image
+              source={require("../assets/avatar1.png")}
+              style={[styles.avatar, { zIndex: 0, left: 0 }]}
+            />
+            <Image
+              source={require("../assets/avatar2.png")}
+              style={[styles.avatar, { zIndex: 1, left: 18 }]}
+            />
+            <Image
+              source={require("../assets/avatar3.png")}
+              style={[styles.avatar, { zIndex: 2, left: 36 }]}
+            />
+            <View
+              style={[
+                styles.avatar,
+                styles.attendeesCountAvatar,
+                { left: 54, zIndex: 3 },
+              ]}
+            >
+              <Text style={styles.attendeesCountText}>
+                {event.attendees
+                  ? event.attendees > 999
+                    ? "1k+"
+                    : event.attendees
+                  : "0"}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.attendeesText}>
-            +{event.attendees || 0} people have joined
-          </Text>
+          <Text style={styles.attendeesText}>people have joined</Text>
         </View>
       </View>
-
-      {/* Register Button */}
-      <TouchableOpacity style={styles.registerButton}>
-        <Text style={styles.registerText}>Register</Text>
-      </TouchableOpacity>
+      {/* Check-In/Checked-In/Register Button */}
+      {event.status === "Registered" ? (
+        <View style={[styles.registerButton, { backgroundColor: "#7F00FF" }]}>
+          <Text style={styles.registerText}>Registered</Text>
+        </View>
+      ) : event.status === "Checked-In" ? (
+        <View style={[styles.registerButton, { backgroundColor: "#18C964" }]}>
+          <Text style={styles.registerText}>Checked-In</Text>
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={handleRegister}
+        >
+          <Text style={styles.registerText}>Register</Text>
+        </TouchableOpacity>
+      )}
+      <Modal
+        visible={showModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Ionicons
+              name="checkmark-circle"
+              size={48}
+              color="#7F00FF"
+              style={{ marginBottom: 12 }}
+            />
+            <Text style={styles.modalTitle}>Event Registration Successful</Text>
+            <Image
+              source={require("../assets/registration-success.png")}
+              style={styles.modalImage}
+              resizeMode="contain"
+            />
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowModal(false)}
+            >
+              <Text style={styles.modalButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -121,10 +204,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+
   backButton: {
     position: "absolute",
-    top: 40,
-    left: 20,
+    top: 60,
+    left: 15,
     zIndex: 1,
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
@@ -189,14 +273,40 @@ const styles = StyleSheet.create({
   attendeesContainer: {
     flexDirection: "row",
     alignItems: "center",
+    // Ensure horizontal alignment
   },
   avatarStack: {
     flexDirection: "row",
-    marginRight: 8,
+    marginRight: 12, // More space between avatars and text
+    position: "relative",
+    height: 36,
+    width: 90, // Enough width for all avatars
+    alignItems: "center",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#fff",
+    position: "absolute",
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  attendeesCountAvatar: {
+    backgroundColor: "#7F00FF",
+  },
+  attendeesCountText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
   attendeesText: {
     fontSize: 16,
     color: "#666",
+    // No marginTop, keep vertically centered
   },
   registerButton: {
     backgroundColor: "#7F00FF",
@@ -209,5 +319,47 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+    width: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#7F00FF",
+    marginBottom: 18,
+    textAlign: "center",
+  },
+  modalImage: {
+    width: 180,
+    height: 180,
+    marginBottom: 18,
+  },
+  modalButton: {
+    backgroundColor: "#7F00FF",
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    marginTop: 8,
+  },
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Image,
-  ScrollView,
   TouchableOpacity,
   Animated,
   FlatList,
@@ -14,53 +13,106 @@ import Home from "../assets/home.png";
 import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
-import { Event } from "../types/event";
 
-const events = [
+// Update Event type to include status
+type Event = {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  price: string;
+  description: string;
+  image: any;
+  latitude: number;
+  longitude: number;
+  attendees: number;
+  section: string;
+  status: "Registered" | "Checked-In"; // <-- Added status
+  key?: string;
+};
+
+// Dummy data for events
+const events: Event[] = [
   {
     id: "1",
     title: "Ruston Fest!!! - Revival",
     date: "Sat, May 17",
+    time: "4:00 PM - 10:00 PM",
     location: "LA Tech Basketball Stadium",
     price: "Free",
+    description:
+      "Join us for the biggest festival in Ruston! Featuring live music, food vendors, local artisans, and family-friendly activities. A celebration of our community's culture and spirit.",
     image: require("../assets/ruston-fest.png"),
+    latitude: 32.5272,
+    longitude: -92.6379,
+    attendees: 156,
     section: "Ongoing",
+    status: "Registered", // <-- Set status
   },
   {
     id: "2",
     title: "Dembele Calculus - Education",
-    date: "May 17- Dec 1",
+    date: "May 17 - Dec 1",
+    time: "2:00 PM - 4:00 PM",
     location: "Grambling, Carver Hall 234",
     price: "Free",
+    description:
+      "Master calculus with Professor Dembele. This comprehensive course covers differential and integral calculus, with practical applications and problem-solving sessions.",
     image: require("../assets/calculus.png"),
-    section: "Today",
+    latitude: 32.5251,
+    longitude: -92.7146,
+    attendees: 45,
+    section: "Ongoing",
+    status: "Checked-In", // <-- Set status
   },
   {
     id: "3",
     title: "Karaoke - Live Singing",
     date: "Fri, June 11",
+    time: "7:00 PM - 11:00 PM",
     location: "Grambling, McDinning",
     price: "$30",
+    description:
+      "Show off your vocal talents at our weekly karaoke night! Wide selection of songs, great atmosphere, and prizes for the best performers.",
     image: require("../assets/karaoke.png"),
+    latitude: 32.5254,
+    longitude: -92.7141,
+    attendees: 89,
     section: "Today",
+    status: "Registered", // <-- Set status
   },
   {
     id: "4",
-    title: "Dembele Calculus - Education",
-    date: "May 17- Dec 1",
-    location: "Grambling, Carver Hall 234",
-    price: "Free",
-    image: require("../assets/calculus.png"),
+    title: "Tech Expo 2025",
+    date: "Mon, July 7",
+    time: "9:00 AM - 5:00 PM",
+    location: "Tech Park, Ruston",
+    price: "$10",
+    description:
+      "Experience the future of technology at Tech Expo 2025. Featuring cutting-edge innovations, interactive demos, and inspiring talks from industry leaders.",
+    image: require("../assets/karaoke.png"),
+    latitude: 32.5295,
+    longitude: -92.6379,
+    attendees: 234,
     section: "Upcoming",
+    status: "Registered", // <-- Set status
   },
   {
     id: "5",
-    title: "Karaoke - Live Singing",
-    date: "Fri, June 11",
-    location: "Grambling, McDinning",
-    price: "$30",
+    title: "Jazz Night",
+    date: "Sat, July 12",
+    time: "8:00 PM - 12:00 AM",
+    location: "Downtown Ruston",
+    price: "$15",
+    description:
+      "An evening of smooth jazz and sophisticated ambiance. Local and guest musicians perform classic jazz standards and original compositions.",
     image: require("../assets/karaoke.png"),
+    latitude: 32.5232,
+    longitude: -92.6379,
+    attendees: 67,
     section: "Upcoming",
+    status: "Checked-In", // <-- Set status
   },
 ];
 
@@ -75,7 +127,7 @@ type RootStackParamList = {
   EventDetails: { event: Event };
   VerifyLocation: undefined;
   CreateEvent: undefined;
-  Cancelpage: undefined;
+  Cancelpage: { event: Event };
   ExploreScreen: undefined;
 };
 
@@ -97,20 +149,7 @@ export default function CheckinScreen() {
   const flatEvents = events.map((event) => ({
     ...event,
     key: event.id,
-    section: event.section,
   }));
-
-  type EventItem = {
-    id: string;
-    title: string;
-    date: string;
-    location: string;
-    price: string;
-    image: any;
-    section: string;
-    key?: string;
-    type?: string;
-  };
 
   const renderEvent = ({ item }: { item: Event }) => (
     <View style={styles.eventItem}>
@@ -141,7 +180,9 @@ export default function CheckinScreen() {
             <TouchableOpacity
               style={styles.cancelBtn}
               onPress={() => {
-                navigation.navigate("Cancelpage");
+                navigation.navigate("Cancelpage", {
+                  event: item,
+                });
               }}
             >
               <Text style={styles.cancelText}>Cancel</Text>
@@ -153,11 +194,7 @@ export default function CheckinScreen() {
   );
 
   // Section headers for FlatList
-  interface SectionHeaderProps {
-    section: string;
-  }
-
-  const renderSectionHeader = (section: SectionHeaderProps["section"]) => (
+  const renderSectionHeader = (section: string) => (
     <Text style={styles.sectionTitle}>{section}</Text>
   );
 
@@ -187,7 +224,7 @@ export default function CheckinScreen() {
         renderItem={({ item }) =>
           "type" in item && item.type === "header"
             ? renderSectionHeader(item.section)
-            : renderEvent({ item: item as EventItem })
+            : renderEvent({ item: item as Event })
         }
         keyExtractor={(item) => item.key || item.section}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: 120 }]}

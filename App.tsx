@@ -24,6 +24,7 @@ import VerifyLocation from "./screens/VerifyLocation";
 import CheckinScreen from "./screens/CheckinScreen";
 import Cancelpage from "./screens/Cancelpage"; // Import the Cancelpage screen
 import EventDetailsScreen from "./screens/EventDetailsScreen";
+import PaymentScreen from "./screens/PaymentScreen"; // Import the PaymentScreen if needed
 import ExploreScreen from "./screens/ExploreScreen";
 import { useGoogleAuth } from "./components/useGoogleAuth";
 
@@ -55,6 +56,7 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+        <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
         <Stack.Screen
           name="ExploreScreen"
           component={ExploreScreen}
