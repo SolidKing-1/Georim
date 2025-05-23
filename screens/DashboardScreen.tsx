@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import LocationIcon from "react-native-vector-icons/Feather";
@@ -88,7 +88,7 @@ const events = [
     price: "$10",
     description:
       "Experience the future of technology at Tech Expo 2025. Featuring cutting-edge innovations, interactive demos, and inspiring talks from industry leaders.",
-    image: require("../assets/karaoke.png"),
+    image: require("../assets/tech_expo.png"),
     latitude: 32.5295,
     longitude: -92.6379,
     attendees: 234,
@@ -102,7 +102,7 @@ const events = [
     price: "$15",
     description:
       "An evening of smooth jazz and sophisticated ambiance. Local and guest musicians perform classic jazz standards and original compositions.",
-    image: require("../assets/karaoke.png"),
+    image: require("../assets/jazz_night.png"),
     latitude: 32.5232,
     longitude: -92.6379,
     attendees: 67,
@@ -116,7 +116,7 @@ const events = [
     price: "Free",
     description:
       "Watch promising startups pitch their ideas to investors. Network with entrepreneurs and learn about the latest innovations in technology and business.",
-    image: require("../assets/ruston-fest.png"),
+    image: require("../assets/startup_pitch.jpg"),
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 112,
@@ -130,7 +130,7 @@ const events = [
     price: "$5",
     description:
       "A culinary adventure featuring the best food trucks in the region. Enjoy diverse cuisines, live music, and family entertainment.",
-    image: require("../assets/karaoke.png"),
+    image: require("../assets/food_truck.jpg"),
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 445,
@@ -144,7 +144,7 @@ const events = [
     price: "$99",
     description:
       "Intensive coding bootcamp covering web development fundamentals. Learn HTML, CSS, JavaScript, and modern frameworks. Perfect for beginners!",
-    image: require("../assets/calculus.png"),
+    image: require("../assets/coding_bootcamp.jpg"),
     attendees: 78,
   },
   {
@@ -156,7 +156,7 @@ const events = [
     price: "Free",
     description:
       "Showcase of local artisans featuring handmade crafts, artwork, jewelry, and more. Support local artists and find unique pieces for your collection.",
-    image: require("../assets/calculus.png"),
+    image: require("../assets/art_&_craft.webp"),
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 223,
@@ -170,7 +170,7 @@ const events = [
     price: "$8",
     description:
       "Outdoor movie screening under the stars. Bring your blankets and enjoy classic films in a beautiful outdoor setting. Concessions available.",
-    image: require("../assets/karaoke.png"),
+    image: require("../assets/movie_under_the_stars.jpg"),
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 167,
@@ -183,12 +183,20 @@ type NavigationProp = NativeStackNavigationProp<
 >;
 export default function DashboardScreen() {
   const navigation = useNavigation<NavigationProp>();
+  type DashboardRouteParams = { initialTab?: string };
+  const route = useRoute<{
+    key: string;
+    name: string;
+    params?: DashboardRouteParams;
+  }>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState(1);
   const translateX = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const navSlideAnim = useRef(new Animated.Value(100)).current;
-  const [activeTab, setActiveTab] = useState("Explore");
+  const [activeTab, setActiveTab] = useState(
+    (route.params?.initialTab as string) || "Home"
+  );
   const [favs, setFavs] = useState<Record<string, boolean>>({});
 
   const toggleFav = (id: string) => {
@@ -292,6 +300,13 @@ export default function DashboardScreen() {
       });
     })();
   }, []);
+
+  // Add this effect to handle tab changes
+  useEffect(() => {
+    if (route.params?.initialTab) {
+      setActiveTab(route.params.initialTab);
+    }
+  }, [route.params]);
 
   return (
     <View style={styles.container}>
@@ -439,7 +454,10 @@ export default function DashboardScreen() {
         {/* Explore Tab */}
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab("Explore")}
+          onPressIn={() => {
+            setActiveTab("Explore");
+            navigation.navigate("ExploreScreen");
+          }}
         >
           <Image
             source={Explore}
@@ -530,7 +548,7 @@ export default function DashboardScreen() {
           {/* Create label */}
         </TouchableOpacity>
       </View>
-      <Text style={styles.createLabel}>Create</Text>
+      {/* <Text style={styles.createLabel}>Create</Text> */}
     </View>
   );
 }
@@ -763,17 +781,17 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
 
-  createLabel: {
-    position: "absolute",
-    bottom: 37,
-    left: "47%",
-    transform: [{ translateX: -16 }],
-    fontSize: 14,
-    color: "#333",
-    fontWeight: "600",
-    textAlign: "center",
-    width: 50,
-  },
+  // createLabel: {
+  //   position: "absolute",
+  //   bottom: 37,
+  //   left: "47%",
+  //   transform: [{ translateX: -16 }],
+  //   fontSize: 14,
+  //   color: "#333",
+  //   fontWeight: "600",
+  //   textAlign: "center",
+  //   width: 50,
+  // },
 
   section: { marginTop: 16 },
   sectionTitle: {
