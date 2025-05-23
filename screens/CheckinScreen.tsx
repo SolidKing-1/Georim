@@ -70,13 +70,13 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type RootStackParamList = {
   Dashboard: undefined;
-  Explore: undefined;
   CheckinScreen: undefined;
   Account: undefined;
   EventDetails: { event: Event };
   VerifyLocation: undefined;
   CreateEvent: undefined;
   Cancelpage: undefined;
+  ExploreScreen: undefined;
 };
 
 export default function CheckinScreen() {
@@ -234,7 +234,10 @@ export default function CheckinScreen() {
         {/* Explore Tab */}
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab("Explore")}
+          onPress={() => {
+            setActiveTab("Explore");
+            navigation.navigate("ExploreScreen");
+          }}
         >
           <Image
             source={Explore}
@@ -338,6 +341,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#333",
     flex: 1,
+    marginLeft: 18,
+    paddingTop: 20,
   },
   scrollContainer: {
     padding: 20,

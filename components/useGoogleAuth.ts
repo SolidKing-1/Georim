@@ -14,21 +14,25 @@ const GOOGLE_CLIENT_ID = Constants.expoConfig?.extra?.GOOGLE_CLIENT_ID;
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
 export function useGoogleAuth(onSuccess: (data: any) => void) {
-  const redirectUri = AuthSession.makeRedirectUri();
+  // preferLocalhost: false ensures you get the Expo proxy URI for Expo Go
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: undefined,
+  });
   console.log("Redirect URI:", redirectUri);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: GOOGLE_CLIENT_ID,
-      redirectUri,
-      responseType: "token", // <--- get access token directly
+      clientId:
+        "271076448072-79m89tq5nsnl8t8627gv97kehmt9a9uc.apps.googleusercontent.com",
+      redirectUri: "https://auth.expo.io/@SolidKing/georim-app",
+      responseType: "token",
       scopes: [
         "openid",
         "profile",
         "email",
         "https://www.googleapis.com/auth/calendar",
       ],
-      usePKCE: false, // <--- PKCE not used for implicit flow
+      usePKCE: false,
     },
     discovery
   );
