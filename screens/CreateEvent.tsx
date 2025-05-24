@@ -11,6 +11,9 @@ import {
   Dimensions,
   Platform,
   KeyboardAvoidingView,
+  Modal,
+  ActivityIndicator,
+  FlatList,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import DownArrow from "react-native-vector-icons/Entypo";
@@ -19,6 +22,12 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
 import * as ImagePicker from "expo-image-picker";
+import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import * as Location from "expo-location";
+
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
 const { width } = Dimensions.get("window");
 
@@ -29,7 +38,10 @@ const categoryOptions = [
   "Education",
   "Corporate",
 ];
-const visibilityOptions = ["Public - Anyone can view and register", "Private - Only invited guests can view and register"];
+const visibilityOptions = [
+  "Public - Anyone can view and register",
+  "Private - Only invited guests can view and register",
+];
 const recurrenceOptions = ["Daily", "Weekly", "Monthly", "Yearly"];
 const steps = ["basic", "datetime", "location", "image", "additional"];
 
@@ -39,7 +51,10 @@ type RootStackParamList = {
 };
 
 export default function CreateEventScreen() {
-  const navigation = useNavigation<import('@react-navigation/native').NavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<
+      import("@react-navigation/native").NavigationProp<RootStackParamList>
+    >();
 
   // State Management
   const [step, setStep] = useState(0);
@@ -67,9 +82,25 @@ export default function CreateEventScreen() {
 
   // Location State
   const [geofence, setGeofence] = useState(50);
+  const [mapModalVisible, setMapModalVisible] = useState(false);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 6.5244, // Default: Lagos
+    longitude: 3.3792,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
+  const [markerCoords, setMarkerCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<string>("");
 
   // Image State
-  const [eventImage, setEventImage] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [eventImage, setEventImage] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
 
   // Additional Info State
   const [additionalDescription, setAdditionalDescription] = useState("");
@@ -103,11 +134,116 @@ export default function CreateEventScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 1,
+      base64: true, // <-- add this line
     });
 
     if (!result.canceled) {
       setEventImage(result.assets[0]);
     }
+  };
+
+  // Handler for Finish button
+  const handleFinish = async () => {
+    try {
+      // Get JWT token for authentication
+      const token = await AsyncStorage.getItem("jwt");
+
+      // Prepare event data
+      const eventData = {
+        // Add all your fields here, e.g.:
+        category,
+        visibility,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        isRecurring,
+        recurrence: isRecurring ? recurrence : null,
+        untilDate: isRecurring ? untilDate.toISOString() : null,
+        geofence,
+        additionalDescription,
+        // Add more fields as needed from your form
+        eventImageString: eventImage?.base64 ? eventImage.base64 : null,
+      };
+
+      const response = await fetch(`${BACKEND_URL}/api/events/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Event creation failed");
+        return;
+      }
+
+      alert("Event created successfully!");
+      navigation.navigate("EventSuccess");
+    } catch (err) {
+      alert("Network error. Please try again.");
+      console.error("Network error:", err);
+    }
+  };
+
+  // Helper: Search address using Nominatim (OpenStreetMap)
+  const searchAddress = async (query: string) => {
+    setSearchLoading(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}`
+      );
+      const data = await res.json();
+      setSearchResults(data);
+    } catch (e) {
+      setSearchResults([]);
+    }
+    setSearchLoading(false);
+  };
+
+  // Helper: Reverse geocode coordinates to address
+  const reverseGeocode = async (lat: number, lon: number) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`
+      );
+      const data = await res.json();
+      setSelectedAddress(data.display_name || "");
+    } catch (e) {
+      setSelectedAddress("");
+    }
+  };
+
+  // When marker moves, update address
+  const onMarkerDragEnd = async (e: any) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    setMarkerCoords({ latitude, longitude });
+    setMapRegion({ ...mapRegion, latitude, longitude });
+    await reverseGeocode(latitude, longitude);
+  };
+
+  // When user selects a search result
+  const onSelectSearchResult = async (item: any) => {
+    const latitude = parseFloat(item.lat);
+    const longitude = parseFloat(item.lon);
+    setMarkerCoords({ latitude, longitude });
+    setMapRegion({ ...mapRegion, latitude, longitude });
+    setSelectedAddress(item.display_name);
+    setSearchResults([]);
+    setSearchQuery(item.display_name);
+  };
+
+  // Confirm location
+  const confirmLocation = () => {
+    // Save to your form state as needed
+    setMapModalVisible(false);
+    // Example: setCheckInLocation({ coords: markerCoords, address: selectedAddress });
   };
 
   // Card Renderer
@@ -388,10 +524,20 @@ export default function CreateEventScreen() {
             {/* Location */}
             <Text style={styles.cardHeader}>Location</Text>
 
-            <Text style={styles.inputLabel}>Location Type</Text>
-            <View style={[styles.input, { justifyContent: "center" }]}>
-              <Text style={{ fontSize: 14, color: "#333" }}>Physical</Text>
-            </View>
+            <Text style={styles.inputLabel}>Check-In-Location</Text>
+            <TouchableOpacity
+              style={[styles.input, { justifyContent: "center" }]}
+              onPress={() => setMapModalVisible(true)}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: selectedAddress ? "#333" : "#999",
+                }}
+              >
+                {selectedAddress || "Choose coordinates from map"}
+              </Text>
+            </TouchableOpacity>
 
             <Text style={styles.inputLabel}>Venue Name</Text>
             <TextInput style={styles.input} />
@@ -434,6 +580,100 @@ export default function CreateEventScreen() {
                 Minimum radius should be at least 100m
               </Text>
             )}
+
+            {/* Map Modal Trigger */}
+            <TouchableOpacity
+              style={styles.mapButton}
+              onPress={() => setMapModalVisible(true)}
+            >
+              <Ionicons name="map-outline" size={16} color="#fff" />
+              <Text style={styles.mapButtonText}>Select on Map</Text>
+            </TouchableOpacity>
+
+            {/* Map Modal */}
+            <Modal
+              visible={mapModalVisible}
+              animationType="slide"
+              transparent={true}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Select Location on Map</Text>
+
+                  {/* Map View */}
+                  <MapView
+                    provider={PROVIDER_GOOGLE}
+                    style={styles.map}
+                    region={mapRegion}
+                    onRegionChangeComplete={(region) => setMapRegion(region)}
+                  >
+                    {markerCoords && (
+                      <Marker
+                        coordinate={markerCoords}
+                        draggable
+                        onDragEnd={onMarkerDragEnd}
+                      />
+                    )}
+                  </MapView>
+
+                  {/* Search Bar */}
+                  <View style={styles.searchContainer}>
+                    <TextInput
+                      style={styles.searchInput}
+                      placeholder="Search address..."
+                      placeholderTextColor="#999"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                      onSubmitEditing={() => searchAddress(searchQuery)}
+                    />
+                    {searchLoading && (
+                      <ActivityIndicator
+                        size="small"
+                        color="#7F00FF"
+                        style={{ marginLeft: 8 }}
+                      />
+                    )}
+                  </View>
+
+                  {/* Search Results List */}
+                  {searchResults.length > 0 && (
+                    <FlatList
+                      data={searchResults}
+                      keyExtractor={(item) => item.place_id.toString()}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.searchResultItem}
+                          onPress={() => onSelectSearchResult(item)}
+                        >
+                          <Text style={styles.searchResultText}>
+                            {item.display_name}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                      style={styles.searchResultsList}
+                    />
+                  )}
+
+                  {/* Confirm Button */}
+                  <TouchableOpacity
+                    style={styles.confirmLocationButton}
+                    onPress={confirmLocation}
+                  >
+                    <Text style={styles.confirmLocationText}>
+                      Confirm Location
+                    </Text>
+                  </TouchableOpacity>
+
+                  {/* Close Button */}
+                  <TouchableOpacity
+                    style={styles.closeModalButton}
+                    onPress={() => setMapModalVisible(false)}
+                  >
+                    <Ionicons name="close" size={24} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
           </View>
         );
       case "image":
@@ -462,7 +702,9 @@ export default function CreateEventScreen() {
             {/* File Info Row */}
             <View style={styles.fileInfoRow}>
               <Text style={{ color: "#555", flex: 1 }}>
-                {eventImage ? eventImage.fileName || eventImage.uri : "No selected File"}
+                {eventImage
+                  ? eventImage.fileName || eventImage.uri
+                  : "No selected File"}
               </Text>
               {eventImage && (
                 <TouchableOpacity onPress={() => setEventImage(null)}>
@@ -568,10 +810,7 @@ export default function CreateEventScreen() {
                 ) : (
                   <TouchableOpacity
                     style={styles.nextButton}
-                    onPress={() => {
-                      // Submit logic here if needed
-                      navigation.navigate("EventSuccess");
-                    }}
+                    onPress={handleFinish}
                   >
                     <Text style={styles.nextButtonText}>Finish</Text>
                   </TouchableOpacity>
@@ -818,5 +1057,120 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     marginRight: 8,
+  },
+
+  // New styles for map modal
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  },
+
+  modalContent: {
+    width: "90%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    elevation: 4,
+  },
+
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 12,
+  },
+
+  map: {
+    width: "100%",
+    height: 200,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 12,
+  },
+
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+  },
+
+  searchResultsList: {
+    maxHeight: 150,
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    elevation: 2,
+  },
+
+  searchResultItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+
+  searchResultText: {
+    fontSize: 14,
+    color: "#333",
+  },
+
+  confirmLocationButton: {
+    backgroundColor: "#7F00FF",
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    elevation: 2,
+  },
+
+  confirmLocationText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+
+  closeModalButton: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 50,
+    padding: 8,
+    elevation: 2,
+  },
+
+  mapButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#7F00FF",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    marginTop: 16,
+    alignSelf: "flex-start",
+    elevation: 2,
+  },
+  mapButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginLeft: 8,
   },
 });

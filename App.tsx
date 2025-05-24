@@ -10,6 +10,7 @@ export type RootStackParamList = {
   CheckinScreen: undefined;
   Cancelpage: undefined;
   ExploreScreen: undefined;
+  PaymentScreen: undefined;
 };
 
 import React from "react";
