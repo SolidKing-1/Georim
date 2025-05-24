@@ -28,7 +28,6 @@ const bannerImages = [
   require("../assets/explore_page/banner3.png"),
 ];
 
-
 const eventCards = [
   {
     id: "1",

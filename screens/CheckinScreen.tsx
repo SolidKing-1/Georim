@@ -13,6 +13,7 @@ import Home from "../assets/home.png";
 import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
+import BottomNavBar from "../components/BottomNavBar"; // Add this import at the top
 
 // Update Event type to include status
 type Event = {
@@ -233,13 +234,13 @@ export default function CheckinScreen() {
       />
 
       {/* Bottom Navigation Bar */}
+      {/*
       <Animated.View
         style={[
           styles.bottomNav,
           { transform: [{ translateY: navSlideAnim }] },
         ]}
       >
-        {/* Home Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -267,8 +268,6 @@ export default function CheckinScreen() {
             Home
           </Text>
         </TouchableOpacity>
-
-        {/* Explore Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -296,11 +295,7 @@ export default function CheckinScreen() {
             Explore
           </Text>
         </TouchableOpacity>
-
-        {/* Spacer */}
         <View style={styles.navSpacer} />
-
-        {/* Check-In Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -328,8 +323,6 @@ export default function CheckinScreen() {
             Check-In
           </Text>
         </TouchableOpacity>
-
-        {/* Account Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => setActiveTab("Account")}
@@ -355,7 +348,6 @@ export default function CheckinScreen() {
           </Text>
         </TouchableOpacity>
       </Animated.View>
-      {/* Bowl Cutout */}
       <View style={styles.bowlCutout}>
         <TouchableOpacity
           style={styles.floatingButton}
@@ -364,6 +356,14 @@ export default function CheckinScreen() {
           <Text style={styles.plusText}>+</Text>
         </TouchableOpacity>
       </View>
+      */}
+
+      {/* Use the reusable BottomNavBar component */}
+      <BottomNavBar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
+      />
     </View>
   );
 }

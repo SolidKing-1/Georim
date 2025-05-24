@@ -10,6 +10,8 @@ export type RootStackParamList = {
   CheckinScreen: undefined;
   Cancelpage: undefined;
   ExploreScreen: undefined;
+  PaymentScreen: undefined;
+  AccountScreen: undefined;
 };
 
 import React from "react";
@@ -27,6 +29,7 @@ import EventDetailsScreen from "./screens/EventDetailsScreen";
 import PaymentScreen from "./screens/PaymentScreen"; // Import the PaymentScreen if needed
 import ExploreScreen from "./screens/ExploreScreen";
 import { useGoogleAuth } from "./components/useGoogleAuth";
+import AccountScreen from "./screens/AccountScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -62,6 +65,7 @@ export default function App() {
           component={ExploreScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="AccountScreen" component={AccountScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -23,6 +23,7 @@ import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
+import BottomNavBar from "../components/BottomNavBar"; // Import the reusable bottom nav component
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
@@ -419,13 +420,13 @@ export default function DashboardScreen() {
       </View>
 
       {/* Bottom Navigation Bar */}
+      {/* 
       <Animated.View
         style={[
           styles.bottomNav,
           { transform: [{ translateY: navSlideAnim }] },
         ]}
       >
-        {/* Home Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => setActiveTab("Home")}
@@ -450,8 +451,6 @@ export default function DashboardScreen() {
             Home
           </Text>
         </TouchableOpacity>
-
-        {/* Explore Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPressIn={() => {
@@ -479,11 +478,7 @@ export default function DashboardScreen() {
             Explore
           </Text>
         </TouchableOpacity>
-
-        {/* Spacer */}
         <View style={styles.navSpacer} />
-
-        {/* Check-In Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -511,8 +506,6 @@ export default function DashboardScreen() {
             Check-In
           </Text>
         </TouchableOpacity>
-
-        {/* Account Tab */}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => setActiveTab("Account")}
@@ -538,17 +531,22 @@ export default function DashboardScreen() {
           </Text>
         </TouchableOpacity>
       </Animated.View>
-      {/* Bowl Cutout */}
       <View style={styles.bowlCutout}>
         <TouchableOpacity
           style={styles.floatingButton}
           onPress={() => navigation.navigate("CreateEvent")}
         >
           <Text style={styles.plusText}>+</Text>
-          {/* Create label */}
         </TouchableOpacity>
       </View>
-      {/* <Text style={styles.createLabel}>Create</Text> */}
+      */}
+
+      {/* Use the reusable BottomNavBar component */}
+      <BottomNavBar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
+      />
     </View>
   );
 }
