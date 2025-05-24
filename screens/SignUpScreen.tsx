@@ -17,18 +17,64 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import { Platform, KeyboardAvoidingView } from "react-native";
 import { useGoogleAuth } from "../components/useGoogleAuth";
+import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
 export default function SignUpScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showPassword, setShowPassword] = useState(false);
+  const [first, setFirst] = useState("");
+  const [last, setLast] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
   const { promptAsync, request } = useGoogleAuth((data) => {
     // Handle signup success, e.g., save token, navigate, etc.
     console.log("Google signup success:", data);
     navigation.navigate("Dashboard"); // or wherever you want
   });
+
+  const handleSignUp = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/sign-up`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first,
+          last,
+          email,
+          phone,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+      console.log("Response body:", data);
+
+      if (!response.ok) {
+        alert(data.message || "Sign up failed");
+        return;
+      }
+
+      // Save JWT token
+      if (data.token) {
+        await AsyncStorage.setItem("jwt", data.token);
+      }
+
+      alert("Sign up successful!");
+      navigation.navigate("Login");
+    } catch (err) {
+      alert("Network error. Please try again.");
+      console.error("Network error:", err);
+    }
+  };
+
 
   return (
     <KeyboardAvoidingView
@@ -57,6 +103,8 @@ export default function SignUpScreen() {
                 placeholder="John"
                 placeholderTextColor="#999"
                 style={styles.input}
+                value={first}
+                onChangeText={setFirst}
               />
             </View>
             <View style={{ flex: 1, marginLeft: 8 }}>
@@ -65,6 +113,8 @@ export default function SignUpScreen() {
                 placeholder="Doe"
                 placeholderTextColor="#999"
                 style={styles.input}
+                value={last}
+                onChangeText={setLast}
               />
             </View>
           </View>
@@ -77,6 +127,8 @@ export default function SignUpScreen() {
             style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
 
           {/* Phone */}
@@ -86,6 +138,8 @@ export default function SignUpScreen() {
             placeholderTextColor="#999"
             style={styles.input}
             keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
           />
 
           {/* Password */}
@@ -97,6 +151,8 @@ export default function SignUpScreen() {
               style={[styles.input, { flex: 1 }]}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Icon
@@ -110,7 +166,7 @@ export default function SignUpScreen() {
 
           {/* Sign Up Button */}
           <TouchableOpacity
-            onPress={() => navigation.navigate("Login")}
+            onPress={handleSignUp}
             style={styles.loginButton}
           >
             <Text style={styles.loginButtonText}>Sign Up</Text>

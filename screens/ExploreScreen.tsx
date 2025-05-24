@@ -92,6 +92,8 @@ export default function ExploreScreen() {
   const [pausedVideos, setPausedVideos] = useState<{ [key: string]: boolean }>(
     {}
   );
+  const previewVideoRef = useRef<Video>(null);
+  const fullscreenVideoRefs = useRef<{ [key: string]: Video | null }>({});
 
   type EventCard = {
     id: string;
@@ -104,13 +106,18 @@ export default function ExploreScreen() {
   };
 
   const videoData = [
-    { id: "1", source: require("../assets/videos/video1.mp4") },
-    { id: "2", source: require("../assets/videos/video2.mp4") },
-    { id: "3", source: require("../assets/videos/video3.mp4") },
-    { id: "4", source: require("../assets/videos/video4.mp4") },
-    { id: "5", source: require("../assets/videos/video5.mp4") },
-    { id: "6", source: require("../assets/videos/video6.mp4") },
-    { id: "7", source: require("../assets/videos/video7.mp4") },
+    { id: "1", source: require("../assets/videos/video.mp4") },
+    { id: "2", source: require("../assets/videos/video1.mp4") },
+    { id: "3", source: require("../assets/videos/video2.mp4") },
+    { id: "4", source: require("../assets/videos/video3.mp4") },
+    { id: "5", source: require("../assets/videos/video4.mp4") },
+    { id: "6", source: require("../assets/videos/video5.mp4") },
+    { id: "7", source: require("../assets/videos/video6.mp4") },
+    { id: "8", source: require("../assets/videos/video7.mp4") },
+    { id: "9", source: require("../assets/videos/video8.mp4") },
+    { id: "10", source: require("../assets/videos/video9.mp4") },
+    { id: "11", source: require("../assets/videos/video10.mp4") },
+    { id: "12", source: require("../assets/videos/video11.mp4") },
     // Add more videos...
   ];
 
@@ -168,6 +175,29 @@ export default function ExploreScreen() {
     alert("Registered for event/video " + id);
   };
 
+  // Unload preview video when leaving screen
+  useEffect(() => {
+    return () => {
+      // Unload preview video
+      if (previewVideoRef.current) {
+        previewVideoRef.current.unloadAsync();
+      }
+      // Unload all fullscreen videos
+      Object.values(fullscreenVideoRefs.current).forEach((video) => {
+        if (video) video.unloadAsync();
+      });
+    };
+  }, []);
+
+  // Unload all fullscreen videos when modal closes
+  useEffect(() => {
+    if (!videoModalVisible) {
+      Object.values(fullscreenVideoRefs.current).forEach((video) => {
+        if (video) video.unloadAsync();
+      });
+    }
+  }, [videoModalVisible]);
+
   return (
     <View style={styles.container}>
       {/* Banner Carousel */}
@@ -215,11 +245,13 @@ export default function ExploreScreen() {
         style={styles.videoPreviewBox}
       >
         <Video
+          ref={previewVideoRef}
           source={videoData[0].source}
           style={styles.videoPreview}
           resizeMode={ResizeMode.COVER}
           shouldPlay={true}
           isLooping
+          isMuted={true} // <-- Mute the preview video!
         />
       </TouchableOpacity>
 
@@ -233,6 +265,7 @@ export default function ExploreScreen() {
           renderItem={({ item, index }) => (
             <View style={styles.fullscreenVideoBox}>
               <Video
+                ref={(ref) => { fullscreenVideoRefs.current[item.id] = ref; }}
                 source={item.source}
                 style={styles.fullscreenVideo}
                 resizeMode={ResizeMode.COVER}
@@ -240,7 +273,7 @@ export default function ExploreScreen() {
                   currentVideoIndex === index && !pausedVideos[item.id]
                 }
                 isLooping
-                isMuted={true}
+                isMuted={false}
               />
               {/* Overlay controls */}
               <View style={styles.videoControls}>

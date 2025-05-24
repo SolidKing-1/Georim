@@ -13,17 +13,24 @@ import Company from "../assets/Company_icon.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
 import { useGoogleAuth } from "../components/useGoogleAuth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import { Platform, KeyboardAvoidingView } from "react-native";
 
+import Constants from "expo-constants";
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
 export default function LoginScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
   // Handle Google OAuth
   const { promptAsync, request } = useGoogleAuth((data) => {
@@ -31,6 +38,37 @@ export default function LoginScreen() {
     console.log("Google login success:", data);
     navigation.navigate("Dashboard"); // or wherever you want
   });
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/sign-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        alert(data?.data?.message || "Login failed");
+        return;
+      }
+
+      // Save JWT token from nested data object
+      if (data.data && data.data.token) {
+        await AsyncStorage.setItem("jwt", data.data.token);
+      }
+
+      alert("Login successful!");
+      navigation.navigate("Dashboard");
+    } catch (err) {
+      alert("Network error. Please try again.");
+      console.error("Network error:", err);
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -63,6 +101,8 @@ export default function LoginScreen() {
               style={styles.input}
               keyboardType="email-address"
               autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
 
             <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
@@ -73,6 +113,8 @@ export default function LoginScreen() {
                 style={[styles.input, { flex: 1 }]}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 <Icon
@@ -89,12 +131,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Login Button */}
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => {
-                navigation.navigate("Dashboard");
-              }}
-            >
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
               <Text style={styles.loginButtonText}>Login</Text>
             </TouchableOpacity>
 

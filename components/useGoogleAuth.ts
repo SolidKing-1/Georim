@@ -18,7 +18,7 @@ export function useGoogleAuth(onSuccess: (data: any) => void) {
   const redirectUri = AuthSession.makeRedirectUri({
     scheme: undefined,
   });
-  console.log("Redirect URI:", redirectUri);
+  // console.log("Redirect URI:", redirectUri);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
@@ -36,6 +36,7 @@ export function useGoogleAuth(onSuccess: (data: any) => void) {
     },
     discovery
   );
+  // console.log(BACKEND_URL);
 
   useEffect(() => {
     if (response?.type === "success") {

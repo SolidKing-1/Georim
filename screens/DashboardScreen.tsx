@@ -23,6 +23,7 @@ import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
+import { getToken } from "../utils/auth";
 import BottomNavBar from "../components/BottomNavBar"; // Import the reusable bottom nav component
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
@@ -287,18 +288,25 @@ export default function DashboardScreen() {
       }
       // Get current location
       let location = await Location.getCurrentPositionAsync({});
+      const token = await getToken();
       // Send to backend
-      fetch(`${BACKEND_URL}`, {
+      const response = await fetch(`${BACKEND_URL}/user/update-location`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Add auth token if needed
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           latitude: location.coords.latitude,
           longitude: location.coords.longitude,
         }),
       });
+      console.log(token);
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message || "Failed to update location");
+        return;
+      }
     })();
   }, []);
 
