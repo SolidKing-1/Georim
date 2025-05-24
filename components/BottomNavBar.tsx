@@ -32,7 +32,8 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   return (
     <>
-      <NavWrapper
+      {/* Bottom Navigation Bar with Animation */}
+      <Animated.View
         style={[
           styles.bottomNav,
           navSlideAnim ? { transform: [{ translateY: navSlideAnim }] } : {},
@@ -156,7 +157,7 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
             Account
           </Text>
         </TouchableOpacity>
-      </NavWrapper>
+      </Animated.View>
       {/* Bowl Cutout and Floating Button */}
       <View style={styles.bowlCutout}>
         <TouchableOpacity

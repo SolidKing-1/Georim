@@ -7,8 +7,12 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
+  Animated,
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import BottomNavBar from "../components/BottomNavBar";
+import DashedDropzone from "../components/DashedDropzone";
+import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileScreen() {
   const [fullName, setFullName] = useState("James koght");
@@ -17,16 +21,88 @@ export default function ProfileScreen() {
   const [phone, setPhone] = useState("+1 (318) 345 9987");
   const [location, setLocation] = useState("403 Main Street, LA");
   const [password, setPassword] = useState("************");
+  const [activeTab, setActiveTab] = useState("Account");
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [modalTranslateY] = useState(new Animated.Value(300));
+  const [navbarTranslateY] = useState(new Animated.Value(0));
+  const [overlayOpacity] = useState(new Animated.Value(0));
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileImage, setProfileImage] = useState(
+    "https://randomuser.me/api/portraits/men/1.jpg"
+  );
+
+  const openModal = () => {
+    setIsModalVisible(true);
+    Animated.parallel([
+      Animated.timing(modalTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(navbarTranslateY, {
+        toValue: 100,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(overlayOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const closeModal = () => {
+    Animated.parallel([
+      Animated.timing(modalTranslateY, {
+        toValue: 300,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(navbarTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(overlayOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start(() => setIsModalVisible(false));
+  };
+
+  const [eventImage, setEventImage] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
+
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setEventImage(result.assets[0]);
+    }
+  };
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        style={styles.scrollView}
+      >
         <Text style={styles.title}>Profile</Text>
         <View style={styles.avatarContainer}>
           <Image
-            source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
+            source={{ uri: profileImage }}
             style={styles.avatar}
           />
+          <TouchableOpacity style={styles.editIcon} onPress={openModal}>
+            <Ionicons name="pencil" size={16} color="#7F00FF" />
+          </TouchableOpacity>
         </View>
         <View style={styles.formGroup}>
           <Text style={styles.label}>Full Name</Text>
@@ -34,7 +110,7 @@ export default function ProfileScreen() {
             style={styles.input}
             value={fullName}
             onChangeText={setFullName}
-            editable={false}
+            editable={isEditing}
           />
         </View>
         <View style={styles.formGroup}>
@@ -43,7 +119,7 @@ export default function ProfileScreen() {
             style={styles.input}
             value={displayName}
             onChangeText={setDisplayName}
-            editable={false}
+            editable={isEditing}
           />
         </View>
         <View style={styles.formGroup}>
@@ -52,7 +128,7 @@ export default function ProfileScreen() {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            editable={false}
+            editable={isEditing}
             keyboardType="email-address"
           />
         </View>
@@ -67,7 +143,7 @@ export default function ProfileScreen() {
               style={styles.phoneInput}
               value={phone}
               onChangeText={setPhone}
-              editable={false}
+              editable={isEditing}
               keyboardType="phone-pad"
             />
           </View>
@@ -78,7 +154,7 @@ export default function ProfileScreen() {
             style={styles.input}
             value={location}
             onChangeText={setLocation}
-            editable={false}
+            editable={isEditing}
           />
         </View>
         <View style={styles.formGroup}>
@@ -88,35 +164,84 @@ export default function ProfileScreen() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
-            editable={false}
+            editable={isEditing}
           />
         </View>
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Update Profile</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setIsEditing((prev) => !prev)}
+        >
+          <Text style={styles.buttonText}>
+            {isEditing ? "Save Profile" : "Update Profile"}
+          </Text>
         </TouchableOpacity>
       </ScrollView>
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="home" size={24} color="#A259FF" />
-          <Text style={styles.tabLabelActive}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="search" size={24} color="#92929D" />
-          <Text style={styles.tabLabel}>Explore</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="add-circle-outline" size={24} color="#92929D" />
-          <Text style={styles.tabLabel}>Create</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="check-square" size={24} color="#92929D" />
-          <Text style={styles.tabLabel}>Check-In</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="user" size={24} color="#92929D" />
-          <Text style={styles.tabLabel}>Account</Text>
-        </TouchableOpacity>
-      </View>
+
+      {/* Dim Overlay when modal is visible */}
+      {isModalVisible && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              zIndex: 1,
+              opacity: overlayOpacity,
+            },
+          ]}
+        />
+      )}
+
+      {/* Animated Modal for Editing Profile Picture */}
+      {isModalVisible && (
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            { transform: [{ translateY: modalTranslateY }], zIndex: 2 },
+          ]}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.card}>
+              <Text style={styles.cardHeader}>Upload Profile Image</Text>
+              <DashedDropzone onPress={pickImage} />
+              <View style={styles.fileInfoRow}>
+                <Text style={{ color: "#555", flex: 1 }}>
+                  {eventImage
+                    ? eventImage.fileName || eventImage.uri
+                    : "No selected File"}
+                </Text>
+                {eventImage && (
+                  <TouchableOpacity onPress={() => setEventImage(null)}>
+                    <Ionicons name="trash-outline" size={20} color="#d11a2a" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => {
+                if (eventImage && eventImage.uri) {
+                  setProfileImage(eventImage.uri);
+                }
+                closeModal();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Done {">>"}</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Animated BottomNavBar */}
+      <Animated.View
+        style={[{ transform: [{ translateY: navbarTranslateY }] }]}
+      >
+        <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
+      </Animated.View>
     </View>
   );
 }
@@ -124,7 +249,11 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9F9F9",
+    backgroundColor: "#fff",
+  },
+  scrollView: {
+    flex: 1,
+    marginBottom: 130,
   },
   scrollContent: {
     padding: 24,
@@ -134,18 +263,33 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     marginBottom: 16,
+    marginTop: 24,
     color: "#000",
   },
   avatarContainer: {
     alignItems: "center",
     marginBottom: 24,
+    position: "relative",
   },
   avatar: {
     width: 110,
     height: 110,
     borderRadius: 55,
     borderWidth: 4,
-    borderColor: "#A259FF",
+    borderColor: "#7F00FF",
+  },
+  editIcon: {
+    position: "absolute",
+    bottom: 0,
+    right: 120,
+    backgroundColor: "#fff",
+    width: 30,
+    height: 26,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#7F00FF",
   },
   formGroup: {
     marginBottom: 16,
@@ -183,48 +327,88 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   button: {
-    backgroundColor: "#A259FF",
-    borderRadius: 12,
+    backgroundColor: "#7F00FF",
+    borderRadius: 30,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 16,
+    alignSelf: "center",
+    width: "60%",
   },
   buttonText: {
     color: "#FFF",
     fontWeight: "600",
     fontSize: 16,
   },
-  tabBar: {
-    flexDirection: "row",
-    backgroundColor: "#FFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: 70,
-    alignItems: "center",
-    justifyContent: "space-around",
+  modalContainer: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
+    height: "60%", // Covers half the screen
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
     shadowColor: "#000",
-    shadowOpacity: 0.05,
     shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 5,
   },
-  tabItem: {
-    alignItems: "center",
+  modalContent: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
+    padding: 0,
   },
-  tabLabel: {
-    fontSize: 12,
-    color: "#92929D",
-    marginTop: 2,
-  },
-  tabLabelActive: {
-    fontSize: 12,
-    color: "#A259FF",
-    marginTop: 2,
+  modalTitle: {
+    fontSize: 18,
     fontWeight: "600",
+    color: "#7F00FF",
+    marginBottom: 16,
+  },
+  modalButton: {
+    backgroundColor: "#7F00FF",
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    marginTop: 0,
+  },
+  modalButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    width: "90%",
+    alignSelf: "center",
+  },
+  cardHeader: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#7F00FF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#7F00FF",
+    paddingBottom: 6,
+    marginBottom: 14,
+  },
+  fileInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "#fff",
+    minHeight: 44,
   },
 });

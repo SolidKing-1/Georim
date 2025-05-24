@@ -13,6 +13,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import RegistrationSuccessModal from "../components/RegistrationSuccessModal"; // Add this import
 
 const { width } = Dimensions.get("window");
 
@@ -173,6 +174,7 @@ export default function EventDetailsScreen() {
       </View>
 
       {/* Advanced Styled Modal */}
+      {/*
       <Modal
         visible={showModal}
         transparent
@@ -202,6 +204,13 @@ export default function EventDetailsScreen() {
           </View>
         </View>
       </Modal>
+      */}
+
+      {/* Use the reusable RegistrationSuccessModal component */}
+      <RegistrationSuccessModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+      />
     </View>
   );
 }

@@ -12,15 +12,25 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import BottomNavBar from "../components/BottomNavBar"; // Import the reusable BottomNavBar
+import BottomNavBar from "../components/BottomNavBar";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 // Dummy profile image
 const profileImage = { uri: "https://randomuser.me/api/portraits/men/32.jpg" };
+
+// Define the type for the stack's param list
+type AccountStackParamList = {
+  AccountHome: undefined;
+  Profile: undefined;
+  Settings: undefined;
+  // Add more screens as needed
+};
 
 // Home screen content for the Account stack
 const AccountHome = () => {
   // State for active tab (for BottomNavBar)
   const [activeTab, setActiveTab] = React.useState("Account");
+  const navigation = useNavigation<NavigationProp<AccountStackParamList>>();
 
   return (
     <View style={styles.container}>
@@ -40,36 +50,45 @@ const AccountHome = () => {
             <Image source={profileImage} style={styles.profileImage} />
             <Text style={styles.email}>jkoght2@gmail.com</Text>
           </View>
-          {/* Menu items */}
-          <View style={styles.menu}>
+          {/* Menu items grouped and styled as in the screenshot */}
+          <View style={styles.menuGroup}>
             <MenuItem
               icon={
                 <Ionicons name="person-outline" size={24} color="#8B8B8B" />
               }
               label="Profile Details"
+              showDivider
+              onPress={() => navigation.navigate("Profile")}
             />
             <MenuItem
               icon={<Ionicons name="heart-outline" size={24} color="#C8A2FA" />}
               label="Favourites"
+              showDivider
+              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
             />
             <MenuItem
               icon={<MaterialIcons name="history" size={24} color="#C8A2FA" />}
               label="Attendance History"
-              iconBg="#F5E9FF"
+              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
             />
+          </View>
+          <View style={styles.menuGroup}>
             <MenuItem
               icon={
                 <Ionicons name="calendar-outline" size={24} color="#C8A2FA" />
               }
               label="Events Created"
-              iconBg="#F5E9FF"
+              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
             />
+          </View>
+          <View style={styles.menuGroup}>
             <MenuItem
               icon={
                 <FontAwesome5 name="credit-card" size={20} color="#8B8B8B" />
               }
               label="Payment Methods"
-              iconBg="#F5E9FF"
+              showDivider
+              onPress={() => navigation.navigate("Settings")}
             />
             <MenuItem
               icon={
@@ -80,12 +99,15 @@ const AccountHome = () => {
                 />
               }
               label="Help and Support"
-              iconBg="#F5E9FF"
+              showDivider
+              onPress={() => navigation.navigate("Settings")}
             />
             <MenuItem
               icon={<MaterialIcons name="logout" size={24} color="#8B8B8B" />}
               label="Log out"
-              iconBg="#F5E9FF"
+              onPress={() => {
+                /* Add logout logic here */
+              }}
             />
           </View>
         </View>
@@ -98,22 +120,32 @@ const AccountHome = () => {
 };
 
 // Menu item component for account options
-const MenuItem = ({ icon, label, iconBg = "#F5F5F5", badge }: any) => (
-  <TouchableOpacity style={styles.menuItem}>
-    <View style={[styles.menuIcon, { backgroundColor: iconBg }]}>{icon}</View>
-    <Text style={styles.menuLabel}>{label}</Text>
-    {badge && (
-      <View style={styles.badge}>
-        <Text style={styles.badgeText}>{badge}</Text>
-      </View>
-    )}
-    <Ionicons
-      name="chevron-forward"
-      size={20}
-      color="#BDBDBD"
-      style={{ marginLeft: "auto" }}
-    />
-  </TouchableOpacity>
+const MenuItem = ({
+  icon,
+  label,
+  iconBg = "#F5F5F5",
+  badge,
+  showDivider,
+  onPress,
+}: any) => (
+  <View>
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <View style={[styles.menuIcon, { backgroundColor: iconBg }]}>{icon}</View>
+      <Text style={styles.menuLabel}>{label}</Text>
+      {badge && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{badge}</Text>
+        </View>
+      )}
+      <Ionicons
+        name="chevron-forward"
+        size={20}
+        color="#000"
+        style={{ marginLeft: "auto" }}
+      />
+    </TouchableOpacity>
+    {showDivider && <View style={styles.menuDivider} />}
+  </View>
 );
 
 // Stack navigator for Account section
@@ -160,7 +192,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginLeft: 24,
     marginBottom: 4,
-    marginTop: 16,
+    marginTop: 24,
     color: "#181818",
   },
   greeting: {
@@ -188,23 +220,33 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
-  menu: {
-    width: "100%",
-    marginTop: 8,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
+  menuGroup: {
+    width: "92%",
     backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginVertical: 6,
-    borderRadius: 18,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderRadius: 16,
+    marginTop: 16,
+    marginBottom: 0,
+    alignSelf: "center",
+    paddingVertical: 2,
+    // shadow for iOS/Android
     shadowColor: "#000",
     shadowOpacity: 0.03,
     shadowRadius: 2,
     elevation: 1,
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "transparent",
+    borderRadius: 0,
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: "#F5E9FF",
+    marginLeft: 60,
+    marginRight: 0,
   },
   menuIcon: {
     width: 36,
@@ -213,6 +255,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginRight: 16,
+    backgroundColor: "#F5F5F5",
   },
   menuLabel: {
     fontSize: 16,
