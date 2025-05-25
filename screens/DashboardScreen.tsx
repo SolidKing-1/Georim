@@ -516,7 +516,10 @@ export default function DashboardScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navItem}
-          onPress={() => setActiveTab("Account")}
+          onPress={() => {
+            setActiveTab("Account");
+            navigation.navigate('EventCreatedPage'); // Navigate to EventCreatedPage
+          }}
         >
           <Image
             source={ProfileIcon}
