@@ -13,6 +13,7 @@ import {
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import RegistrationSuccessModal from "../components/RegistrationSuccessModal"; // Add this import
 
 const { width } = Dimensions.get("window");
 
@@ -57,16 +58,14 @@ export default function EventDetailsScreen() {
     if (event.price.toLowerCase() === "free") {
       setShowModal(true);
       event.status = "Registered";
-      // Here you could also update event.status if you want
     } else {
-      // Handle paid event registration logic
       navigation.navigate("PaymentScreen", { event });
     }
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Back Button */}
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      {/* Fixed Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -74,98 +73,108 @@ export default function EventDetailsScreen() {
         <Ionicons name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
-      {/* Event Image */}
-      <Image source={event.image} style={styles.eventImage} />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
+        {/* Event Image */}
+        <Image source={event.image} style={styles.eventImage} />
 
-      {/* Event Title Section */}
-      <View style={styles.titleSection}>
-        <Text style={styles.title}>{event.title}</Text>
-        <View style={styles.tagContainer}>
-          <Text style={styles.tag}>{event.price}</Text>
-        </View>
-      </View>
-
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{event.description}</Text>
-      </View>
-
-      {/* Date & Time */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Date & Time</Text>
-        <Text style={styles.dateTime}>{event.date}</Text>
-        {event.time && <Text style={styles.dateTime}>{event.time}</Text>}
-      </View>
-
-      {/* Map */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Map</Text>
-        <Text style={styles.location}>{event.location}</Text>
-        <MapView style={styles.map} initialRegion={coordinates}>
-          <Marker coordinate={coordinates} />
-        </MapView>
-      </View>
-
-      {/* Further Details */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Further Details</Text>
-        <Text style={styles.description}>{event.description}</Text>
-      </View>
-
-      {/* Attendees */}
-      <View style={styles.section}>
-        <View style={styles.attendeesContainer}>
-          <View style={styles.avatarStack}>
-            {/* Overlapping circular avatars */}
-            <Image
-              source={require("../assets/avatar1.png")}
-              style={[styles.avatar, { zIndex: 0, left: 0 }]}
-            />
-            <Image
-              source={require("../assets/avatar2.png")}
-              style={[styles.avatar, { zIndex: 1, left: 18 }]}
-            />
-            <Image
-              source={require("../assets/avatar3.png")}
-              style={[styles.avatar, { zIndex: 2, left: 36 }]}
-            />
-            <View
-              style={[
-                styles.avatar,
-                styles.attendeesCountAvatar,
-                { left: 54, zIndex: 3 },
-              ]}
-            >
-              <Text style={styles.attendeesCountText}>
-                {event.attendees
-                  ? event.attendees > 999
-                    ? "1k+"
-                    : event.attendees
-                  : "0"}
-              </Text>
-            </View>
+        {/* Event Title Section */}
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>{event.title}</Text>
+          <View style={styles.tagContainer}>
+            <Text style={styles.tag}>{event.price}</Text>
           </View>
-          <Text style={styles.attendeesText}>people have joined</Text>
         </View>
+
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>{event.description}</Text>
+        </View>
+
+        {/* Date & Time */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Date & Time</Text>
+          <Text style={styles.dateTime}>{event.date}</Text>
+          {event.time && <Text style={styles.dateTime}>{event.time}</Text>}
+        </View>
+
+        {/* Map */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Map</Text>
+          <Text style={styles.location}>{event.location}</Text>
+          <MapView style={styles.map} initialRegion={coordinates}>
+            <Marker coordinate={coordinates} />
+          </MapView>
+        </View>
+
+        {/* Further Details */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Further Details</Text>
+          <Text style={styles.description}>{event.description}</Text>
+        </View>
+
+        {/* Attendees */}
+        <View style={styles.section}>
+          <View style={styles.attendeesContainer}>
+            <View style={styles.avatarStack}>
+              <Image
+                source={require("../assets/avatar1.png")}
+                style={[styles.avatar, { zIndex: 0, left: 0 }]}
+              />
+              <Image
+                source={require("../assets/avatar2.png")}
+                style={[styles.avatar, { zIndex: 1, left: 18 }]}
+              />
+              <Image
+                source={require("../assets/avatar3.png")}
+                style={[styles.avatar, { zIndex: 2, left: 36 }]}
+              />
+              <View
+                style={[
+                  styles.avatar,
+                  styles.attendeesCountAvatar,
+                  { left: 54, zIndex: 3 },
+                ]}
+              >
+                <Text style={styles.attendeesCountText}>
+                  {event.attendees
+                    ? event.attendees > 999
+                      ? "1k+"
+                      : event.attendees
+                    : "0"}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.attendeesText}>people have joined</Text>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Fixed Register/Checked-In Button */}
+      <View style={styles.fixedButtonContainer}>
+        {event.status === "Registered" ? (
+          <View style={[styles.registerButton, { backgroundColor: "#7F00FF" }]}>
+            <Text style={styles.registerText}>Registered</Text>
+          </View>
+        ) : event.status === "Checked-In" ? (
+          <View style={[styles.registerButton, { backgroundColor: "#18C964" }]}>
+            <Text style={styles.registerText}>Checked-In</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.registerButton}
+            onPress={handleRegister}
+          >
+            <Text style={styles.registerText}>Register</Text>
+          </TouchableOpacity>
+        )}
       </View>
-      {/* Check-In/Checked-In/Register Button */}
-      {event.status === "Registered" ? (
-        <View style={[styles.registerButton, { backgroundColor: "#7F00FF" }]}>
-          <Text style={styles.registerText}>Registered</Text>
-        </View>
-      ) : event.status === "Checked-In" ? (
-        <View style={[styles.registerButton, { backgroundColor: "#18C964" }]}>
-          <Text style={styles.registerText}>Checked-In</Text>
-        </View>
-      ) : (
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={handleRegister}
-        >
-          <Text style={styles.registerText}>Register</Text>
-        </TouchableOpacity>
-      )}
+
+      {/* Advanced Styled Modal */}
+      {/*
       <Modal
         visible={showModal}
         transparent
@@ -195,7 +204,14 @@ export default function EventDetailsScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      */}
+
+      {/* Use the reusable RegistrationSuccessModal component */}
+      <RegistrationSuccessModal
+        visible={showModal}
+        onClose={() => setShowModal(false)}
+      />
+    </View>
   );
 }
 
@@ -204,12 +220,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
-
   backButton: {
     position: "absolute",
-    top: 60,
-    left: 15,
-    zIndex: 1,
+    top: 50,
+    left: 16,
+    zIndex: 20, // increased to ensure it's above ScrollView content
     backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
     padding: 8,
@@ -273,14 +288,13 @@ const styles = StyleSheet.create({
   attendeesContainer: {
     flexDirection: "row",
     alignItems: "center",
-    // Ensure horizontal alignment
   },
   avatarStack: {
     flexDirection: "row",
-    marginRight: 12, // More space between avatars and text
+    marginRight: 12,
     position: "relative",
     height: 36,
-    width: 90, // Enough width for all avatars
+    width: 90,
     alignItems: "center",
   },
   avatar: {
@@ -306,7 +320,6 @@ const styles = StyleSheet.create({
   attendeesText: {
     fontSize: 16,
     color: "#666",
-    // No marginTop, keep vertically centered
   },
   registerButton: {
     backgroundColor: "#7F00FF",
@@ -314,11 +327,25 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
+    minWidth: 180,
   },
   registerText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  fixedButtonContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#fff",
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    alignItems: "center",
+    zIndex: 10,
   },
   modalOverlay: {
     flex: 1,

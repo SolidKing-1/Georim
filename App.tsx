@@ -13,6 +13,7 @@ export type RootStackParamList = {
   PaymentScreen: undefined;
   EventCreatedPage: undefined; // Add this line to define the EventCreatedPage screen
 
+  AccountScreen: undefined;
 };
 
 import React from "react";
@@ -25,12 +26,12 @@ import CreateEventScreen from "./screens/CreateEvent";
 import EventSuccessScreen from "./screens/EventSuccessScreen";
 import VerifyLocation from "./screens/VerifyLocation";
 import CheckinScreen from "./screens/CheckinScreen";
-import Cancelpage from "./screens/Cancelpage"; // Import the Cancelpage screen
+import CancelScreen from "./screens/CancelScreen"; // Import the Cancelpage screen
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import PaymentScreen from "./screens/PaymentScreen"; // Import the PaymentScreen if needed
 import ExploreScreen from "./screens/ExploreScreen";
 import { useGoogleAuth } from "./components/useGoogleAuth";
-import EventCreatedPage from "./screens/EventCreatedPage";
+import AccountScreen from "./screens/AccountScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -56,10 +57,9 @@ export default function App() {
         <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
         <Stack.Screen
           name="Cancelpage"
-          component={Cancelpage}
+          component={CancelScreen}
           options={{ headerShown: false }}
         />
-        <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} />
         <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
         <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
         <Stack.Screen
@@ -67,6 +67,7 @@ export default function App() {
           component={ExploreScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="AccountScreen" component={AccountScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -22,6 +22,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
 import * as ImagePicker from "expo-image-picker";
+import DashedDropzone from "../components/DashedDropzone"; // Import the reusable DashedDropzone component
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -683,6 +684,7 @@ export default function CreateEventScreen() {
             <Text style={styles.cardHeader}>Upload Event Image</Text>
 
             {/* Dashed Dropzone */}
+            {/*
             <TouchableOpacity
               style={styles.dashedDropzone}
               onPress={pickImage}
@@ -698,6 +700,10 @@ export default function CreateEventScreen() {
                 Browse Files to Upload
               </Text>
             </TouchableOpacity>
+            */}
+
+            {/* Use the reusable DashedDropzone component */}
+            <DashedDropzone onPress={pickImage} />
 
             {/* File Info Row */}
             <View style={styles.fileInfoRow}>

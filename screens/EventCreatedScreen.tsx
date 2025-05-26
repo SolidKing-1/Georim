@@ -1,6 +1,14 @@
 import React, { useState } from "react";
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from "react-native";
-import { useNavigation } from "@react-navigation/native"; // Import navigation hook
+import BottomNavbar from "../components/BottomNavbar";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 type Event = {
   id: string;
@@ -22,7 +30,7 @@ const EventCreatedPage = () => {
     {
       id: "2",
       title: "Dembele Calculus - Education",
-      description: "May 17 - Dec - Grambing, Carver Hall 234 Free",
+      description: "May 17 - Dec 1 - Grambing, Carver Hall 234 Free",
       image: require("../assets/calculus.png"),
     },
   ]);
@@ -40,27 +48,35 @@ const EventCreatedPage = () => {
   return (
     <View style={styles.container}>
       {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
         <Text style={styles.backButtonText}>{"‹"}</Text>
       </TouchableOpacity>
 
-      {/* Add the image at the top */}
+      {/* Top Banner Image */}
       <Image
         source={require("../assets/CreatedEvent.jpg")}
-        style={styles.image}
+        style={styles.bannerImage}
         resizeMode="contain"
       />
 
-      {/* Horizontal bar with "Events Created" */}
+      {/* Header Bar */}
       <View style={styles.headerBar}>
         <Text style={styles.headerText}>Events Created</Text>
       </View>
 
+      {/* Event List */}
       <FlatList
         data={events}
         keyExtractor={(item) => item.id}
         renderItem={renderEvent}
+        contentContainerStyle={styles.eventList}
       />
+
+      {/* Bottom Navbar */}
+      <BottomNavbar activeTab="Create" />
     </View>
   );
 };
@@ -68,15 +84,14 @@ const EventCreatedPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#fff",
   },
   backButton: {
     position: "absolute",
-    top: 40, // Adjust based on your design
+    top: 40,
     left: 20,
     zIndex: 10,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "#fff",
     borderRadius: 20,
     padding: 5,
     shadowColor: "#000",
@@ -85,29 +100,31 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   backButtonText: {
-    fontSize: 28, // Increased font size for a larger symbol
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#000", // Changed color to black
+    color: "#000",
   },
-  image: {
+  bannerImage: {
     width: "100%",
     height: 200,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   headerBar: {
-    backgroundColor: "#7F00FF", // Violet background
+    backgroundColor: "#7F00FF",
     paddingVertical: 10,
     alignItems: "center",
-    marginBottom: 20,
-    marginHorizontal: -20, // Override the container's horizontal padding
+    marginBottom: 10,
   },
   headerText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#fff", // White text
+    color: "#fff",
+  },
+  eventList: {
+    paddingHorizontal: 20,
   },
   eventCard: {
-    flexDirection: "row", // Align image and text side by side
+    flexDirection: "row",
     padding: 15,
     marginBottom: 10,
     backgroundColor: "#f9f9f9",
@@ -118,14 +135,14 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   eventImage: {
-    width: 60, // Smaller image width
-    height: 60, // Smaller image height
+    width: 60,
+    height: 60,
     borderRadius: 8,
-    marginRight: 10, // Space between image and text
+    marginRight: 10,
   },
   eventDetails: {
-    flex: 1, // Take up the remaining space
-    justifyContent: "center", // Center text vertically
+    flex: 1,
+    justifyContent: "center",
   },
   eventTitle: {
     fontSize: 16,
