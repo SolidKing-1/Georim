@@ -17,6 +17,7 @@ export type RootStackParamList = {
   AccountScreen: undefined;
   ActivitySnapshot: undefined;
   HelpAndSupportScreen: undefined;
+  Profile: undefined;
 };
 
 import React, { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ import EventCreatedPage from "./screens/EventCreatedScreen";
 import HelpAndSupportScreen from "./screens/Help_Support"; // Import your Help&Support screen component
 import { getToken, isBiometricEnabled } from "./utils/auth";
 import { promptBiometric } from "./utils/biometric";
+import Profile from "./screens/ProfileScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -124,6 +126,8 @@ export default function App() {
           component={HelpAndSupportScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="Profile" component={Profile} />
+        {/* Add more screens as needed */}
       </Stack.Navigator>
     </NavigationContainer>
   );

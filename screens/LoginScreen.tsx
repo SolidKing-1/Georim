@@ -189,7 +189,7 @@ export default function LoginScreen() {
             <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
             <View style={styles.passwordWrapper}>
               <TextInput
-                placeholder=".........."
+                placeholder="***********"
                 placeholderTextColor="#999"
                 style={[styles.input, { flex: 1 }]}
                 secureTextEntry={!showPassword}
