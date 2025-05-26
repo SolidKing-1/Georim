@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Profile from "./ProfileScreen";
 import Settings from "./SettingsScreen";
+import EventCreatedPage from "./EventCreatedScreen";
 import {
   View,
   Text,
@@ -23,6 +24,7 @@ type AccountStackParamList = {
   AccountHome: undefined;
   Profile: undefined;
   Settings: undefined;
+  EventCreatedPage: undefined;
   // Add more screens as needed
 };
 
@@ -78,7 +80,7 @@ const AccountHome = () => {
                 <Ionicons name="calendar-outline" size={24} color="#C8A2FA" />
               }
               label="Events Created"
-              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
+              onPress={() => navigation.navigate("EventCreatedPage")} // Replace with correct screen if needed
             />
           </View>
           <View style={styles.menuGroup}>
@@ -158,6 +160,7 @@ export default function AccountScreen() {
       <Stack.Screen name="AccountHome" component={AccountHome} />
       <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen name="Settings" component={Settings} />
+      <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} />
       {/* Add more screens as needed */}
     </Stack.Navigator>
   );
