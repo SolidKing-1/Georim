@@ -11,13 +11,17 @@ export type RootStackParamList = {
   Cancelpage: undefined;
   ExploreScreen: undefined;
   PaymentScreen: undefined;
-  EventCreatedPage: undefined; // Add this line to define the EventCreatedPage screen
+  EventCreatedPage: undefined;
+  // Add this line to define the EventCreatedPage screen
 
   AccountScreen: undefined;
+  ActivitySnapshot: undefined;
+  HelpAndSupportScreen: undefined;
 };
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
+import { ActivityIndicator, View } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
@@ -26,22 +30,59 @@ import CreateEventScreen from "./screens/CreateEvent";
 import EventSuccessScreen from "./screens/EventSuccessScreen";
 import VerifyLocation from "./screens/VerifyLocation";
 import CheckinScreen from "./screens/CheckinScreen";
-import CancelScreen from "./screens/CancelScreen"; // Import the Cancelpage screen
+import CancelScreen from "./screens/CancelScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
-import PaymentScreen from "./screens/PaymentScreen"; // Import the PaymentScreen if needed
+import PaymentScreen from "./screens/PaymentScreen";
 import ExploreScreen from "./screens/ExploreScreen";
-import { useGoogleAuth } from "./components/useGoogleAuth";
 import AccountScreen from "./screens/AccountScreen";
+import ActivitySnapshot from "./screens/ActivitySnapshot";
+import EventCreatedPage from "./screens/EventCreatedScreen";
+import HelpAndSupportScreen from "./screens/Help_Support"; // Import your Help&Support screen component
+import { getToken, isBiometricEnabled } from "./utils/auth";
+import { promptBiometric } from "./utils/biometric";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
-  useGoogleAuth(() => {});
+  const [initialRoute, setInitialRoute] = useState<
+    keyof RootStackParamList | null
+  >(null);
+
+  useEffect(() => {
+    (async () => {
+      const token = await getToken();
+      if (token) {
+        const biometric = await isBiometricEnabled();
+        if (biometric) {
+          const success = await promptBiometric();
+          setInitialRoute(success ? "Dashboard" : "Login");
+        } else {
+          setInitialRoute("Dashboard");
+        }
+      } else {
+        setInitialRoute("Login");
+      }
+    })();
+  }, []);
+
+  if (!initialRoute) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
+        initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
@@ -68,6 +109,21 @@ export default function App() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="AccountScreen" component={AccountScreen} />
+        <Stack.Screen
+          name="EventCreatedPage"
+          component={EventCreatedPage}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ActivitySnapshot"
+          component={ActivitySnapshot}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="HelpAndSupportScreen"
+          component={HelpAndSupportScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
