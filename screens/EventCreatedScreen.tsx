@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import BottomNavbar from "../components/BottomNavbar";
+import BottomNavBar from "../components/BottomNavBar";
 import {
   View,
   Text,
@@ -76,7 +76,10 @@ const EventCreatedPage = () => {
       />
 
       {/* Bottom Navbar */}
-      <BottomNavbar activeTab="Create" />
+      <BottomNavBar
+        activeTab="Create"
+        setActiveTab={() => {}}
+      />
     </View>
   );
 };
