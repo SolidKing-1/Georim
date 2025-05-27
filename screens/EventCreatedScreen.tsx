@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import BottomNavbar from "../components/BottomNavbar";
+import React, { useState, useRef, useEffect } from "react";
+import BottomNavComplete from "../components/BottomNavComplete";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -19,7 +20,18 @@ type Event = {
 
 const EventCreatedPage = () => {
   const navigation = useNavigation(); // Initialize navigation
+  const [activeTab, setActiveTab] = useState<string>("Create");
+  const navSlideAnim = useRef(new Animated.Value(100)).current;
 
+  useEffect(() => {
+    Animated.timing(navSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []); // Initialize navigation slide animation
+
+  // Add more dummy events using only images that already exist in assets
   const [events, setEvents] = useState<Event[]>([
     {
       id: "1",
@@ -31,6 +43,42 @@ const EventCreatedPage = () => {
       id: "2",
       title: "Dembele Calculus - Education",
       description: "May 17 - Dec 1 - Grambing, Carver Hall 234 Free",
+      image: require("../assets/calculus.png"),
+    },
+    {
+      id: "3",
+      title: "Open Mic Night",
+      description: "Sat, May 24 - Grambling, McDinning $10",
+      image: require("../assets/ruston-fest.png"),
+    },
+    {
+      id: "4",
+      title: "Tech Soccer Finals",
+      description: "Sun, May 25 - LA Sports Stadium Free",
+      image: require("../assets/calculus.png"),
+    },
+    {
+      id: "5",
+      title: "Science Seminar",
+      description: "Mon, May 26 - Grambling, SOC Faculty Free",
+      image: require("../assets/ruston-fest.png"),
+    },
+    {
+      id: "6",
+      title: "Live Band Night",
+      description: "Tue, May 27 - Grambling, McDinning $20",
+      image: require("../assets/calculus.png"),
+    },
+    {
+      id: "7",
+      title: "Basketball Showdown",
+      description: "Wed, May 28 - LA Tech Basketball Stadium Free",
+      image: require("../assets/ruston-fest.png"),
+    },
+    {
+      id: "8",
+      title: "Social Science Workshop",
+      description: "Thu, May 29 - Grambling, SOC Faculty Free",
       image: require("../assets/calculus.png"),
     },
   ]);
@@ -75,8 +123,11 @@ const EventCreatedPage = () => {
         contentContainerStyle={styles.eventList}
       />
 
-      {/* Bottom Navbar */}
-      <BottomNavbar activeTab="Create" />
+      <BottomNavComplete
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
+      />
     </View>
   );
 };

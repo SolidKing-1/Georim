@@ -24,7 +24,7 @@ import ProfileIcon from "../assets/user.png";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
 import { getToken } from "../utils/auth";
-import BottomNavBar from "../components/BottomNavBar"; // Import the reusable bottom nav component
+import BottomNavComplete from "../components/BottomNavComplete"; // Import the reusable bottom nav component
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
@@ -423,137 +423,12 @@ export default function DashboardScreen() {
           renderItem={renderEvent}
           contentContainerStyle={styles.eventsList}
           showsVerticalScrollIndicator={false}
-          style={{ maxHeight: 320, marginBottom: 0 }} // adjust maxHeight as needed
+          style={{ maxHeight: 500, marginBottom: 0 }} // adjust maxHeight as needed
         />
       </View>
 
-      {/* Bottom Navigation Bar */}
-      {/* 
-      <Animated.View
-        style={[
-          styles.bottomNav,
-          { transform: [{ translateY: navSlideAnim }] },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab("Home")}
-        >
-          <Image
-            source={Home}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Home" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Home" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Home
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPressIn={() => {
-            setActiveTab("Explore");
-            navigation.navigate("ExploreScreen");
-          }}
-        >
-          <Image
-            source={Explore}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Explore" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Explore" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Explore
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.navSpacer} />
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Check-In");
-            navigation.navigate("CheckinScreen");
-          }}
-        >
-          <Image
-            source={TicketIcon}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Check-In" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Check-In" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Check-In
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Account");
-            navigation.navigate('EventCreatedPage'); // Navigate to EventCreatedPage
-          }}
-        >
-          <Image
-            source={ProfileIcon}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Account" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Account" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Account
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-      <View style={styles.bowlCutout}>
-        <TouchableOpacity
-          style={styles.floatingButton}
-          onPress={() => navigation.navigate("CreateEvent")}
-        >
-          <Text style={styles.plusText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      */}
-
       {/* Use the reusable BottomNavBar component */}
-      <BottomNavBar
+      <BottomNavComplete
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         navSlideAnim={navSlideAnim}
@@ -718,76 +593,6 @@ const styles = StyleSheet.create({
     height: 24,
     resizeMode: "contain",
     marginBottom: 20,
-  },
-
-  bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 25,
-    paddingVertical: 33,
-    borderTopWidth: 1,
-    borderColor: "#eee",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    backgroundColor: "#7F00FF0D",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    shadowColor: "#000", // iOS shadow
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 10,
-  },
-  navText: {
-    fontSize: 12,
-    marginTop: 2,
-    color: "#333",
-  },
-  navSpacer: {
-    flex: 1,
-  },
-  bowlCutout: {
-    position: "absolute",
-    bottom: 90, // aligns with navbar height
-    left: "50%",
-    transform: [{ translateX: -45 }, { translateY: 30 }, { rotate: "180deg" }],
-    width: 93,
-    height: 54,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    zIndex: 1,
-  },
-
-  floatingButton: {
-    position: "absolute",
-    top: 8,
-    left: "38%",
-    transform: [{ translateX: -25 }],
-    width: 70,
-    height: 40,
-    backgroundColor: "#7F00FF",
-    borderRadius: 23,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-  },
-
-  plusText: {
-    color: "#fff",
-    fontSize: 25,
-    fontWeight: "bold",
-    marginTop: -2,
   },
 
   // createLabel: {

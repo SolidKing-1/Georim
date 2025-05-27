@@ -18,6 +18,7 @@ import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
 import { Video, ResizeMode } from "expo-av";
+import BottomNavComplete from "../components/BottomNavComplete";
 
 const { width } = Dimensions.get("window");
 
@@ -79,6 +80,14 @@ type RootStackParamList = {
 };
 
 export default function ExploreScreen() {
+  const navSlideAnim = useRef(new Animated.Value(100)).current;
+  useEffect(() => {
+    Animated.timing(navSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const bannerScrollX = useRef(new Animated.Value(0)).current;
   const navigation =
@@ -265,7 +274,9 @@ export default function ExploreScreen() {
           renderItem={({ item, index }) => (
             <View style={styles.fullscreenVideoBox}>
               <Video
-                ref={(ref) => { fullscreenVideoRefs.current[item.id] = ref; }}
+                ref={(ref) => {
+                  fullscreenVideoRefs.current[item.id] = ref;
+                }}
                 source={item.source}
                 style={styles.fullscreenVideo}
                 resizeMode={ResizeMode.COVER}
@@ -342,8 +353,9 @@ export default function ExploreScreen() {
       </Modal>
 
       {/* Bottom Navigation */}
+      {/*
       <View style={styles.bottomNav}>
-        {/* Home Tab */}
+        {/* Home Tab *}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -372,7 +384,7 @@ export default function ExploreScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Explore Tab */}
+        {/* Explore Tab *}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => setActiveTab("Explore")}
@@ -398,10 +410,10 @@ export default function ExploreScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Spacer */}
+        {/* Spacer *}
         <View style={styles.navSpacer} />
 
-        {/* Check-In Tab */}
+        {/* Check-In Tab *}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -430,7 +442,7 @@ export default function ExploreScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Profile Tab */}
+        {/* Profile Tab *}
         <TouchableOpacity
           style={styles.navItem}
           onPress={() => {
@@ -459,16 +471,20 @@ export default function ExploreScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-      {/* Bowl Cutout */}
       <View style={styles.bowlCutout}>
         <TouchableOpacity
           style={styles.floatingButton}
           onPress={() => navigation.navigate("CreateEvent")}
         >
           <Text style={styles.plusText}>+</Text>
-          {/* Create label */}
         </TouchableOpacity>
       </View>
+      */}
+      <BottomNavComplete
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
+      />
     </View>
   );
 }
