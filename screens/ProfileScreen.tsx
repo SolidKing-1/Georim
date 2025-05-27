@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import BottomNavBar from "../components/BottomNavBar";
+import BottomNavComplete from "../components/BottomNavComplete";
 import DashedDropzone from "../components/DashedDropzone";
 import * as ImagePicker from "expo-image-picker";
 import { getCountryCode } from "../utils/countryCodes";
@@ -32,6 +32,15 @@ export default function ProfileScreen() {
     "https://randomuser.me/api/portraits/men/1.jpg"
   );
 
+  const navSlideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    Animated.timing(navSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
   const openModal = () => {
     setIsModalVisible(true);
     Animated.parallel([
@@ -228,7 +237,12 @@ export default function ProfileScreen() {
       <Animated.View
         style={[{ transform: [{ translateY: navbarTranslateY }] }]}
       >
-        <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Use the reusable BottomNavBar component */}
+        <BottomNavComplete
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          navSlideAnim={navSlideAnim}
+        />
       </Animated.View>
     </View>
   );
@@ -241,7 +255,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginBottom: 130,
+    marginBottom: 80,
   },
   scrollContent: {
     padding: 24,

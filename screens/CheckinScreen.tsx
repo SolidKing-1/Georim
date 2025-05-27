@@ -13,7 +13,7 @@ import Home from "../assets/home.png";
 import Explore from "../assets/Explore.png";
 import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
-import BottomNavBar from "../components/BottomNavBar"; // Add this import at the top
+import BottomNavComplete from "../components/BottomNavComplete"; // Add this import at the top
 
 // Update Event type to include status
 type Event = {
@@ -230,136 +230,11 @@ export default function CheckinScreen() {
         keyExtractor={(item) => item.key || item.section}
         contentContainerStyle={[styles.scrollContainer, { paddingBottom: 120 }]}
         showsVerticalScrollIndicator={false}
-        style={{ maxHeight: 500, marginBottom: 0 }}
+        style={{ marginBottom: 0 }}
       />
 
-      {/* Bottom Navigation Bar */}
-      {/*
-      <Animated.View
-        style={[
-          styles.bottomNav,
-          { transform: [{ translateY: navSlideAnim }] },
-        ]}
-      >
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Home");
-            navigation.navigate("Dashboard");
-          }}
-        >
-          <Image
-            source={Home}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Home" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Home" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Home
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Explore");
-            navigation.navigate("ExploreScreen");
-          }}
-        >
-          <Image
-            source={Explore}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Explore" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Explore" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Explore
-          </Text>
-        </TouchableOpacity>
-        <View style={styles.navSpacer} />
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Check-In");
-            navigation.navigate("CheckinScreen");
-          }}
-        >
-          <Image
-            source={TicketIcon}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Check-In" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Check-In" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Check-In
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab("Account")}
-        >
-          <Image
-            source={ProfileIcon}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Account" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Account" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Account
-          </Text>
-        </TouchableOpacity>
-      </Animated.View>
-      <View style={styles.bowlCutout}>
-        <TouchableOpacity
-          style={styles.floatingButton}
-          onPress={() => navigation.navigate("CreateEvent")}
-        >
-          <Text style={styles.plusText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      */}
-
       {/* Use the reusable BottomNavBar component */}
-      <BottomNavBar
+      <BottomNavComplete
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         navSlideAnim={navSlideAnim}
@@ -491,7 +366,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 12,
   },
-  bottomNav: {
+  /*   bottomNav: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -559,5 +434,5 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: "bold",
     marginTop: -2,
-  },
+  }, */
 });

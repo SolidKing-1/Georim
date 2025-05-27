@@ -32,6 +32,8 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   return (
     <>
+      {/* Card section beneath the entire navbar */}
+      <View style={styles.navbarCardSection} pointerEvents="none" />
       {/* Bottom Navigation Bar with Animation */}
       <Animated.View
         style={[
@@ -216,18 +218,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 30,
     zIndex: 1,
   },
-  /*   bowlCutout: {
-    position: "absolute",
-    bottom: 90,
-    left: "50%",
-    transform: [{ translateX: -45 }, { translateY: 30 }, { rotate: "180deg" }],
-    width: 93,
-    height: 54,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    zIndex: 1,
-  }, */
   floatingButton: {
     position: "absolute",
     top: 8,
@@ -250,6 +240,17 @@ const styles = StyleSheet.create({
     fontSize: 25,
     fontWeight: "bold",
     marginTop: -2,
+  },
+  navbarCardSection: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    width: "100%",
+    height: 120,
+    backgroundColor: "#fff",
+    zIndex: 0,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
   },
 });
 
