@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Profile from "./ProfileScreen";
 import Settings from "./SettingsScreen";
 import EventCreatedPage from "./EventCreatedScreen";
+import FavouriteScreen from "./FavouriteScreen";
 // Import your Help&Support screen component
 import HelpAndSupportScreen from "./Help_Support";
 import {
@@ -10,12 +11,13 @@ import {
   Text,
   StyleSheet,
   Image,
+  Animated,
   TouchableOpacity,
   ScrollView,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import BottomNavBar from "../components/BottomNavBar";
+import BottomNavComplete from "../components/BottomNavComplete";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { removeToken } from "../utils/auth";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
@@ -31,12 +33,23 @@ type AccountStackParamList = {
   Login: undefined;
   HelpAndSupportScreen: undefined;
   // Add more screens as needed
+  FavouriteScreen: undefined;
+  // Add more screens as needed
 };
 
 // Home screen content for the Account stack
 const AccountHome = () => {
   // State for active tab (for BottomNavBar)
   const [activeTab, setActiveTab] = React.useState("Account");
+  const navSlideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    Animated.timing(navSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
   const navigation = useNavigation<NavigationProp<AccountStackParamList>>();
 
   // State for user data
@@ -62,6 +75,10 @@ const AccountHome = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        // Add extra padding to bottom so content is not hidden under navbar
+        contentInset={{ bottom: 120 }}
+        contentOffset={{ y: 0, x: 0 }}
       >
         <View style={styles.card}>
           {/* Account title and greeting */}
@@ -90,7 +107,7 @@ const AccountHome = () => {
               icon={<Ionicons name="heart-outline" size={24} color="#C8A2FA" />}
               label="Favourites"
               showDivider
-              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
+              onPress={() => navigation.navigate("FavouriteScreen")} // Replace with correct screen if needed
             />
             <MenuItem
               icon={<MaterialIcons name="history" size={24} color="#C8A2FA" />}
@@ -144,8 +161,12 @@ const AccountHome = () => {
         </View>
       </ScrollView>
 
-      {/* Reusable BottomNavBar component */}
-      <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* Bottom Navbar */}
+      <BottomNavComplete
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
+      />
     </View>
   );
 };
@@ -187,6 +208,10 @@ export default function AccountScreen() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="AccountHome" component={AccountHome} />
+      <Stack.Screen name="Profile" component={Profile} />
+      <Stack.Screen name="Settings" component={Settings} />
+      <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} />
+      <Stack.Screen name="FavouriteScreen" component={FavouriteScreen} />
       <Stack.Screen name="Help&Support" component={HelpAndSupportScreen} />
       {/* Add more screens as needed */}
     </Stack.Navigator>
@@ -201,8 +226,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    // This ensures the scroll view goes under the content above the navbar
-    marginBottom: 130, // Adjust this value to be a little more than the navbar height
+    // This ensures the scroll view goes under the content above the navbar// Adjust this value to be a little more than the navbar height
   },
   scrollContent: {
     paddingTop: 0,

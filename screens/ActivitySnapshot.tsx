@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,16 +9,16 @@ import {
   Modal,
   TextInput,
   FlatList,
+  Animated,
   Dimensions,
   Share,
   Alert,
 } from "react-native";
 import GaugeChart from "../components/GaugeChart";
-import BottomNavBar from "../components/BottomNavBar";
+import BottomNavComplete from "../components/BottomNavComplete";
 import Icon from "react-native-vector-icons/Ionicons";
 import QRCode from "react-native-qrcode-svg";
 import * as Clipboard from "expo-clipboard";
-
 
 import Icon1 from "../assets/activity-snapshot/attendees.png";
 import Icon2 from "../assets/activity-snapshot/download.png";
@@ -69,6 +69,15 @@ const EVENT_ACCESS_CODE = "AB12CD34"; // You can generate this dynamically
 
 const ActivitySnapshot: React.FC = () => {
   const [activeTab, setActiveTab] = useState("Home");
+  const navSlideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    Animated.timing(navSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
   const [showAttendeeModal, setShowAttendeeModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -365,7 +374,12 @@ const ActivitySnapshot: React.FC = () => {
         </SafeAreaView>
       </Modal>
 
-      <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
+      {/* Use the reusable BottomNavBar component */}
+      <BottomNavComplete
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
+      />
     </SafeAreaView>
   );
 };

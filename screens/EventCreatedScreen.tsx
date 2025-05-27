@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import BottomNavBar from "../components/BottomNavBar";
+import React, { useState, useRef, useEffect } from "react";
+import BottomNavComplete from "../components/BottomNavComplete";
 import {
   View,
   Text,
@@ -7,8 +7,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Animated,
 } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 type Event = {
   id: string;
@@ -23,8 +25,19 @@ type RootStackParamList = {
 };
 
 const EventCreatedPage = () => {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Typed navigation
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Initialize navigation with type
+  const [activeTab, setActiveTab] = useState<string>("Create");
+  const navSlideAnim = useRef(new Animated.Value(100)).current;
 
+  useEffect(() => {
+    Animated.timing(navSlideAnim, {
+      toValue: 0,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []); // Initialize navigation slide animation
+
+  // Add more dummy events using only images that already exist in assets
   const [events, setEvents] = useState<Event[]>([
     {
       id: "1",
@@ -36,6 +49,42 @@ const EventCreatedPage = () => {
       id: "2",
       title: "Dembele Calculus - Education",
       description: "May 17 - Dec 1 - Grambing, Carver Hall 234 Free",
+      image: require("../assets/calculus.png"),
+    },
+    {
+      id: "3",
+      title: "Open Mic Night",
+      description: "Sat, May 24 - Grambling, McDinning $10",
+      image: require("../assets/ruston-fest.png"),
+    },
+    {
+      id: "4",
+      title: "Tech Soccer Finals",
+      description: "Sun, May 25 - LA Sports Stadium Free",
+      image: require("../assets/calculus.png"),
+    },
+    {
+      id: "5",
+      title: "Science Seminar",
+      description: "Mon, May 26 - Grambling, SOC Faculty Free",
+      image: require("../assets/ruston-fest.png"),
+    },
+    {
+      id: "6",
+      title: "Live Band Night",
+      description: "Tue, May 27 - Grambling, McDinning $20",
+      image: require("../assets/calculus.png"),
+    },
+    {
+      id: "7",
+      title: "Basketball Showdown",
+      description: "Wed, May 28 - LA Tech Basketball Stadium Free",
+      image: require("../assets/ruston-fest.png"),
+    },
+    {
+      id: "8",
+      title: "Social Science Workshop",
+      description: "Thu, May 29 - Grambling, SOC Faculty Free",
       image: require("../assets/calculus.png"),
     },
   ]);
@@ -60,7 +109,7 @@ const EventCreatedPage = () => {
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Text style={styles.backButtonText}>{"‹"}</Text>
+        <Ionicons name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
       {/* Top Banner Image */}
@@ -83,10 +132,10 @@ const EventCreatedPage = () => {
         contentContainerStyle={styles.eventList}
       />
 
-      {/* Bottom Navbar */}
-      <BottomNavBar
-        activeTab="Create"
-        setActiveTab={() => {}}
+      <BottomNavComplete
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        navSlideAnim={navSlideAnim}
       />
     </View>
   );
@@ -99,22 +148,14 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 40,
-    left: 20,
-    zIndex: 10,
-    backgroundColor: "#fff",
+    top: 50,
+    left: 16,
+    zIndex: 20,
+    backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
-    padding: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 8,
   },
-  backButtonText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000",
-  },
+
   bannerImage: {
     width: "100%",
     height: 200,
