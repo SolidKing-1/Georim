@@ -7,7 +7,11 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Modal,
+  FlatList,
 } from "react-native";
+import CountryFlag from "react-native-country-flag";
+import { COUNTRY_LIST } from "../utils/countryList"; // <-- Only this import needed
 import Logo from "../assets/Authentication.jpg";
 import Company from "../assets/Company_icon.png";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -19,8 +23,7 @@ import { Platform, KeyboardAvoidingView } from "react-native";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-
+// Build a country list for the picker
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
@@ -32,6 +35,12 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState({
+    code: "+1",
+    iso: "us",
+  });
+  const [showCountryModal, setShowCountryModal] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
   const { promptAsync, request } = useGoogleAuth((data) => {
@@ -42,6 +51,8 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     try {
+      const fullPhone = selectedCountry.code + phone.replace(/^0+/, "");
+
       const response = await fetch(`${BACKEND_URL}/auth/sign-up`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,7 +60,7 @@ export default function SignUpScreen() {
           first,
           last,
           email,
-          phone,
+          phone: fullPhone,
           password,
         }),
       });
@@ -75,6 +86,9 @@ export default function SignUpScreen() {
     }
   };
 
+  const filteredCountries = COUNTRY_LIST.filter((item) =>
+    item.name.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   return (
     <KeyboardAvoidingView
@@ -100,7 +114,7 @@ export default function SignUpScreen() {
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.label}>First Name</Text>
               <TextInput
-                placeholder="John"
+                placeholder="First Name"
                 placeholderTextColor="#999"
                 style={styles.input}
                 value={first}
@@ -110,7 +124,7 @@ export default function SignUpScreen() {
             <View style={{ flex: 1, marginLeft: 8 }}>
               <Text style={styles.label}>Last Name</Text>
               <TextInput
-                placeholder="Doe"
+                placeholder="Surname"
                 placeholderTextColor="#999"
                 style={styles.input}
                 value={last}
@@ -133,20 +147,103 @@ export default function SignUpScreen() {
 
           {/* Phone */}
           <Text style={[styles.label, { marginTop: 20 }]}>Phone Number</Text>
-          <TextInput
-            placeholder="+1 234 567 890"
-            placeholderTextColor="#999"
-            style={styles.input}
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-          />
+          <View style={styles.phoneRow}>
+            <TouchableOpacity
+              style={styles.flagPicker}
+              onPress={() => setShowCountryModal(true)}
+            >
+              <CountryFlag isoCode={selectedCountry.iso} size={22} />
+              <Text style={{ marginLeft: 6, fontWeight: "600" }}>
+                {selectedCountry.code}
+              </Text>
+              <Icon
+                name="chevron-down"
+                size={16}
+                color="#555"
+                style={{ marginLeft: 2 }}
+              />
+            </TouchableOpacity>
+            <TextInput
+              placeholder="(---) --- ---"
+              placeholderTextColor="#999"
+              style={[styles.input, { flex: 1, marginLeft: 8 }]}
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={setPhone}
+            />
+          </View>
+
+          {/* Country Picker Modal */}
+          <Modal visible={showCountryModal} animationType="slide">
+            <View style={{ flex: 1, backgroundColor: "#fff" }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 16,
+                  paddingTop: 62,
+                }}
+              >
+                <Text style={{ fontWeight: "bold", fontSize: 18, flex: 1 }}>
+                  Select Country
+                </Text>
+                <TouchableOpacity onPress={() => setShowCountryModal(false)}>
+                  <Icon name="close" size={24} color="#4f46e5" />
+                </TouchableOpacity>
+              </View>
+              <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+                <TextInput
+                  placeholder="Search country..."
+                  placeholderTextColor="#999"
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 10,
+                    paddingVertical: 10,
+                    paddingHorizontal: 14,
+                    backgroundColor: "#f9f9f9",
+                    marginBottom: 10,
+                  }}
+                  value={searchText}
+                  onChangeText={setSearchText}
+                />
+              </View>
+              <FlatList
+                data={filteredCountries}
+                keyExtractor={(item) => item.code}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      padding: 14,
+                      borderBottomWidth: 1,
+                      borderBottomColor: "#eee",
+                    }}
+                    onPress={() => {
+                      setSelectedCountry(item);
+                      setShowCountryModal(false);
+                      setSearchText("");
+                    }}
+                  >
+                    <CountryFlag isoCode={item.iso} size={22} />
+                    <Text style={{ marginLeft: 12, fontSize: 16, flex: 1 }}>
+                      {item.name}
+                    </Text>
+                    <Text style={{ fontWeight: "600", fontSize: 16 }}>
+                      {item.code}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+          </Modal>
 
           {/* Password */}
           <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
           <View style={styles.passwordWrapper}>
             <TextInput
-              placeholder="..........."
+              placeholder="************"
               placeholderTextColor="#999"
               style={[styles.input, { flex: 1 }]}
               secureTextEntry={!showPassword}
@@ -165,10 +262,7 @@ export default function SignUpScreen() {
           </View>
 
           {/* Sign Up Button */}
-          <TouchableOpacity
-            onPress={handleSignUp}
-            style={styles.loginButton}
-          >
+          <TouchableOpacity onPress={handleSignUp} style={styles.loginButton}>
             <Text style={styles.loginButtonText}>Sign Up</Text>
           </TouchableOpacity>
 
@@ -316,5 +410,20 @@ const styles = StyleSheet.create({
   link: {
     color: "#4f46e5",
     fontWeight: "600",
+  },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  flagPicker: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: "#f9f9f9",
   },
 });

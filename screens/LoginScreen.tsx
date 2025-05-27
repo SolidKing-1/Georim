@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Switch,
+  Alert,
 } from "react-native";
 import Logo from "../assets/Authentication.jpg";
 import Company from "../assets/Company_icon.png";
@@ -14,6 +16,10 @@ import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
+import { setBiometricEnabled } from "../utils/auth";
+import { isBiometricEnabled } from "../utils/auth";
+import { promptBiometric } from "../utils/biometric";
 
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,6 +27,7 @@ import { RootStackParamList } from "../App";
 import { Platform, KeyboardAvoidingView } from "react-native";
 
 import Constants from "expo-constants";
+import { setToken, removeToken } from "../utils/auth"; // Use your helper
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -29,8 +36,17 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true); // default checked
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+
+  useEffect(() => {
+    (async () => {
+      const enabled = await isBiometricEnabled();
+      setBiometricAvailable(enabled);
+    })();
+  }, []);
 
   // Handle Google OAuth
   const { promptAsync, request } = useGoogleAuth((data) => {
@@ -57,9 +73,41 @@ export default function LoginScreen() {
         return;
       }
 
-      // Save JWT token from nested data object
+      // Save JWT token if rememberMe is checked
       if (data.data && data.data.token) {
-        await AsyncStorage.setItem("jwt", data.data.token);
+        if (rememberMe) {
+          await setToken(data.data.token);
+        } else {
+          await removeToken();
+        }
+
+        // Prompt for biometrics/Face ID
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        if (hasHardware && isEnrolled) {
+          Alert.alert(
+            "Enable Face ID or Biometrics?",
+            "Would you like to use Face ID or biometrics for future logins?",
+            [
+              {
+                text: "No",
+                style: "cancel",
+                onPress: async () => {
+                  await setBiometricEnabled(false);
+                  navigation.navigate("Dashboard");
+                },
+              },
+              {
+                text: "Yes",
+                onPress: async () => {
+                  await setBiometricEnabled(true);
+                  navigation.navigate("Dashboard");
+                },
+              },
+            ]
+          );
+          return;
+        }
       }
 
       alert("Login successful!");
@@ -67,6 +115,18 @@ export default function LoginScreen() {
     } catch (err) {
       alert("Network error. Please try again.");
       console.error("Network error:", err);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Authenticate to continue",
+      fallbackLabel: "Use Passcode",
+      disableDeviceFallback: false, // Set to true to prevent PIN fallback (not always supported in Expo Go)
+      // authenticationType: LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION, // Not supported in Expo Go
+    });
+    if (result.success) {
+      navigation.navigate("Dashboard");
     }
   };
 
@@ -95,20 +155,41 @@ export default function LoginScreen() {
           {/* Input Section */}
           <View style={styles.formContainer}>
             <Text style={styles.label}>Email</Text>
-            <TextInput
-              placeholder="username@gmail.com"
-              placeholderTextColor="#999"
-              style={styles.input}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
+            <View style={{ position: "relative", marginBottom: 16 }}>
+              <TextInput
+                placeholder="username@gmail.com"
+                placeholderTextColor="#999"
+                style={[
+                  styles.input,
+                  { paddingRight: biometricAvailable ? 40 : 12 },
+                ]}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+              {biometricAvailable && (
+                <TouchableOpacity
+                  onPress={handleBiometricLogin}
+                  style={{
+                    position: "absolute",
+                    right: 12,
+                    top: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon name="finger-print" size={22} color="#4f46e5" />
+                </TouchableOpacity>
+              )}
+            </View>
 
             <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
             <View style={styles.passwordWrapper}>
               <TextInput
-                placeholder=".........."
+                placeholder="***********"
                 placeholderTextColor="#999"
                 style={[styles.input, { flex: 1 }]}
                 secureTextEntry={!showPassword}
@@ -126,9 +207,31 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
+            {/* Remember Me and Forgot Password Section */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 10,
+                marginBottom: 10,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color: "#333", fontSize: 15, marginRight: 6 }}>
+                  Remember me?
+                </Text>
+                <Switch
+                  value={rememberMe}
+                  onValueChange={setRememberMe}
+                  trackColor={{ false: "#ccc", true: "#4f46e5" }}
+                  thumbColor={rememberMe ? "#fff" : "#fff"}
+                />
+              </View>
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Login Button */}
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>

@@ -13,14 +13,15 @@ import { Ionicons } from "@expo/vector-icons";
 import BottomNavComplete from "../components/BottomNavComplete";
 import DashedDropzone from "../components/DashedDropzone";
 import * as ImagePicker from "expo-image-picker";
+import { getCountryCode } from "../utils/countryCodes";
+import CountryFlag from "react-native-country-flag";
 
 export default function ProfileScreen() {
   const [fullName, setFullName] = useState("James koght");
   const [displayName, setDisplayName] = useState("James");
   const [email, setEmail] = useState("jkoght2@gmail.com");
-  const [phone, setPhone] = useState("+1 (318) 345 9987");
+  const [phone, setPhone] = useState("+233 (318) 345 9987");
   const [location, setLocation] = useState("403 Main Street, LA");
-  const [password, setPassword] = useState("************");
   const [activeTab, setActiveTab] = useState("Account");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalTranslateY] = useState(new Animated.Value(300));
@@ -97,6 +98,9 @@ export default function ProfileScreen() {
     }
   };
 
+  // Get country code for flag
+  const countryCode = getCountryCode(phone);
+
   return (
     <View style={styles.container}>
       <ScrollView
@@ -141,10 +145,7 @@ export default function ProfileScreen() {
         <View style={styles.formGroup}>
           <Text style={styles.label}>Phone Number</Text>
           <View style={styles.phoneRow}>
-            <Image
-              source={{ uri: "https://flagcdn.com/us.png" }}
-              style={styles.flag}
-            />
+            <CountryFlag isoCode={countryCode} size={24} />
             <TextInput
               style={styles.phoneInput}
               value={phone}
@@ -160,16 +161,6 @@ export default function ProfileScreen() {
             style={styles.input}
             value={location}
             onChangeText={setLocation}
-            editable={isEditing}
-          />
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Password</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
             editable={isEditing}
           />
         </View>
@@ -323,13 +314,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#EFEFEF",
     borderRadius: 8,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
   },
   flag: {
-    width: 28,
+    width: 19,
     height: 20,
     borderRadius: 4,
-    marginRight: 8,
+    marginRight: 10,
   },
   phoneInput: {
     flex: 1,

@@ -77,6 +77,7 @@ type RootStackParamList = {
   ProfileScreen: undefined;
   ExploreScreen: undefined;
   CreateEvent: undefined;
+  AccountScreen: undefined;
 };
 
 export default function ExploreScreen() {
@@ -447,7 +448,7 @@ export default function ExploreScreen() {
           style={styles.navItem}
           onPress={() => {
             setActiveTab("Profile");
-            navigation.navigate("ProfileScreen");
+            navigation.navigate("AccountScreen");
           }}
         >
           <Image

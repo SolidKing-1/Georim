@@ -9,13 +9,18 @@ import {
   Image,
   Animated,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 type Event = {
   id: string;
   title: string;
   description: string;
   image: any;
+};
+
+type RootStackParamList = {
+  ActivitySnapshot: undefined;
+  // add other routes here if needed
 };
 
 const EventCreatedPage = () => {
@@ -84,7 +89,10 @@ const EventCreatedPage = () => {
   ]);
 
   const renderEvent = ({ item }: { item: Event }) => (
-    <TouchableOpacity style={styles.eventCard}>
+    <TouchableOpacity
+      style={styles.eventCard}
+      onPress={() => navigation.navigate("ActivitySnapshot")}
+    >
       <Image source={item.image} style={styles.eventImage} resizeMode="cover" />
       <View style={styles.eventDetails}>
         <Text style={styles.eventTitle}>{item.title}</Text>

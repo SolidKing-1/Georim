@@ -4,6 +4,8 @@ import Profile from "./ProfileScreen";
 import Settings from "./SettingsScreen";
 import EventCreatedPage from "./EventCreatedScreen";
 import FavouriteScreen from "./FavouriteScreen";
+// Import your Help&Support screen component
+import HelpAndSupportScreen from "./Help_Support";
 import {
   View,
   Text,
@@ -17,16 +19,18 @@ import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import BottomNavComplete from "../components/BottomNavComplete";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { removeToken } from "../utils/auth";
 
 // Dummy profile image
 const profileImage = { uri: "https://randomuser.me/api/portraits/men/32.jpg" };
-
-// Define the type for the stack's param list
 type AccountStackParamList = {
   AccountHome: undefined;
   Profile: undefined;
   Settings: undefined;
   EventCreatedPage: undefined;
+  Login: undefined;
+  HelpAndSupportScreen: undefined;
+  // Add more screens as needed
   FavouriteScreen: undefined;
   // Add more screens as needed
 };
@@ -114,13 +118,18 @@ const AccountHome = () => {
               }
               label="Help and Support"
               showDivider
-              onPress={() => navigation.navigate("Settings")}
+              onPress={() => navigation.navigate("HelpAndSupportScreen")}
             />
             <MenuItem
               icon={<MaterialIcons name="logout" size={24} color="#8B8B8B" />}
               label="Log out"
-              onPress={() => {
-                /* Add logout logic here */
+              onPress={async () => {
+                await removeToken();
+                // Use navigation.reset to go to Login if it's outside this stack
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Login" }],
+                });
               }}
             />
           </View>
@@ -178,6 +187,7 @@ export default function AccountScreen() {
       <Stack.Screen name="Settings" component={Settings} />
       <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} />
       <Stack.Screen name="FavouriteScreen" component={FavouriteScreen} />
+      <Stack.Screen name="Help&Support" component={HelpAndSupportScreen} />
       {/* Add more screens as needed */}
     </Stack.Navigator>
   );
