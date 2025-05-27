@@ -58,6 +58,10 @@ const AccountHome = () => {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        // Add extra padding to bottom so content is not hidden under navbar
+        contentInset={{ bottom: 120 }}
+        contentOffset={{ y: 0, x: 0 }}
       >
         <View style={styles.card}>
           {/* Account title and greeting */}

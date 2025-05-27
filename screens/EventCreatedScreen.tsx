@@ -10,6 +10,7 @@ import {
   Animated,
 } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 type Event = {
   id: string;
@@ -24,7 +25,7 @@ type RootStackParamList = {
 };
 
 const EventCreatedPage = () => {
-  const navigation = useNavigation(); // Initialize navigation
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Initialize navigation with type
   const [activeTab, setActiveTab] = useState<string>("Create");
   const navSlideAnim = useRef(new Animated.Value(100)).current;
 
@@ -108,7 +109,7 @@ const EventCreatedPage = () => {
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
-        <Text style={styles.backButtonText}>{"‹"}</Text>
+        <Ionicons name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
       {/* Top Banner Image */}
@@ -147,22 +148,14 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 40,
-    left: 20,
-    zIndex: 10,
-    backgroundColor: "#fff",
+    top: 50,
+    left: 16,
+    zIndex: 20,
+    backgroundColor: "rgba(255,255,255,0.8)",
     borderRadius: 20,
-    padding: 5,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 8,
   },
-  backButtonText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#000",
-  },
+
   bannerImage: {
     width: "100%",
     height: 200,
