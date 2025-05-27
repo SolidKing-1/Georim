@@ -9,9 +9,9 @@ import Svg, { Defs, LinearGradient, Stop } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 
-const registered = 1378;
+const registered = `1,378`;
 const checkedIn = 928;
-const fill = (checkedIn / registered) * 100;
+const fill = (checkedIn / parseInt(registered)) * 100;
 
 const GaugeChart: React.FC = () => {
   return (
