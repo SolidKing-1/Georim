@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import BottomNavbar from "../components/BottomNavbar";
+import BottomNavBar from "../components/BottomNavBar";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 
 type Event = {
   id: string;
@@ -17,8 +17,13 @@ type Event = {
   image: any;
 };
 
+type RootStackParamList = {
+  ActivitySnapshot: undefined;
+  // add other routes here if needed
+};
+
 const EventCreatedPage = () => {
-  const navigation = useNavigation(); // Initialize navigation
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>(); // Typed navigation
 
   const [events, setEvents] = useState<Event[]>([
     {
@@ -36,7 +41,10 @@ const EventCreatedPage = () => {
   ]);
 
   const renderEvent = ({ item }: { item: Event }) => (
-    <TouchableOpacity style={styles.eventCard}>
+    <TouchableOpacity
+      style={styles.eventCard}
+      onPress={() => navigation.navigate("ActivitySnapshot")}
+    >
       <Image source={item.image} style={styles.eventImage} resizeMode="cover" />
       <View style={styles.eventDetails}>
         <Text style={styles.eventTitle}>{item.title}</Text>
@@ -76,7 +84,10 @@ const EventCreatedPage = () => {
       />
 
       {/* Bottom Navbar */}
-      <BottomNavbar activeTab="Create" />
+      <BottomNavBar
+        activeTab="Create"
+        setActiveTab={() => {}}
+      />
     </View>
   );
 };
