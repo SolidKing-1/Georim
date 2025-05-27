@@ -18,6 +18,8 @@ import { StatusBar } from "expo-status-bar";
 import BottomNavBar from "../components/BottomNavBar";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { removeToken } from "../utils/auth";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { getUserData } from "../utils/user";
 
 // Dummy profile image
 const profileImage = { uri: "https://randomuser.me/api/portraits/men/32.jpg" };
@@ -28,7 +30,7 @@ type AccountStackParamList = {
   EventCreatedPage: undefined;
   Login: undefined;
   HelpAndSupportScreen: undefined;
-// Add more screens as needed
+  // Add more screens as needed
 };
 
 // Home screen content for the Account stack
@@ -36,6 +38,21 @@ const AccountHome = () => {
   // State for active tab (for BottomNavBar)
   const [activeTab, setActiveTab] = React.useState("Account");
   const navigation = useNavigation<NavigationProp<AccountStackParamList>>();
+
+  // State for user data
+  const [userData, setUserData] = React.useState<{
+    name?: string;
+    email?: string;
+    picture?: { uri: string };
+  }>({});
+
+  // Fetch user data on mount
+  React.useEffect(() => {
+    (async () => {
+      const data = await getUserData();
+      setUserData(data || {});
+    })();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -49,11 +66,15 @@ const AccountHome = () => {
         <View style={styles.card}>
           {/* Account title and greeting */}
           <Text style={styles.accountTitle}>Account</Text>
-          <Text style={styles.greeting}>Hi James,</Text>
+          <Text style={styles.greeting}>
+            Hi {userData.name ? userData.name : "User"},
+          </Text>
           {/* Profile section */}
           <View style={styles.profileSection}>
-            <Image source={profileImage} style={styles.profileImage} />
-            <Text style={styles.email}>jkoght2@gmail.com</Text>
+            <Image source={userData.picture?.uri ? userData.picture : profileImage} style={styles.profileImage} />
+            <Text style={styles.email}>
+              {userData.email ? userData.email : "user@email.com"}
+            </Text>
           </View>
           {/* Menu items grouped and styled as in the screenshot */}
           <View style={styles.menuGroup}>

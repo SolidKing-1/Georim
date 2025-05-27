@@ -17,7 +17,7 @@ import GoogleIcon from "../assets/Google.png";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
-import { setBiometricEnabled } from "../utils/auth";
+import { getToken, setBiometricEnabled } from "../utils/auth";
 import { isBiometricEnabled } from "../utils/auth";
 import { promptBiometric } from "../utils/biometric";
 
@@ -28,6 +28,7 @@ import { Platform, KeyboardAvoidingView } from "react-native";
 
 import Constants from "expo-constants";
 import { setToken, removeToken } from "../utils/auth"; // Use your helper
+import { setUserData } from "../utils/user";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
 
@@ -40,6 +41,7 @@ export default function LoginScreen() {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+  const USER_KEY = "user_data";
 
   useEffect(() => {
     (async () => {
@@ -73,10 +75,21 @@ export default function LoginScreen() {
         return;
       }
 
-      // Save JWT token if rememberMe is checked
+      // Save JWT token and user Data if rememberMe is checked
       if (data.data && data.data.token) {
         if (rememberMe) {
           await setToken(data.data.token);
+
+          // Prepare user data for AsyncStorage; 
+          let userData = {
+            email: data.data.email,
+            name: data.data.name,
+            isGoogleUser: data.data.isGoogleUser || false,
+            picture: { "uri": data.data.picture || null },
+          };
+          // Save user data to AsyncStorage
+          await setUserData(userData); 
+
         } else {
           await removeToken();
         }
@@ -119,13 +132,56 @@ export default function LoginScreen() {
   };
 
   const handleBiometricLogin = async () => {
+    // Get User Data from AsyncStorage;
+    let userData = await AsyncStorage.getItem(USER_KEY);
+
+    // If the user lacks the userData we should alert them
+    if (!userData) {
+      Alert.alert("You are not logged in. \n Please log in first.");
+      return;
+    }
+
+    // Disable the fingerprint icon while authenticating (optional UX improvement)
+    // You can add a loading state if desired
+
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: "Authenticate to continue",
       fallbackLabel: "Use Passcode",
-      disableDeviceFallback: false, // Set to true to prevent PIN fallback (not always supported in Expo Go)
-      // authenticationType: LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION, // Not supported in Expo Go
+      disableDeviceFallback: false,
     });
     if (result.success) {
+      let response = await fetch(`${BACKEND_URL}/auth/biometric-auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: JSON.parse(userData).email,
+        }),
+      });
+
+      if (!response.ok) {
+        // Show backend error message if available
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = {};
+        }
+        Alert.alert(
+          errorData?.data?.message || "We Had Issues Logging You In."
+        );
+        return;
+      }
+      const data = await response.json();
+      await setToken(data.data.token);
+      let userDataObj = {
+        email: data.data.email,
+        name: data.data.name,
+        isGoogleUser: data.data.isGoogleUser || false,
+        picture: { uri: data.data.picture || null },
+      };
+      await setUserData(userDataObj);
       navigation.navigate("Dashboard");
     }
   };
