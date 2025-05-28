@@ -4,7 +4,7 @@ import Profile from "./ProfileScreen";
 import Settings from "./SettingsScreen";
 import EventCreatedPage from "./EventCreatedScreen";
 import FavouriteScreen from "./FavouriteScreen";
-// Import your Help&Support screen component
+import AttendanceHistory from "./AttendanceHistory";
 import HelpAndSupportScreen from "./Help_Support";
 import {
   View,
@@ -32,7 +32,7 @@ type AccountStackParamList = {
   EventCreatedPage: undefined;
   Login: undefined;
   HelpAndSupportScreen: undefined;
-  // Add more screens as needed
+  AttendanceHistory: undefined;
   FavouriteScreen: undefined;
   // Add more screens as needed
 };
@@ -112,7 +112,7 @@ const AccountHome = () => {
             <MenuItem
               icon={<MaterialIcons name="history" size={24} color="#C8A2FA" />}
               label="Attendance History"
-              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
+              onPress={() => navigation.navigate("AttendanceHistory")} // Replace with correct screen if needed
             />
           </View>
           <View style={styles.menuGroup}>
@@ -213,6 +213,7 @@ export default function AccountScreen() {
       <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} />
       <Stack.Screen name="FavouriteScreen" component={FavouriteScreen} />
       <Stack.Screen name="Help&Support" component={HelpAndSupportScreen} />
+      <Stack.Screen name="AttendanceHistory" component={AttendanceHistory} />
       {/* Add more screens as needed */}
     </Stack.Navigator>
   );
