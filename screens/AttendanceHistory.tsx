@@ -94,13 +94,15 @@ const AttendanceHistory = () => {
 
   return (
     <View style={styles.container}>
-      {/* Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="chevron-back" size={26} color="#181818" />
-      </TouchableOpacity>
+      {/* White space section for back button */}
+      <View style={styles.topSpacer}>
+        {/* <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={26} color="#181818" />
+        </TouchableOpacity> */}
+      </View>
 
       {/* Header */}
       <View style={styles.headerBar}>
@@ -131,9 +133,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  topSpacer: {
+    height: 48,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+  },
   backButton: {
     position: "absolute",
-    top: 40,
     left: 16,
     zIndex: 10,
     backgroundColor: "#fff",

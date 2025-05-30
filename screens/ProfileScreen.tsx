@@ -177,7 +177,6 @@ export default function ProfileScreen() {
       {/* Dim Overlay when modal is visible */}
       {isModalVisible && (
         <Animated.View
-          pointerEvents="none"
           style={[
             {
               position: "absolute",
@@ -190,7 +189,14 @@ export default function ProfileScreen() {
               opacity: overlayOpacity,
             },
           ]}
-        />
+        >
+          {/* Touchable area to close modal when tapping outside */}
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            activeOpacity={1}
+            onPress={closeModal}
+          />
+        </Animated.View>
       )}
 
       {/* Animated Modal for Editing Profile Picture */}
@@ -347,7 +353,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: "60%", // Covers half the screen
+    height: "55%", // Covers half the screen
     backgroundColor: "#fff",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

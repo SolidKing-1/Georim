@@ -317,6 +317,8 @@ export default function DashboardScreen() {
     }
   }, [route.params]);
 
+  const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+
   return (
     <View style={styles.container}>
       {/* Company Logo */}
@@ -404,13 +406,18 @@ export default function DashboardScreen() {
             </View>
           ))}
 
-          {/* Options icon (no label) */}
-          <View style={styles.iconCircleWrapper}>
+          {/* Options icon moreCategories */}
+          <TouchableOpacity
+            onPress={() => {
+              setShowCategoriesModal(true);
+            }}
+            style={styles.iconCircleWrapper}
+          >
             <Image
               source={require("../assets/menu.png")}
               style={[styles.optionsIcon, { tintColor: "#7F00FF" }]}
             />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -423,7 +430,7 @@ export default function DashboardScreen() {
           renderItem={renderEvent}
           contentContainerStyle={styles.eventsList}
           showsVerticalScrollIndicator={false}
-          style={{ maxHeight: 500, marginBottom: 0 }} // adjust maxHeight as needed
+          style={{ marginBottom: 425 }} // adjust maxHeight as needed
         />
       </View>
 
@@ -607,7 +614,9 @@ const styles = StyleSheet.create({
   //   width: 50,
   // },
 
-  section: { marginTop: 16 },
+  section: {
+    marginTop: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
