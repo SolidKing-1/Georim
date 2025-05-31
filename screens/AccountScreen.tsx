@@ -4,7 +4,7 @@ import Profile from "./ProfileScreen";
 import Settings from "./SettingsScreen";
 import EventCreatedPage from "./EventCreatedScreen";
 import FavouriteScreen from "./FavouriteScreen";
-// Import your Help&Support screen component
+import AttendanceHistory from "./AttendanceHistory";
 import HelpAndSupportScreen from "./Help_Support";
 import {
   View,
@@ -12,8 +12,9 @@ import {
   StyleSheet,
   Image,
   Animated,
-  TouchableOpacity,
   ScrollView,
+  TouchableOpacity,
+  ScrollView as RNScrollView,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -32,7 +33,7 @@ type AccountStackParamList = {
   EventCreatedPage: undefined;
   Login: undefined;
   HelpAndSupportScreen: undefined;
-  // Add more screens as needed
+  AttendanceHistory: undefined;
   FavouriteScreen: undefined;
   // Add more screens as needed
 };
@@ -67,6 +68,9 @@ const AccountHome = () => {
     })();
   }, []);
 
+  // State and setter for showing the profile image modal
+  const [imageModalVisible, setImageModalVisible] = useState<boolean>(false);
+
   return (
     <View style={styles.container}>
       {/* Status bar for top of the screen */}
@@ -88,7 +92,17 @@ const AccountHome = () => {
           </Text>
           {/* Profile section */}
           <View style={styles.profileSection}>
-            <Image source={userData.picture?.uri ? userData.picture : profileImage} style={styles.profileImage} />
+            <TouchableOpacity
+              onPress={() => setImageModalVisible(true)}
+              activeOpacity={0.8}
+              accessibilityLabel="View profile image full screen"
+              accessibilityHint="Tap to view your profile image in full screen"
+            >
+              <Image
+                source={userData.picture?.uri ? userData.picture : profileImage}
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
             <Text style={styles.email}>
               {userData.email ? userData.email : "user@email.com"}
             </Text>
@@ -107,12 +121,12 @@ const AccountHome = () => {
               icon={<Ionicons name="heart-outline" size={24} color="#C8A2FA" />}
               label="Favourites"
               showDivider
-              onPress={() => navigation.navigate("FavouriteScreen")} // Replace with correct screen if needed
+              onPress={() => navigation.navigate("FavouriteScreen")}
             />
             <MenuItem
               icon={<MaterialIcons name="history" size={24} color="#C8A2FA" />}
               label="Attendance History"
-              onPress={() => navigation.navigate("Profile")} // Replace with correct screen if needed
+              onPress={() => navigation.navigate("AttendanceHistory")}
             />
           </View>
           <View style={styles.menuGroup}>
@@ -121,7 +135,7 @@ const AccountHome = () => {
                 <Ionicons name="calendar-outline" size={24} color="#C8A2FA" />
               }
               label="Events Created"
-              onPress={() => navigation.navigate("EventCreatedPage")} // Replace with correct screen if needed
+              onPress={() => navigation.navigate("EventCreatedPage")}
             />
           </View>
           <View style={styles.menuGroup}>
@@ -150,7 +164,6 @@ const AccountHome = () => {
               label="Log out"
               onPress={async () => {
                 await removeToken();
-                // Use navigation.reset to go to Login if it's outside this stack
                 navigation.reset({
                   index: 0,
                   routes: [{ name: "Login" }],
@@ -160,6 +173,29 @@ const AccountHome = () => {
           </View>
         </View>
       </ScrollView>
+
+      {/* Profile Image Modal */}
+      {imageModalVisible && (
+        <View style={styles.profileModalOverlay}>
+          <TouchableOpacity
+            style={styles.profileModalTouchable}
+            activeOpacity={1}
+            onPress={() => setImageModalVisible(false)}
+          />
+          <View style={styles.profileModalImageContainer}>
+            <Image
+              source={userData.picture?.uri ? userData.picture : profileImage}
+              style={styles.profileModalImage}
+              resizeMode="cover"
+            />
+            <View style={styles.profileEditIconWrapper}>
+              <View style={styles.profileEditIconCircle}>
+                <Ionicons name="pencil-outline" size={22} color="#181818" />
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
 
       {/* Bottom Navbar */}
       <BottomNavComplete
@@ -213,6 +249,7 @@ export default function AccountScreen() {
       <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} />
       <Stack.Screen name="FavouriteScreen" component={FavouriteScreen} />
       <Stack.Screen name="Help&Support" component={HelpAndSupportScreen} />
+      <Stack.Screen name="AttendanceHistory" component={AttendanceHistory} />
       {/* Add more screens as needed */}
     </Stack.Navigator>
   );
@@ -268,6 +305,7 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
     marginBottom: 8,
   },
+
   email: {
     fontSize: 14,
     color: "#8B8B8B",
@@ -327,5 +365,52 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 14,
+  },
+  profileModalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#f5f5f5ee",
+    zIndex: 100,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileModalTouchable: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: "100%",
+    height: "100%",
+  },
+  profileModalImageContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileModalImage: {
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: "#eee",
+  },
+  profileEditIconWrapper: {
+    position: "absolute",
+    bottom: 24,
+    right: 24,
+  },
+  profileEditIconCircle: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
 });
