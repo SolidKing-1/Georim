@@ -115,7 +115,12 @@ const ActivitySnapshot: React.FC = () => {
           style={styles.card}
           onPress={() => setShowAttendeeModal(true)}
         >
-          <Image source={Icon1} style={styles.cardIcon} />
+          <Image
+            source={{
+              uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748582868638-890874d6-ef76-4f22-8611-013b0ff55f0c-attendees.png",
+            }}
+            style={styles.cardIcon}
+          />
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>View & Edit Attendees</Text>
             <Text style={styles.cardSubtitle}>
@@ -129,7 +134,12 @@ const ActivitySnapshot: React.FC = () => {
           style={styles.card}
           onPress={() => setShowExportModal(true)}
         >
-          <Image source={Icon2} style={styles.cardIcon} />
+          <Image
+            source={{
+              uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748583835407-7a3b6d6f-a6d9-4ad1-a3dd-449f60a24cc7-download.png",
+            }}
+            style={styles.cardIcon}
+          />
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Export Attendance Sheet</Text>
             <Text style={styles.cardSubtitle}>Download as CSV or PDF.</Text>
@@ -141,7 +151,12 @@ const ActivitySnapshot: React.FC = () => {
           style={styles.card}
           onPress={() => setShowQRModal(true)}
         >
-          <Image source={Icon3} style={styles.cardIcon} />
+          <Image
+            source={{
+              uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748583958025-6080ef35-0329-4b7d-bafb-33081b777864-qr-code.png",
+            }}
+            style={styles.cardIcon}
+          />
           <View style={styles.cardTextContainer}>
             <Text style={styles.cardTitle}>Event QR Code</Text>
             <Text style={styles.cardSubtitle}>

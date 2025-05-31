@@ -109,7 +109,9 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
           }}
         >
           <Image
-            source={TicketIcon}
+            source={{
+              uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/v1748463730/ticket_jvd9gk.png",
+            }}
             style={{
               width: 24,
               height: 24,
@@ -138,7 +140,9 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
           }}
         >
           <Image
-            source={ProfileIcon}
+            source={{
+              uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/user_tvz4cy.png",
+            }}
             style={{
               width: 24,
               height: 24,
