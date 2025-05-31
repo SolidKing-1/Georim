@@ -7,15 +7,18 @@ import {
   TouchableOpacity,
   Animated,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Home from "../assets/home.png";
-import Explore from "../assets/Explore.png";
-import TicketIcon from "../assets/ticket.png";
-import ProfileIcon from "../assets/user.png";
-import BottomNavComplete from "../components/BottomNavComplete"; // Add this import at the top
+import BottomNavComplete from "../components/BottomNavComplete";
+import Constants from "expo-constants";
+import { getToken } from "../utils/auth";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as Animatable from "react-native-animatable";
 
-// Update Event type to include status
+// Constsants.
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+
 type Event = {
   id: string;
   title: string;
@@ -29,97 +32,9 @@ type Event = {
   longitude: number;
   attendees: number;
   section: string;
-  status: "Registered" | "Checked-In"; // <-- Added status
+  status: "Registered" | "Checked-In";
   key?: string;
 };
-
-// Dummy data for events
-const events: Event[] = [
-  {
-    id: "1",
-    title: "Ruston Fest!!! - Revival",
-    date: "Sat, May 17",
-    time: "4:00 PM - 10:00 PM",
-    location: "LA Tech Basketball Stadium",
-    price: "Free",
-    description:
-      "Join us for the biggest festival in Ruston! Featuring live music, food vendors, local artisans, and family-friendly activities. A celebration of our community's culture and spirit.",
-    image: require("../assets/ruston-fest.png"),
-    latitude: 32.5272,
-    longitude: -92.6379,
-    attendees: 156,
-    section: "Ongoing",
-    status: "Registered", // <-- Set status
-  },
-  {
-    id: "2",
-    title: "Dembele Calculus - Education",
-    date: "May 17 - Dec 1",
-    time: "2:00 PM - 4:00 PM",
-    location: "Grambling, Carver Hall 234",
-    price: "Free",
-    description:
-      "Master calculus with Professor Dembele. This comprehensive course covers differential and integral calculus, with practical applications and problem-solving sessions.",
-    image: require("../assets/calculus.png"),
-    latitude: 32.5251,
-    longitude: -92.7146,
-    attendees: 45,
-    section: "Ongoing",
-    status: "Checked-In", // <-- Set status
-  },
-  {
-    id: "3",
-    title: "Karaoke - Live Singing",
-    date: "Fri, June 11",
-    time: "7:00 PM - 11:00 PM",
-    location: "Grambling, McDinning",
-    price: "$30",
-    description:
-      "Show off your vocal talents at our weekly karaoke night! Wide selection of songs, great atmosphere, and prizes for the best performers.",
-    image: require("../assets/karaoke.png"),
-    latitude: 32.5254,
-    longitude: -92.7141,
-    attendees: 89,
-    section: "Today",
-    status: "Registered", // <-- Set status
-  },
-  {
-    id: "4",
-    title: "Tech Expo 2025",
-    date: "Mon, July 7",
-    time: "9:00 AM - 5:00 PM",
-    location: "Tech Park, Ruston",
-    price: "$10",
-    description:
-      "Experience the future of technology at Tech Expo 2025. Featuring cutting-edge innovations, interactive demos, and inspiring talks from industry leaders.",
-    image: require("../assets/karaoke.png"),
-    latitude: 32.5295,
-    longitude: -92.6379,
-    attendees: 234,
-    section: "Upcoming",
-    status: "Registered", // <-- Set status
-  },
-  {
-    id: "5",
-    title: "Jazz Night",
-    date: "Sat, July 12",
-    time: "8:00 PM - 12:00 AM",
-    location: "Downtown Ruston",
-    price: "$15",
-    description:
-      "An evening of smooth jazz and sophisticated ambiance. Local and guest musicians perform classic jazz standards and original compositions.",
-    image: require("../assets/karaoke.png"),
-    latitude: 32.5232,
-    longitude: -92.6379,
-    attendees: 67,
-    section: "Upcoming",
-    status: "Checked-In", // <-- Set status
-  },
-];
-
-const sections = ["Ongoing", "Today", "Upcoming"];
-
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type RootStackParamList = {
   Dashboard: undefined;
@@ -132,11 +47,23 @@ type RootStackParamList = {
   ExploreScreen: undefined;
 };
 
+const sections = ["Ongoing", "Today", "Upcoming"];
+
 export default function CheckinScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [activeTab, setActiveTab] = useState("Check-In");
   const navSlideAnim = useRef(new Animated.Value(100)).current;
+
+  // State for events and loading
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Replace your emoji list with these:
+  const emojiList = ["🕵️‍♂️", "🔍", "😔", "📭", "🗒️", "🕳️", "🕰️"];
+
+  // Add this near the top of your component
+  const [emojiIndex, setEmojiIndex] = useState(0);
 
   useEffect(() => {
     Animated.timing(navSlideAnim, {
@@ -144,17 +71,60 @@ export default function CheckinScreen() {
       duration: 500,
       useNativeDriver: true,
     }).start();
+
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const token = await getToken();
+        const response = await fetch(`${BACKEND_URL}/user/registered-events`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.log(errorData.message);
+          throw new Error("Failed to fetch events");
+        } else {
+          const eventData = await response.json();
+          // eventData.data is the array of events
+          setEvents(
+            (eventData.data || []).map((event: any) => ({
+              ...event,
+              key: event.id,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        setEvents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
   }, []);
 
-  // Flatten events for FlatList
-  const flatEvents = events.map((event) => ({
-    ...event,
-    key: event.id,
-  }));
+  useEffect(() => {
+    if (!loading && events.length === 0) {
+      const interval = setInterval(() => {
+        setEmojiIndex((prev) => (prev + 1) % emojiList.length);
+      }, 1200);
+      return () => clearInterval(interval);
+    }
+  }, [loading, events.length]);
 
   const renderEvent = ({ item }: { item: Event }) => (
     <View style={styles.eventItem}>
-      <Image source={item.image} style={styles.eventImage} />
+      <Image
+        source={
+          typeof item.image === "string" ? { uri: item.image } : item.image
+        }
+        style={styles.eventImage}
+      />
       <View style={styles.eventInfo}>
         <View style={styles.eventMainInfo}>
           <TouchableOpacity
@@ -194,7 +164,6 @@ export default function CheckinScreen() {
     </View>
   );
 
-  // Section headers for FlatList
   const renderSectionHeader = (section: string) => (
     <Text style={styles.sectionTitle}>{section}</Text>
   );
@@ -202,7 +171,7 @@ export default function CheckinScreen() {
   // Group events by section for rendering headers
   const groupedEvents = sections.flatMap((section) => [
     { type: "header", section, key: `header-${section}` },
-    ...flatEvents.filter((e) => e.section === section),
+    ...events.filter((e) => e.section === section),
   ]);
 
   return (
@@ -220,20 +189,77 @@ export default function CheckinScreen() {
         <Text style={styles.registeredText}>Registered Events</Text>
       </View>
 
-      <FlatList
-        data={groupedEvents}
-        renderItem={({ item }) =>
-          "type" in item && item.type === "header"
-            ? renderSectionHeader(item.section)
-            : renderEvent({ item: item as Event })
-        }
-        keyExtractor={(item) => item.key || item.section}
-        contentContainerStyle={[styles.scrollContainer, { paddingBottom: 120 }]}
-        showsVerticalScrollIndicator={false}
-        style={{ marginBottom: 0 }}
-      />
+      {loading ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color="#7F00FF" />
+        </View>
+      ) : events.length === 0 ? (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 40,
+          }}
+        >
+          <Animatable.Text
+            animation="bounceIn"
+            iterationCount="infinite"
+            direction="alternate"
+            style={{ fontSize: 40, marginBottom: 10 }}
+          >
+            {emojiList[emojiIndex]}
+          </Animatable.Text>
+          <Animatable.Text
+            animation="fadeInDown"
+            iterationCount="infinite"
+            direction="alternate"
+            duration={1800}
+            style={{
+              fontSize: 20,
+              fontWeight: "bold",
+              color: "#7F00FF",
+              marginBottom: 6,
+            }}
+          >
+            No events found!
+          </Animatable.Text>
+          <Animatable.Text
+            animation="pulse"
+            iterationCount="infinite"
+            duration={2200}
+            style={{
+              fontSize: 16,
+              color: "#666",
+              textAlign: "center",
+              paddingHorizontal: 24,
+              marginBottom: 156,
+            }}
+          >
+            You have not registered for any events yet.{"\n"}
+            Go explore and register for an event!
+          </Animatable.Text>
+        </View>
+      ) : (
+        <FlatList
+          data={groupedEvents}
+          renderItem={({ item }) =>
+            "type" in item && item.type === "header"
+              ? renderSectionHeader(item.section)
+              : renderEvent({ item: item as Event })
+          }
+          keyExtractor={(item) => item.key || item.section}
+          contentContainerStyle={[
+            styles.scrollContainer,
+            { paddingBottom: 120 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          style={{ marginBottom: 0 }}
+        />
+      )}
 
-      {/* Use the reusable BottomNavBar component */}
       <BottomNavComplete
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -366,73 +392,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 12,
   },
-  /*   bottomNav: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 25,
-    paddingVertical: 33,
-    borderTopWidth: 1,
-    borderColor: "#eee",
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    backgroundColor: "#7F00FF0D",
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  navItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 10,
-  },
-  navText: {
-    fontSize: 12,
-    marginTop: 2,
-    color: "#333",
-  },
-  navSpacer: {
-    flex: 1,
-  },
-  bowlCutout: {
-    position: "absolute",
-    bottom: 90, // aligns with navbar height
-    left: "50%",
-    transform: [{ translateX: -45 }, { translateY: 30 }, { rotate: "180deg" }],
-    width: 93,
-    height: 54,
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    zIndex: 0,
-  },
-
-  floatingButton: {
-    position: "absolute",
-    top: 8,
-    left: "38%",
-    transform: [{ translateX: -25 }],
-    width: 70,
-    height: 40,
-    backgroundColor: "#7F00FF",
-    borderRadius: 23,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-  },
-
-  plusText: {
-    color: "#fff",
-    fontSize: 25,
-    fontWeight: "bold",
-    marginTop: -2,
-  }, */
 });

@@ -66,7 +66,7 @@ export default function SignUpScreen() {
       });
 
       const data = await response.json();
-      console.log("Response body:", data);
+      
 
       if (!response.ok) {
         alert(data.message || "Sign up failed");
@@ -104,7 +104,13 @@ export default function SignUpScreen() {
         {/* Top Image Box */}
         <View style={styles.imageContainer}>
           <Text style={styles.header}>Sign Up</Text>
-          <Image source={Logo} style={styles.image} resizeMode="contain" />
+          <Image
+            source={{
+              uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/Authentication_ympwp3.jpg",
+            }}
+            style={styles.image}
+            resizeMode="contain"
+          />
         </View>
 
         {/* Form Section */}
