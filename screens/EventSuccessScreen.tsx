@@ -9,7 +9,6 @@ import {
   Easing,
 } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
-import CompletedImage from "../assets/Completed_event.jpg";
 
 const { width } = Dimensions.get("window");
 
@@ -79,7 +78,9 @@ export default function EventSuccessScreen() {
         }}
       >
         <Image
-          source={CompletedImage}
+          source={{
+            uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655981045-02ee2e92-3356-49ff-ae78-fd7d1ba23beb-Completed_event.jpg",
+          }}
           style={styles.image}
           resizeMode="contain"
         />

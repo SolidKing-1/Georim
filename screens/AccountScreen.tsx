@@ -15,6 +15,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ScrollView as RNScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -23,6 +24,7 @@ import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { removeToken } from "../utils/auth";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { getUserData } from "../utils/user";
+import * as ImagePicker from "expo-image-picker";
 
 // Dummy profile image
 const profileImage = { uri: "https://randomuser.me/api/portraits/men/32.jpg" };
@@ -70,6 +72,32 @@ const AccountHome = () => {
 
   // State and setter for showing the profile image modal
   const [imageModalVisible, setImageModalVisible] = useState<boolean>(false);
+
+  // Function to handle profile image editing
+  const handleProfileImageEdit = async () => {
+    // Ask for permission
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission required",
+        "Please grant media access to update your profile image."
+      );
+      return;
+    }
+    // Launch image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const newImage = { uri: result.assets[0].uri };
+      setUserData((prev) => ({ ...prev, picture: newImage }));
+      setImageModalVisible(false);
+      // Optionally, upload the new image to your backend here
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -189,9 +217,14 @@ const AccountHome = () => {
               resizeMode="cover"
             />
             <View style={styles.profileEditIconWrapper}>
-              <View style={styles.profileEditIconCircle}>
-                <Ionicons name="pencil-outline" size={22} color="#181818" />
-              </View>
+              <TouchableOpacity
+                onPress={handleProfileImageEdit}
+                activeOpacity={0.7}
+              >
+                <View style={styles.profileEditIconCircle}>
+                  <Ionicons name="pencil-outline" size={22} color="#181818" />
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
