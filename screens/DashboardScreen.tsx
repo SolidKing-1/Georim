@@ -347,24 +347,28 @@ export default function DashboardScreen() {
   }, [route.params]);
 
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
-  const sideNavAnim = useRef(new Animated.Value(-260)).current;
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
   const iconRef = useRef<View>(null);
-  const [iconPosition, setIconPosition] = useState({ top: 0, left: 0 });
+  const [iconPosition, setIconPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
 
-  // Animate side nav in/out
+  // Animate dropdown in/out
   useEffect(() => {
-    Animated.timing(sideNavAnim, {
-      toValue: showCategoriesModal ? 0 : -260,
-      duration: 300,
+    Animated.timing(dropdownAnim, {
+      toValue: showCategoriesModal ? 1 : 0,
+      duration: 200,
       useNativeDriver: false,
     }).start();
   }, [showCategoriesModal]);
 
-  // Find the position of the icon so the modal can be attached to it
+  // Find the position of the icon so the dropdown can be attached to it
   const handleShowCategories = () => {
     if (iconRef.current) {
       iconRef.current.measureInWindow((x, y, width, height) => {
-        setIconPosition({ top: y + height, left: x });
+        setIconPosition({ top: y + height, left: x, width });
         setShowCategoriesModal(true);
       });
     }
@@ -509,7 +513,7 @@ export default function DashboardScreen() {
         navSlideAnim={navSlideAnim}
       />
 
-      {/* Side Navigation Modal (attached to icon, not full height) */}
+      {/* Dropdown Modal (attached to icon, not full height) */}
       {showCategoriesModal && (
         <Pressable
           style={StyleSheet.absoluteFill}
@@ -517,42 +521,41 @@ export default function DashboardScreen() {
         >
           <Animated.View
             style={[
-              styles.attachedSideNav,
+              styles.dropdownMenu,
               {
-                top: iconPosition.top + 8,
-                left: iconPosition.left - 220, // adjust as needed to align right edge
-                opacity: sideNavAnim.interpolate({
-                  inputRange: [-260, 0],
-                  outputRange: [0, 1],
-                }),
+                top: iconPosition.top + 4,
+                left: iconPosition.left - 120 + iconPosition.width / 2,
+                opacity: dropdownAnim,
                 transform: [
                   {
-                    translateX: sideNavAnim,
+                    scale: dropdownAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
                   },
                 ],
               },
             ]}
             pointerEvents="box-none"
           >
-            <View style={styles.attachedSideNavContent}>
-              <Text style={styles.modalTitle}>Categories</Text>
-              <TouchableOpacity style={styles.sideNavItem}>
-                <Text style={styles.sideNavText}>Religious</Text>
+            <View style={styles.dropdownContent}>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Religious</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.sideNavItem}>
-                <Text style={styles.sideNavText}>Entertainment</Text>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Entertainment</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.sideNavItem}>
-                <Text style={styles.sideNavText}>Corporate</Text>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Corporate</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.sideNavItem}>
-                <Text style={styles.sideNavText}>Educational</Text>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Educational</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.sideNavItem, { marginTop: 16 }]}
+                style={[styles.dropdownItem, { marginTop: 8 }]}
                 onPress={() => setShowCategoriesModal(false)}
               >
-                <Text style={[styles.sideNavText, { color: "#A259FF" }]}>
+                <Text style={[styles.dropdownText, { color: "#A259FF" }]}>
                   Close
                 </Text>
               </TouchableOpacity>
@@ -847,5 +850,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     alignItems: "flex-start",
     justifyContent: "flex-start",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    width: 160,
+    backgroundColor: "transparent",
+    zIndex: 3000,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 2 },
+    elevation: 10,
+  },
+  dropdownContent: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    width: "100%",
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: "#181818",
+    fontWeight: "500",
   },
 });
