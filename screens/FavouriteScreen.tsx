@@ -184,7 +184,7 @@ const FavouriteScreen = ({ route }: any) => {
               <TouchableOpacity onPress={() => toggleFavourite(event.id)}>
                 <Ionicons
                   name={favourites[event.id] ? "heart" : "heart-outline"}
-                  size={22}
+                  size={20}
                   color="#7F00FF"
                   style={styles.heartIcon}
                 />
@@ -271,13 +271,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  eventTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#181818",
-    marginBottom: 2,
-    textDecorationLine: "underline",
-  },
+  eventTitle: { fontSize: 16, fontWeight: "500" },
   eventDate: {
     fontSize: 13,
     color: "#444",
