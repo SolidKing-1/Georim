@@ -19,14 +19,14 @@ import { useNavigation } from "@react-navigation/native";
 import DownArrow from "react-native-vector-icons/Entypo";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
 import * as ImagePicker from "expo-image-picker";
-import DashedDropzone from "../components/DashedDropzone"; // Import the reusable DashedDropzone component
+import DashedDropzone from "../components/DashedDropzone"; 
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
+import axios from "axios";
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
@@ -36,7 +36,7 @@ const { width } = Dimensions.get("window");
 const categoryOptions = [
   "Religious",
   "Entertainment",
-  "Education",
+  "Educational",
   "Corporate",
 ];
 const visibilityOptions = [
@@ -148,7 +148,6 @@ export default function CreateEventScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 1,
-      base64: true, // <-- add this line
     });
 
     if (!result.canceled) {
@@ -156,62 +155,169 @@ export default function CreateEventScreen() {
     }
   };
 
-  // Handler for Finish button
+
+  // More State. 
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [venueName, setVenueName] = useState("");
+
   const handleFinish = async () => {
-    try {
-      // Get JWT token for authentication
-      const token = await AsyncStorage.getItem("jwt");
+  try {
+    const token = await AsyncStorage.getItem("jwt");
 
-      // Prepare event data
-      const eventData = {
-        // Add all your fields here, e.g.:
-        category,
-        visibility,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        isRecurring,
-        recurrence: isRecurring ? recurrence : null,
-        untilDate: isRecurring ? untilDate.toISOString() : null,
-        geofence,
-        additionalDescription,
-        // Add more fields as needed from your form
-        eventImageString: eventImage?.base64 ? eventImage.base64 : null,
-      };
-
-      const response = await fetch(`${BACKEND_URL}/events/create`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(eventData),
-      });
-
-      const text = await response.text();
-      console.log("Raw response:", text);
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error("Failed to parse JSON:", e, text);
-        alert("Server error. Please try again later.");
-        return;
-      }
-
-      if (!response.ok) {
-        alert(data.message || "Event creation failed");
-        return;
-      }
-
-      alert("Event created successfully!");
-      navigation.navigate("EventSuccess");
-    } catch (err) {
-      alert("Network error. Please try again.");
-      console.error("Network error:", err);
+    if (!token) {
+      alert("Authentication required. Please log in again.");
+      return;
     }
-  };
+
+    // Add back all validation
+    if (!title?.trim()) {
+      alert("Please enter an event title");
+      return;
+    }
+    if (!description?.trim()) {
+      alert("Please enter an event description");
+      return;
+    }
+    if (!category) {
+      alert("Please select a category");
+      return;
+    }
+    if (!visibility) {
+      alert("Please select visibility");
+      return;
+    }
+    if (!venueName?.trim()) {
+      alert("Please enter a venue name");
+      return;
+    }
+    if (!markerCoords) {
+      alert("Please select a location on the map");
+      return;
+    }
+
+    let imageUrl = null;
+
+    // Step 1: Upload image first if exists
+    if (eventImage) {
+      try {
+        const imageFormData = new FormData();
+        imageFormData.append("image", {
+          uri: eventImage.uri,
+          type: eventImage.type || "image/jpeg",
+          name: eventImage.fileName || "event-image.jpg",
+        } as any);
+
+        console.log(`${BACKEND_URL}/file/upload/image`);
+        const imageResponse = await axios.post(
+          `${BACKEND_URL}/file/upload/image`,
+          imageFormData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+            timeout: 20000, // optional: increase timeout for large files
+          }
+        );
+
+        if (imageResponse.status === 200 && imageResponse.data?.data?.imageUrl) {
+          imageUrl = imageResponse.data.data.imageUrl;
+          console.log("Image uploaded successfully:", imageUrl);
+        } else {
+          console.error("Image upload failed:", imageResponse.data);
+          alert("Image upload failed. Proceeding without image.");
+        }
+      } catch (imageError) {
+        console.error("Image upload error:", imageError);
+        alert("Image upload failed. Proceeding without image.");
+      }
+    }
+
+    // Step 2: Create event with JSON data
+    const eventData = {
+      title: title.trim(),
+      description: description.trim(),
+      category: category.toLowerCase(),
+      visibility: visibility.split(' ')[0].toLowerCase(),
+      
+      dateTime: {
+        start: new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          startTime.getHours(),
+          startTime.getMinutes()
+        ).toISOString(),
+        end: new Date(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          endTime.getHours(),
+          endTime.getMinutes()
+        ).toISOString(),
+      },
+
+      recurring: {
+        isRecurring: isRecurring,
+        ...(isRecurring && {
+          pattern: recurrence.toLowerCase(),
+          until: untilDate.toISOString(),
+        }),
+      },
+
+      location: {
+        venue: venueName.trim(),
+        address: {
+          street: street.trim() || "",
+          city: city.trim() || "",
+          state: state.trim() || "",
+          zipCode: zip.trim() || "",
+        },
+        longitude: markerCoords.longitude,
+        latitude: markerCoords.latitude,
+        accuracy: 10,
+      },
+
+      radius: Math.max(geofence, 25),
+
+      // Include imageUrl if upload was successful
+      ...(imageUrl && { imageUrl }),
+
+      // TODO: UNCOMMENT THIS!
+      // ...(additionalDescription?.trim() && {
+      //   additionalInfo: additionalDescription.trim(),
+      // }),
+    };
+
+    console.log("Creating event with data:", eventData);
+
+    const response = await fetch(`${BACKEND_URL}/events/create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(eventData),
+    });
+
+    const data = await response.json();
+    console.log("Event creation response:", data);
+
+    if (!response.ok) {
+      console.error("Event creation failed:", data);
+      alert(data.message || `Event creation failed: ${response.status}`);
+      return;
+    }
+
+    console.log("Event created successfully:", data);
+    navigation.navigate("EventSuccess");
+    
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Network error. Please check your connection and try again.");
+  }
+};
 
   // Open modal and center on user location
   const openMapModal = async () => {
@@ -453,20 +559,22 @@ export default function CreateEventScreen() {
             <Text style={styles.cardHeader}>Basic Information</Text>
 
             {/* Title */}
-            <Text style={styles.inputLabel}>Title</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter event title"
               placeholderTextColor="#999"
+              value={title}
+              onChangeText={setTitle}
             />
 
             {/* Description */}
-            <Text style={styles.inputLabel}>Description</Text>
             <TextInput
               style={[styles.input, styles.largeInput]}
               placeholder="Enter event description"
               placeholderTextColor="#999"
               multiline
+              value={description}
+              onChangeText={setDescription}
             />
 
             {/* Category */}
@@ -738,7 +846,12 @@ export default function CreateEventScreen() {
             </TouchableOpacity>
 
             <Text style={styles.inputLabel}>Venue Name</Text>
-            <TextInput style={styles.input} />
+                      <TextInput 
+            style={styles.input} 
+            placeholder="Enter venue name"
+            value={venueName}
+            onChangeText={setVenueName}
+          />
 
             <Text style={styles.inputLabel}>Street Address</Text>
             <TextInput

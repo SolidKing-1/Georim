@@ -290,7 +290,10 @@ export default function LoginScreen() {
                   thumbColor={rememberMe ? "#fff" : "#fff"}
                 />
               </View>
-              <TouchableOpacity style={styles.forgotPassword}>
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => navigation.navigate("ForgotPassword")}
+              >
                 <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
               </TouchableOpacity>
             </View>

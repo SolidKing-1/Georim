@@ -492,16 +492,13 @@ export default function ExploreScreen() {
                     </TouchableOpacity>
                     <Text style={styles.iconLabel}>Register</Text>
                   </Animatable.View>
+                  {/* Like button with white outline and purple fill when liked */}
                   <View style={{ alignItems: "center" }}>
                     <TouchableOpacity onPress={() => toggleLike(item.id)}>
-                      <Image
-                        source={{
-                          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655239600-428a273b-4a5e-44b8-9d27-37595b1fbafb-like.png",
-                        }}
-                        style={[
-                          styles.icon,
-                          likedVideos[item.id] && { tintColor: "#7F00FF" },
-                        ]}
+                      <Icon
+                        name={likedVideos[item.id] ? "heart" : "heart-outline"}
+                        size={34}
+                        color={likedVideos[item.id] ? "#7F00FF" : "#fff"}
                       />
                     </TouchableOpacity>
                     <Text style={styles.iconLabel}>Like</Text>
