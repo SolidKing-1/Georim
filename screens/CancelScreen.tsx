@@ -43,7 +43,7 @@ export default function Cancelpage() {
 
       {/* Graphic/Image */}
       <Image
-        source={require("../assets/CancelPage.jpg")}
+        source={{ uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748656070966-61f7c2a7-100f-48cf-812d-eb452efe602d-CancelPage.jpg" }}
         style={styles.image}
         resizeMode="contain"
       />

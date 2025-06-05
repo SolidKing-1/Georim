@@ -121,15 +121,21 @@ export default function EventDetailsScreen() {
           <View style={styles.attendeesContainer}>
             <View style={styles.avatarStack}>
               <Image
-                source={require("../assets/avatar1.png")}
+                source={{
+                  uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748656304178-71b53d6f-4d1a-4360-b3ed-0e7b0b4de64f-avatar1.png",
+                }}
                 style={[styles.avatar, { zIndex: 0, left: 0 }]}
               />
               <Image
-                source={require("../assets/avatar2.png")}
+                source={{
+                  uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748656363527-279f672b-0b38-4368-9893-726fd4bea580-avatar2.png",
+                }}
                 style={[styles.avatar, { zIndex: 1, left: 18 }]}
               />
               <Image
-                source={require("../assets/avatar3.png")}
+                source={{
+                  uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748656387756-5f817cd9-b3f7-465e-ae7c-0d10a632ceb5-avatar3.png",
+                }}
                 style={[styles.avatar, { zIndex: 2, left: 36 }]}
               />
               <View
@@ -172,39 +178,6 @@ export default function EventDetailsScreen() {
           </TouchableOpacity>
         )}
       </View>
-
-      {/* Advanced Styled Modal */}
-      {/*
-      <Modal
-        visible={showModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Ionicons
-              name="checkmark-circle"
-              size={48}
-              color="#7F00FF"
-              style={{ marginBottom: 12 }}
-            />
-            <Text style={styles.modalTitle}>Event Registration Successful</Text>
-            <Image
-              source={require("../assets/registration-success.png")}
-              style={styles.modalImage}
-              resizeMode="contain"
-            />
-            <Pressable
-              style={styles.modalButton}
-              onPress={() => setShowModal(false)}
-            >
-              <Text style={styles.modalButtonText}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-      */}
 
       {/* Use the reusable RegistrationSuccessModal component */}
       <RegistrationSuccessModal

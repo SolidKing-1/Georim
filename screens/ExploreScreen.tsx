@@ -18,10 +18,6 @@ import LikeIcon from "../assets/explore_page/like.png";
 import SendIcon from "../assets/explore_page/send.png";
 import * as Sharing from "expo-sharing";
 import * as Animatable from "react-native-animatable";
-import Home from "../assets/home.png";
-import Explore from "../assets/Explore.png";
-import TicketIcon from "../assets/ticket.png";
-import ProfileIcon from "../assets/user.png";
 import { Video, ResizeMode } from "expo-av";
 import BottomNavComplete from "../components/BottomNavComplete";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -30,49 +26,79 @@ const { width } = Dimensions.get("window");
 
 // Sample data for banner images
 const bannerImages = [
-  require("../assets/explore_page/banner1.png"),
-  require("../assets/explore_page/banner2.png"),
-  require("../assets/explore_page/banner3.png"),
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654341940-52731232-6446-4e80-bc89-270b3f97c813-banner1.png",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654400542-c21f053c-586a-4b56-a445-3f4918e434b2-banner2.png",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654422791-0aff7f94-4f9c-43b7-b718-99895a81e0ee-banner3.png",
+  },
 ];
 
 const eventCards = [
   {
     id: "1",
-    image: require("../assets/explore_page/event1.jpg"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654473358-d256bcd2-f1ce-4238-931c-159eb2071074-event1.jpg",
+    },
     title: "Summer Music Festival",
     date: "Sat, May 17 - 18",
     location: "New Orleans",
     type: "Free",
     attendees: [
-      require("../assets/explore_page/profile1.png"),
-      require("../assets/explore_page/profile2.png"),
-      require("../assets/explore_page/profile3.png"),
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654826648-fee7c89b-60a1-48ea-9e2b-e21575bcd45f-profile1.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654850394-6348ea54-01c9-4d8c-a9c9-6d92fc01a537-profile2.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654871281-e9ed77f7-9c71-4521-a7d3-c1357dafdc0e-profile3.png",
+      },
     ],
   },
   {
     id: "2",
-    image: require("../assets/explore_page/event2.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654782845-1cf52141-9856-4ba8-8a7e-e8658211651c-event2.png",
+    },
     title: "G-Men vs LSU Men's Football",
     date: "Wed, May 15 - 16",
     location: "Grambling, LA",
     type: "$20",
     attendees: [
-      require("../assets/explore_page/profile1.png"),
-      require("../assets/explore_page/profile2.png"),
-      require("../assets/explore_page/profile3.png"),
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654826648-fee7c89b-60a1-48ea-9e2b-e21575bcd45f-profile1.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654850394-6348ea54-01c9-4d8c-a9c9-6d92fc01a537-profile2.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654871281-e9ed77f7-9c71-4521-a7d3-c1357dafdc0e-profile3.png",
+      },
     ],
   },
   {
     id: "3",
-    image: require("../assets/explore_page/event3.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654804260-e6847c74-b255-474d-bf42-df31646bb92f-event3.png",
+    },
     title: "Black History Month Celebration",
     date: "Sun, May 14 - 15",
     location: "Manhattan, NY",
     type: "Free",
     attendees: [
-      require("../assets/explore_page/profile1.png"),
-      require("../assets/explore_page/profile2.png"),
-      require("../assets/explore_page/profile3.png"),
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654826648-fee7c89b-60a1-48ea-9e2b-e21575bcd45f-profile1.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654850394-6348ea54-01c9-4d8c-a9c9-6d92fc01a537-profile2.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654871281-e9ed77f7-9c71-4521-a7d3-c1357dafdc0e-profile3.png",
+      },
     ],
   },
   // Add more event objects...
@@ -298,8 +324,12 @@ export default function ExploreScreen() {
     }
   }, [videoModalVisible]);
 
-  const [expandedDescIndex, setExpandedDescIndex] = useState<number | null>(null);
-  const [registerAnimIndex, setRegisterAnimIndex] = useState<number | null>(null);
+  const [expandedDescIndex, setExpandedDescIndex] = useState<number | null>(
+    null
+  );
+  const [registerAnimIndex, setRegisterAnimIndex] = useState<number | null>(
+    null
+  );
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
 
   const renderDescriptionWithHashtags = (desc: string = "") => {
@@ -335,10 +365,13 @@ export default function ExploreScreen() {
             [{ nativeEvent: { contentOffset: { x: bannerScrollX } } }],
             { useNativeDriver: true }
           )}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Image
               source={bannerImages[currentBannerIndex]}
-              style={styles.bannerImage}
+              style={[
+                styles.bannerImage,
+                currentBannerIndex === 0 && { marginRight: 20 }, // Shift banner1 to the left
+              ]}
             />
           )}
           keyExtractor={(_, index) => index.toString()}
@@ -450,14 +483,21 @@ export default function ExploreScreen() {
                     style={{ alignItems: "center" }}
                   >
                     <TouchableOpacity onPress={() => handleRegister(index)}>
-                      <Image source={RegisterIcon} style={styles.icon} />
+                      <Image
+                        source={{
+                          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655210270-e781ce15-9e4d-4e94-9e26-520cd02a937f-register.png",
+                        }}
+                        style={styles.icon}
+                      />
                     </TouchableOpacity>
                     <Text style={styles.iconLabel}>Register</Text>
                   </Animatable.View>
                   <View style={{ alignItems: "center" }}>
                     <TouchableOpacity onPress={() => toggleLike(item.id)}>
                       <Image
-                        source={LikeIcon}
+                        source={{
+                          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655239600-428a273b-4a5e-44b8-9d27-37595b1fbafb-like.png",
+                        }}
                         style={[
                           styles.icon,
                           likedVideos[item.id] && { tintColor: "#7F00FF" },
@@ -468,7 +508,12 @@ export default function ExploreScreen() {
                   </View>
                   <View style={{ alignItems: "center" }}>
                     <TouchableOpacity onPress={() => handleShare(index)}>
-                      <Image source={SendIcon} style={styles.icon} />
+                      <Image
+                        source={{
+                          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655276169-168fc654-0016-4bc2-a532-0b1a5cd17da0-send.png",
+                        }}
+                        style={styles.icon}
+                      />
                     </TouchableOpacity>
                     <Text style={styles.iconLabel}>Share</Text>
                   </View>

@@ -84,12 +84,12 @@ export default function CreateEventScreen() {
   // Location State
   const [geofence, setGeofence] = useState(50);
   const [mapModalVisible, setMapModalVisible] = useState(false);
-  const [mapRegion, setMapRegion] = useState({
-    latitude: 6.5244, // Default: Lagos
-    longitude: 3.3792,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
+  const [mapRegion, setMapRegion] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
   const [markerCoords, setMarkerCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -98,6 +98,19 @@ export default function CreateEventScreen() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [checkInLocation, setCheckInLocation] = useState<string>("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
+
+  // For dropdown suggestions
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [stateSuggestions, setStateSuggestions] = useState<string[]>([]);
+  const [zipSuggestions, setZipSuggestions] = useState<string[]>([]);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [showZipDropdown, setShowZipDropdown] = useState(false);
 
   // Image State
   const [eventImage, setEventImage] =
@@ -167,7 +180,7 @@ export default function CreateEventScreen() {
         eventImageString: eventImage?.base64 ? eventImage.base64 : null,
       };
 
-      const response = await fetch(`${BACKEND_URL}/api/events/create`, {
+      const response = await fetch(`${BACKEND_URL}/events/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,7 +189,16 @@ export default function CreateEventScreen() {
         body: JSON.stringify(eventData),
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      console.log("Raw response:", text);
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse JSON:", e, text);
+        alert("Server error. Please try again later.");
+        return;
+      }
 
       if (!response.ok) {
         alert(data.message || "Event creation failed");
@@ -191,8 +213,43 @@ export default function CreateEventScreen() {
     }
   };
 
-  // Helper: Search address using Nominatim (OpenStreetMap)
+  // Open modal and center on user location
+  const openMapModal = async () => {
+    setMapModalVisible(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        alert(
+          "Location permission is required to select your current location."
+        );
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+      setMapRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      setMarkerCoords({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+    } catch (e) {
+      alert("Could not fetch your current location. Please try again.");
+    }
+  };
+
+  // Live search for address
   const searchAddress = async (query: string) => {
+    setSearchQuery(query);
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
     setSearchLoading(true);
     try {
       const res = await fetch(
@@ -208,6 +265,59 @@ export default function CreateEventScreen() {
     setSearchLoading(false);
   };
 
+  const US_STATES = [
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY",
+  ];
+
   // Helper: Reverse geocode coordinates to address
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
@@ -216,35 +326,122 @@ export default function CreateEventScreen() {
       );
       const data = await res.json();
       setSelectedAddress(data.display_name || "");
+      setSearchQuery(data.display_name || "");
+
+      // Parse address fields
+      const addr = data.address || {};
+      setStreet(addr.road || addr.pedestrian || addr.footway || "");
+      setCity(addr.city || addr.town || addr.village || "");
+      setState(addr.state || "");
+      setZip(addr.postcode || "");
     } catch (e) {
       setSelectedAddress("");
+      setSearchQuery("");
+      setStreet("");
+      setCity("");
+      setState("");
+      setZip("");
     }
   };
 
-  // When marker moves, update address
-  const onMarkerDragEnd = async (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setMarkerCoords({ latitude, longitude });
-    setMapRegion({ ...mapRegion, latitude, longitude });
-    await reverseGeocode(latitude, longitude);
+  const onCityChange = (text: string) => {
+    setCity(text);
+    if (text.length > 1) {
+      // Optionally, fetch city suggestions from OpenStreetMap
+      fetch(
+        `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(
+          text
+        )}&country=USA&format=json`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setCitySuggestions([
+            ...new Set(
+              data
+                .map(
+                  (item: any) =>
+                    item.address.city ||
+                    item.address.town ||
+                    item.address.village
+                )
+                .filter(Boolean)
+            ),
+          ] as string[]);
+          setShowCityDropdown(true);
+        });
+    } else {
+      setShowCityDropdown(false);
+    }
+  };
+
+  const onStateChange = (text: string) => {
+    setState(text);
+    if (text.length > 0) {
+      setStateSuggestions(
+        US_STATES.filter((s) => s.startsWith(text.toUpperCase()))
+      );
+      setShowStateDropdown(true);
+    } else {
+      setShowStateDropdown(false);
+    }
+  };
+
+  const onZipChange = (text: string) => {
+    setZip(text);
+    if (text.length > 2) {
+      // Optionally, fetch zip suggestions from OpenStreetMap
+      fetch(
+        `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(
+          text
+        )}&country=USA&format=json`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setZipSuggestions([
+            ...new Set(
+              data.map((item: any) => item.address.postcode).filter(Boolean)
+            ),
+          ] as string[]);
+          setShowZipDropdown(true);
+        });
+    } else {
+      setShowZipDropdown(false);
+    }
   };
 
   // When user selects a search result
-  const onSelectSearchResult = async (item: any) => {
+  const onSelectSearchResult = (item: any) => {
     const latitude = parseFloat(item.lat);
     const longitude = parseFloat(item.lon);
     setMarkerCoords({ latitude, longitude });
-    setMapRegion({ ...mapRegion, latitude, longitude });
+    setMapRegion({
+      latitude,
+      longitude,
+      latitudeDelta: mapRegion ? mapRegion.latitudeDelta : 0.01,
+      longitudeDelta: mapRegion ? mapRegion.longitudeDelta : 0.01,
+    });
     setSelectedAddress(item.display_name);
-    setSearchResults([]);
     setSearchQuery(item.display_name);
+    setSearchResults([]);
+  };
+
+  // When user taps on map
+  const onMapPress = async (e: any) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    setMarkerCoords({ latitude, longitude });
+    setMapRegion({
+      latitude,
+      longitude,
+      latitudeDelta: mapRegion ? mapRegion.latitudeDelta : 0.01,
+      longitudeDelta: mapRegion ? mapRegion.longitudeDelta : 0.01,
+    });
+    await reverseGeocode(latitude, longitude);
   };
 
   // Confirm location
   const confirmLocation = () => {
-    // Save to your form state as needed
+    setCheckInLocation(selectedAddress || searchQuery);
     setMapModalVisible(false);
-    // Example: setCheckInLocation({ coords: markerCoords, address: selectedAddress });
   };
 
   // Card Renderer
@@ -528,15 +725,15 @@ export default function CreateEventScreen() {
             <Text style={styles.inputLabel}>Check-In-Location</Text>
             <TouchableOpacity
               style={[styles.input, { justifyContent: "center" }]}
-              onPress={() => setMapModalVisible(true)}
+              onPress={openMapModal}
             >
               <Text
                 style={{
                   fontSize: 14,
-                  color: selectedAddress ? "#333" : "#999",
+                  color: checkInLocation ? "#333" : "#999",
                 }}
               >
-                {selectedAddress || "Choose coordinates from map"}
+                {checkInLocation || "Choose coordinates from map"}
               </Text>
             </TouchableOpacity>
 
@@ -544,20 +741,103 @@ export default function CreateEventScreen() {
             <TextInput style={styles.input} />
 
             <Text style={styles.inputLabel}>Street Address</Text>
-            <TextInput style={styles.input} />
+            <TextInput
+              style={styles.input}
+              value={street}
+              onChangeText={setStreet}
+            />
 
             <View style={styles.row}>
-              <View style={[styles.inputGroup, { marginRight: 8 }]}>
+              {/* City */}
+              <View style={[styles.inputGroup, { marginRight: 6 }]}>
                 <Text style={styles.inputLabel}>City</Text>
-                <TextInput style={styles.input} />
+                <TextInput
+                  style={styles.input}
+                  value={city}
+                  placeholder="City"
+                  onChangeText={onCityChange}
+                  onFocus={() => city && setShowCityDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowCityDropdown(false), 200)
+                  }
+                />
+                {showCityDropdown && citySuggestions.length > 0 && (
+                  <View style={styles.dropdownList}>
+                    {citySuggestions.map((suggestion, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setCity(suggestion);
+                          setShowCityDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItem}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
-              <View style={[styles.inputGroup, { marginHorizontal: 4 }]}>
+              {/* State */}
+              <View style={[styles.inputGroup, { marginHorizontal: 6 }]}>
                 <Text style={styles.inputLabel}>State</Text>
-                <TextInput style={styles.input} />
+                <TextInput
+                  style={styles.input}
+                  value={state}
+                  placeholder="State"
+                  onChangeText={onStateChange}
+                  onFocus={() => state && setShowStateDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowStateDropdown(false), 200)
+                  }
+                  maxLength={2}
+                  autoCapitalize="characters"
+                />
+                {showStateDropdown && stateSuggestions.length > 0 && (
+                  <View style={styles.dropdownList}>
+                    {stateSuggestions.map((suggestion, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setState(suggestion);
+                          setShowStateDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItem}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
-              <View style={[styles.inputGroup, { marginLeft: 8 }]}>
+              {/* Zip */}
+              <View style={[styles.inputGroup, { marginLeft: 6 }]}>
                 <Text style={styles.inputLabel}>Zip</Text>
-                <TextInput style={styles.input} />
+                <TextInput
+                  style={styles.input}
+                  value={zip}
+                  placeholder="Zip"
+                  onChangeText={onZipChange}
+                  onFocus={() => zip && setShowZipDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowZipDropdown(false), 200)
+                  }
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+                {showZipDropdown && zipSuggestions.length > 0 && (
+                  <View style={styles.dropdownList}>
+                    {zipSuggestions.map((suggestion, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setZip(suggestion);
+                          setShowZipDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItem}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
             </View>
 
@@ -578,7 +858,7 @@ export default function CreateEventScreen() {
             </View>
             {geofence < 50 && (
               <Text style={{ fontSize: 12, color: "red", marginTop: 4 }}>
-                Minimum radius should be at least 100m
+                Minimum radius should be at least 50m
               </Text>
             )}
 
@@ -597,35 +877,36 @@ export default function CreateEventScreen() {
               animationType="slide"
               transparent={true}
             >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
+              <KeyboardAvoidingView
+                style={styles.modalContainer}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+              >
+                <View style={styles.modalContentExpanded}>
                   <Text style={styles.modalTitle}>Select Location on Map</Text>
-
-                  {/* Map View */}
                   <MapView
                     provider={PROVIDER_GOOGLE}
-                    style={styles.map}
-                    region={mapRegion}
-                    onRegionChangeComplete={(region) => setMapRegion(region)}
+                    style={styles.mapExpanded}
+                    region={
+                      mapRegion || {
+                        latitude: 37.0902, // fallback: center of USA
+                        longitude: -95.7129,
+                        latitudeDelta: 0.5,
+                        longitudeDelta: 0.5,
+                      }
+                    }
+                    onRegionChangeComplete={setMapRegion}
+                    onPress={onMapPress}
                   >
-                    {markerCoords && (
-                      <Marker
-                        coordinate={markerCoords}
-                        draggable
-                        onDragEnd={onMarkerDragEnd}
-                      />
-                    )}
+                    {markerCoords && <Marker coordinate={markerCoords} />}
                   </MapView>
-
-                  {/* Search Bar */}
                   <View style={styles.searchContainer}>
                     <TextInput
                       style={styles.searchInput}
                       placeholder="Search address..."
                       placeholderTextColor="#999"
                       value={searchQuery}
-                      onChangeText={setSearchQuery}
-                      onSubmitEditing={() => searchAddress(searchQuery)}
+                      onChangeText={searchAddress}
                     />
                     {searchLoading && (
                       <ActivityIndicator
@@ -635,8 +916,6 @@ export default function CreateEventScreen() {
                       />
                     )}
                   </View>
-
-                  {/* Search Results List */}
                   {searchResults.length > 0 && (
                     <FlatList
                       data={searchResults}
@@ -652,10 +931,9 @@ export default function CreateEventScreen() {
                         </TouchableOpacity>
                       )}
                       style={styles.searchResultsList}
+                      keyboardShouldPersistTaps="handled"
                     />
                   )}
-
-                  {/* Confirm Button */}
                   <TouchableOpacity
                     style={styles.confirmLocationButton}
                     onPress={confirmLocation}
@@ -664,8 +942,6 @@ export default function CreateEventScreen() {
                       Confirm Location
                     </Text>
                   </TouchableOpacity>
-
-                  {/* Close Button */}
                   <TouchableOpacity
                     style={styles.closeModalButton}
                     onPress={() => setMapModalVisible(false)}
@@ -673,7 +949,7 @@ export default function CreateEventScreen() {
                     <Ionicons name="close" size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </Modal>
           </View>
         );
@@ -683,26 +959,6 @@ export default function CreateEventScreen() {
             {/* Upload Event Image */}
             <Text style={styles.cardHeader}>Upload Event Image</Text>
 
-            {/* Dashed Dropzone */}
-            {/*
-            <TouchableOpacity
-              style={styles.dashedDropzone}
-              onPress={pickImage}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="cloud-upload-outline"
-                size={38}
-                color="#7F00FF"
-                style={{ marginBottom: 6 }}
-              />
-              <Text style={{ color: "#888", fontSize: 14 }}>
-                Browse Files to Upload
-              </Text>
-            </TouchableOpacity>
-            */}
-
-            {/* Use the reusable DashedDropzone component */}
             <DashedDropzone onPress={pickImage} />
 
             {/* File Info Row */}
@@ -759,7 +1015,9 @@ export default function CreateEventScreen() {
           <View style={styles.topRow}>
             <Text style={styles.createTitle}>Create A New Event</Text>
             <Image
-              source={New_Event}
+              source={{
+                uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655652532-4860d545-2e1c-4eaf-a156-a189ae3dc8c9-New_Event.jpg",
+              }}
               style={styles.headerImage}
               resizeMode="contain"
             />
@@ -1082,6 +1340,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
+  modalContentExpanded: {
+    width: "96%",
+    maxWidth: 500,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    elevation: 4,
+    maxHeight: "90%",
+    alignSelf: "center",
+  },
+
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -1092,6 +1361,13 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: 200,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+
+  mapExpanded: {
+    width: "100%",
+    height: 340,
     borderRadius: 10,
     marginBottom: 12,
   },
@@ -1131,6 +1407,26 @@ const styles = StyleSheet.create({
   },
 
   searchResultText: {
+    fontSize: 14,
+    color: "#333",
+  },
+
+  dropdownList: {
+    position: "absolute",
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    zIndex: 10,
+    maxHeight: 120,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
     fontSize: 14,
     color: "#333",
   },
