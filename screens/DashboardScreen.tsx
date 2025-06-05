@@ -10,6 +10,7 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  Pressable,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -37,7 +38,9 @@ const slideshowImages = [
   {
     uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587771409-76d2a879-0ae5-4b69-a8f5-2c727483817d-slide2.jpg",
   },
-  { uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588842532-41a63b0a-a69b-474e-b26c-48d538f34a9d-slide3.jpg" },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588842532-41a63b0a-a69b-474e-b26c-48d538f34a9d-slide3.jpg",
+  },
   {
     uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588074446-41748066-679a-4487-ae22-a088c5cf388e-slide4.jpg",
   },
@@ -344,6 +347,32 @@ export default function DashboardScreen() {
   }, [route.params]);
 
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
+  const iconRef = useRef<View>(null);
+  const [iconPosition, setIconPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
+
+  // Animate dropdown in/out
+  useEffect(() => {
+    Animated.timing(dropdownAnim, {
+      toValue: showCategoriesModal ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [showCategoriesModal]);
+
+  // Find the position of the icon so the dropdown can be attached to it
+  const handleShowCategories = () => {
+    if (iconRef.current) {
+      iconRef.current.measureInWindow((x, y, width, height) => {
+        setIconPosition({ top: y + height, left: x, width });
+        setShowCategoriesModal(true);
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -450,17 +479,17 @@ export default function DashboardScreen() {
           ))}
 
           {/* Options icon moreCategories */}
-          <TouchableOpacity
-            onPress={() => {
-              setShowCategoriesModal(true);
-            }}
-            style={styles.iconCircleWrapper}
-          >
-            <Image
-              source={require("../assets/menu.png")}
-              style={[styles.optionsIcon, { tintColor: "#7F00FF" }]}
-            />
-          </TouchableOpacity>
+          <View ref={iconRef} collapsable={false}>
+            <TouchableOpacity
+              onPress={handleShowCategories}
+              style={styles.iconCircleWrapper}
+            >
+              <Image
+                source={require("../assets/menu.png")}
+                style={[styles.optionsIcon, { tintColor: "#7F00FF" }]}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -483,6 +512,57 @@ export default function DashboardScreen() {
         setActiveTab={setActiveTab}
         navSlideAnim={navSlideAnim}
       />
+
+      {/* Dropdown Modal (attached to icon, not full height) */}
+      {showCategoriesModal && (
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => setShowCategoriesModal(false)}
+        >
+          <Animated.View
+            style={[
+              styles.dropdownMenu,
+              {
+                top: iconPosition.top + 4,
+                left: iconPosition.left - 120 + iconPosition.width / 2,
+                opacity: dropdownAnim,
+                transform: [
+                  {
+                    scale: dropdownAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.dropdownContent}>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Religious</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Entertainment</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Corporate</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Educational</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dropdownItem, { marginTop: 8 }]}
+                onPress={() => setShowCategoriesModal(false)}
+              >
+                <Text style={[styles.dropdownText, { color: "#A259FF" }]}>
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -678,4 +758,127 @@ const styles = StyleSheet.create({
   eventTitle: { fontSize: 16, fontWeight: "500" },
   eventDate: { fontSize: 12, color: "#666", marginTop: 2 },
   eventPrice: { fontSize: 12, color: "#000", marginTop: 2 },
+
+  // Modal styles
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  closeModal: {
+    marginTop: 12,
+    color: "#007BFF",
+    fontWeight: "500",
+  },
+
+  // Side navigation styles
+  sideNavOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "100%",
+    flexDirection: "row",
+    zIndex: 2000,
+  },
+  sideNavBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  sideNavContent: {
+    width: 260,
+    backgroundColor: "#fff",
+    paddingTop: 48,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 0 },
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  sideNavItem: {
+    paddingVertical: 16,
+    width: "100%",
+  },
+  sideNavText: {
+    fontSize: 16,
+    color: "#181818",
+    fontWeight: "500",
+  },
+  attachedSideNav: {
+    position: "absolute",
+    width: 220,
+    minHeight: 220,
+    maxHeight: 320,
+    backgroundColor: "transparent",
+    zIndex: 3000,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 0 },
+    elevation: 10,
+  },
+  attachedSideNavContent: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingTop: 18,
+    paddingBottom: 12,
+    paddingHorizontal: 18,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    width: 160,
+    backgroundColor: "transparent",
+    zIndex: 3000,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 2 },
+    elevation: 10,
+  },
+  dropdownContent: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    width: "100%",
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: "#181818",
+    fontWeight: "500",
+  },
 });
