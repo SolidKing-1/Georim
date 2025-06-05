@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import BottomNavComplete from "../components/BottomNavComplete";
 import {
   View,
   Text,
@@ -8,7 +9,7 @@ import {
   Image,
   Animated,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, NavigationProp } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Constants from "expo-constants";
 import { getUserData } from "../utils/user";
@@ -101,9 +102,7 @@ const EventCreatedPage = () => {
     >
       <Image source={item.image} style={styles.eventImage} resizeMode="cover" />
       <View style={styles.eventDetails}>
-        <TouchableOpacity onPress={() => handleEventTitlePress(item)}>
-          <Text style={styles.eventTitle}>{item.title}</Text>
-        </TouchableOpacity>
+        <Text style={styles.eventTitle}>{item.title}</Text>
         <Text style={styles.eventDescription}>{item.description}</Text>
       </View>
     </TouchableOpacity>
@@ -111,6 +110,7 @@ const EventCreatedPage = () => {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -118,12 +118,14 @@ const EventCreatedPage = () => {
         <Ionicons name="chevron-back" size={24} color="#000" />
       </TouchableOpacity>
 
+      {/* Top Banner Image */}
       <Image
         source={require("../assets/CreatedEvent.jpg")}
         style={styles.bannerImage}
         resizeMode="contain"
       />
 
+      {/* Header Bar */}
       <View style={styles.headerBar}>
         <Text style={styles.headerText}>Events Created</Text>
       </View>
@@ -190,6 +192,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 8,
   },
+
   bannerImage: {
     width: "100%",
     height: 200,
@@ -208,7 +211,6 @@ const styles = StyleSheet.create({
   },
   eventList: {
     paddingHorizontal: 20,
-    paddingBottom: 120,
   },
   eventCard: {
     flexDirection: "row",
@@ -235,8 +237,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginBottom: 5,
-    color: "#181818",
-    textDecorationLine: "underline",
   },
   eventDescription: {
     fontSize: 14,
@@ -266,4 +266,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EventCreatedScreen;
+export default EventCreatedPage;
