@@ -10,60 +10,48 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import BottomNavComplete from "../components/BottomNavComplete";
-import Constants from "expo-constants";
-import { getToken } from "../utils/auth";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Animatable from "react-native-animatable";
-
-// Constsants.
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
-
-type Event = {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  price: string;
-  description: string;
-  image: any;
-  latitude: number;
-  longitude: number;
-  attendees: number;
-  section: string;
-  status: "Registered" | "Checked-In";
-  key?: string;
-};
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
-  Dashboard: undefined;
-  CheckinScreen: undefined;
-  Account: undefined;
-  EventDetails: { event: Event };
+  EventDetails: { event: typeof dummyEvent };
   VerifyLocation: undefined;
-  CreateEvent: undefined;
-  Cancelpage: { event: Event };
-  ExploreScreen: undefined;
+  Cancelpage: { event: typeof dummyEvent };
+  // Add other routes as needed
+};
+
+type CheckinScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+import BottomNavComplete from "../components/BottomNavComplete";
+import * as Animatable from "react-native-animatable";
+
+// Dummy event data for testing
+const dummyEvent = {
+  id: "1",
+  title: "Test Event",
+  date: "2025-06-10",
+  time: "10:00 AM",
+  location: "Test Venue, Test City",
+  price: "Free",
+  description: "This is a dummy event for testing check-in.",
+  image: require("../assets/checkin-illustration.jpg"),
+  status: "Registered",
+  key: "1",
+  section: "Ongoing", // Add this line
 };
 
 const sections = ["Ongoing", "Today", "Upcoming"];
 
 export default function CheckinScreen() {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<CheckinScreenNavigationProp>();
   const [activeTab, setActiveTab] = useState("Check-In");
   const navSlideAnim = useRef(new Animated.Value(100)).current;
 
-  // State for events and loading
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Only use dummy event for now
+  const [events, setEvents] = useState([dummyEvent]);
+  const [loading, setLoading] = useState(false);
 
-  // Replace your emoji list with these:
+  // Emoji animation for empty state (not used here, but kept for structure)
   const emojiList = ["🕵️‍♂️", "🔍", "😔", "📭", "🗒️", "🕳️", "🕰️"];
-
-  // Add this near the top of your component
-  const [emojiIndex, setEmojiIndex] = useState(0);
+  const [emojiIndex] = useState(0);
 
   useEffect(() => {
     Animated.timing(navSlideAnim, {
@@ -71,53 +59,9 @@ export default function CheckinScreen() {
       duration: 500,
       useNativeDriver: true,
     }).start();
-
-    const fetchEvents = async () => {
-      setLoading(true);
-      try {
-        const token = await getToken();
-        const response = await fetch(`${BACKEND_URL}/user/registered-events`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.log(errorData.message);
-          throw new Error("Failed to fetch events");
-        } else {
-          const eventData = await response.json();
-          // eventData.data is the array of events
-          setEvents(
-            (eventData.data || []).map((event: any) => ({
-              ...event,
-              key: event.id,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching events:", error);
-        setEvents([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
   }, []);
 
-  useEffect(() => {
-    if (!loading && events.length === 0) {
-      const interval = setInterval(() => {
-        setEmojiIndex((prev) => (prev + 1) % emojiList.length);
-      }, 1200);
-      return () => clearInterval(interval);
-    }
-  }, [loading, events.length]);
-
-  const renderEvent = ({ item }: { item: Event }) => (
+  const renderEvent = ({ item }: { item: typeof dummyEvent }) => (
     <View style={styles.eventItem}>
       <Image
         source={
@@ -168,7 +112,7 @@ export default function CheckinScreen() {
     <Text style={styles.sectionTitle}>{section}</Text>
   );
 
-  // Group events by section for rendering headers
+  // Group dummy event under "Ongoing" section
   const groupedEvents = sections.flatMap((section) => [
     { type: "header", section, key: `header-${section}` },
     ...events.filter((e) => e.section === section),
@@ -189,76 +133,21 @@ export default function CheckinScreen() {
         <Text style={styles.registeredText}>Registered Events</Text>
       </View>
 
-      {loading ? (
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color="#7F00FF" />
-        </View>
-      ) : events.length === 0 ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            marginTop: 40,
-          }}
-        >
-          <Animatable.Text
-            animation="bounceIn"
-            iterationCount="infinite"
-            direction="alternate"
-            style={{ fontSize: 40, marginBottom: 10 }}
-          >
-            {emojiList[emojiIndex]}
-          </Animatable.Text>
-          <Animatable.Text
-            animation="fadeInDown"
-            iterationCount="infinite"
-            direction="alternate"
-            duration={1800}
-            style={{
-              fontSize: 20,
-              fontWeight: "bold",
-              color: "#7F00FF",
-              marginBottom: 6,
-            }}
-          >
-            No events found!
-          </Animatable.Text>
-          <Animatable.Text
-            animation="pulse"
-            iterationCount="infinite"
-            duration={2200}
-            style={{
-              fontSize: 16,
-              color: "#666",
-              textAlign: "center",
-              paddingHorizontal: 24,
-              marginBottom: 156,
-            }}
-          >
-            You have not registered for any events yet.{"\n"}
-            Go explore and register for an event!
-          </Animatable.Text>
-        </View>
-      ) : (
-        <FlatList
-          data={groupedEvents}
-          renderItem={({ item }) =>
-            "type" in item && item.type === "header"
-              ? renderSectionHeader(item.section)
-              : renderEvent({ item: item as Event })
-          }
-          keyExtractor={(item) => item.key || item.section}
-          contentContainerStyle={[
-            styles.scrollContainer,
-            { paddingBottom: 120 },
-          ]}
-          showsVerticalScrollIndicator={false}
-          style={{ marginBottom: 0 }}
-        />
-      )}
+      <FlatList
+        data={groupedEvents}
+        renderItem={({ item }) =>
+          "type" in item && item.type === "header"
+            ? renderSectionHeader(item.section)
+            : renderEvent({ item: item as typeof dummyEvent })
+        }
+        keyExtractor={(item) => item.key || item.section}
+        contentContainerStyle={[
+          styles.scrollContainer,
+          { paddingBottom: 120 },
+        ]}
+        showsVerticalScrollIndicator={false}
+        style={{ marginBottom: 0 }}
+      />
 
       <BottomNavComplete
         activeTab={activeTab}

@@ -22,7 +22,6 @@ import { StatusBar } from "expo-status-bar";
 import BottomNavComplete from "../components/BottomNavComplete";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { removeToken } from "../utils/auth";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { getUserData } from "../utils/user";
 import * as ImagePicker from "expo-image-picker";
 

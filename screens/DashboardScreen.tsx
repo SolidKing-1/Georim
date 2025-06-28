@@ -24,9 +24,9 @@ import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
-import { getToken } from "../utils/auth";
+import { getToken, setToken } from "../utils/auth";
 import BottomNavComplete from "../components/BottomNavComplete"; // Import the reusable bottom nav component
-
+import { handleTokenRefresh } from "../utils/tokenRefresh"; 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
 const { width } = Dimensions.get("window");
@@ -330,11 +330,19 @@ export default function DashboardScreen() {
           longitude: location.coords.longitude,
         }),
       });
-      console.log(token);
+
       const data = await response.json();
+      // Check if the request returned succesfully; 
       if (!response.ok) {
-        alert(data.message || "Failed to update location");
-        return;
+          // If the request failed and it was a jwt expired error, use the handle token refresh function; 
+           
+          if(data.message == "jwt expired"){
+              await handleTokenRefresh(); 
+          }else{
+            alert(data.message || "Failed to update location");
+            return;
+          }
+
       }
     })();
   }, []);

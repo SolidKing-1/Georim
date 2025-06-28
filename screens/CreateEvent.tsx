@@ -14,6 +14,7 @@ import {
   Modal,
   ActivityIndicator,
   FlatList,
+  Switch,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import DownArrow from "react-native-vector-icons/Entypo";
@@ -21,7 +22,7 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Slider from "@react-native-community/slider";
 import * as ImagePicker from "expo-image-picker";
-import DashedDropzone from "../components/DashedDropzone"; 
+import DashedDropzone from "../components/DashedDropzone";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -48,6 +49,7 @@ const steps = ["basic", "datetime", "location", "image", "additional"];
 
 type RootStackParamList = {
   EventSuccess: undefined;
+  PaymentScreen: { eventTitle: string; eventId?: string }; // add this line
   // add other routes if needed
 };
 
@@ -155,169 +157,178 @@ export default function CreateEventScreen() {
     }
   };
 
-
-  // More State. 
+  // More State.
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [venueName, setVenueName] = useState("");
+  const [isPaidEvent, setIsPaidEvent] = useState(false);
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("USD"); // or "NGN"
+  const [showAdvertisePrompt, setShowAdvertisePrompt] = useState(false);
 
   const handleFinish = async () => {
-  try {
-    const token = await AsyncStorage.getItem("jwt");
+    try {
+      const token = await AsyncStorage.getItem("jwt");
 
-    if (!token) {
-      alert("Authentication required. Please log in again.");
-      return;
-    }
+      if (!token) {
+        alert("Authentication required. Please log in again.");
+        return;
+      }
 
-    // Add back all validation
-    if (!title?.trim()) {
-      alert("Please enter an event title");
-      return;
-    }
-    if (!description?.trim()) {
-      alert("Please enter an event description");
-      return;
-    }
-    if (!category) {
-      alert("Please select a category");
-      return;
-    }
-    if (!visibility) {
-      alert("Please select visibility");
-      return;
-    }
-    if (!venueName?.trim()) {
-      alert("Please enter a venue name");
-      return;
-    }
-    if (!markerCoords) {
-      alert("Please select a location on the map");
-      return;
-    }
+      // Validate Input
+      if (!title?.trim()) {
+        alert("Please enter an event title");
+        return;
+      }
+      if (!description?.trim()) {
+        alert("Please enter an event description");
+        return;
+      }
+      if (!category) {
+        alert("Please select a category");
+        return;
+      }
+      if (!visibility) {
+        alert("Please select visibility");
+        return;
+      }
+      if (!venueName?.trim()) {
+        alert("Please enter a venue name");
+        return;
+      }
+      if (!markerCoords) {
+        alert("Please select a location on the map");
+        return;
+      }
 
-    let imageUrl = null;
+      let imageUrl = null;
 
-    // Step 1: Upload image first if exists
-    if (eventImage) {
-      try {
-        const imageFormData = new FormData();
-        imageFormData.append("image", {
-          uri: eventImage.uri,
-          type: eventImage.type || "image/jpeg",
-          name: eventImage.fileName || "event-image.jpg",
-        } as any);
+      // Step 1: Upload image first if exists
+      if (eventImage) {
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append("image", {
+            uri: eventImage.uri,
+            type: eventImage.type || "image/jpeg",
+            name: eventImage.fileName || "event-image.jpg",
+          } as any);
 
-        console.log(`${BACKEND_URL}/file/upload/image`);
-        const imageResponse = await axios.post(
-          `${BACKEND_URL}/file/upload/image`,
-          imageFormData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-            timeout: 20000, // optional: increase timeout for large files
+          console.log(`${BACKEND_URL}/file/upload/image`);
+          const imageResponse = await axios.post(
+            `${BACKEND_URL}/file/upload/image`,
+            imageFormData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
+              timeout: 20000,
+            }
+          );
+
+          if (imageResponse.status === 200 && imageResponse.data?.data?.imageUrl) {
+            imageUrl = imageResponse.data.data.imageUrl;
+            console.log("Image uploaded successfully:", imageUrl);
+          } else {
+            console.error("Image upload failed:", imageResponse.data);
+            alert("Image upload failed. Proceeding without image.");
           }
-        );
-
-        if (imageResponse.status === 200 && imageResponse.data?.data?.imageUrl) {
-          imageUrl = imageResponse.data.data.imageUrl;
-          console.log("Image uploaded successfully:", imageUrl);
-        } else {
-          console.error("Image upload failed:", imageResponse.data);
+        } catch (imageError) {
+          console.error("Image upload error:", imageError);
           alert("Image upload failed. Proceeding without image.");
         }
-      } catch (imageError) {
-        console.error("Image upload error:", imageError);
-        alert("Image upload failed. Proceeding without image.");
       }
-    }
 
-    // Step 2: Create event with JSON data
-    const eventData = {
-      title: title.trim(),
-      description: description.trim(),
-      category: category.toLowerCase(),
-      visibility: visibility.split(' ')[0].toLowerCase(),
-      
-      dateTime: {
-        start: new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-          startTime.getHours(),
-          startTime.getMinutes()
-        ).toISOString(),
-        end: new Date(
-          endDate.getFullYear(),
-          endDate.getMonth(),
-          endDate.getDate(),
-          endTime.getHours(),
-          endTime.getMinutes()
-        ).toISOString(),
-      },
-
-      recurring: {
-        isRecurring: isRecurring,
-        ...(isRecurring && {
-          pattern: recurrence.toLowerCase(),
-          until: untilDate.toISOString(),
-        }),
-      },
-
-      location: {
-        venue: venueName.trim(),
-        address: {
-          street: street.trim() || "",
-          city: city.trim() || "",
-          state: state.trim() || "",
-          zipCode: zip.trim() || "",
+      // Step 2: Create event with JSON data
+      const eventData = {
+        title: title.trim(),
+        description: description.trim(),
+        category: category.toLowerCase(),
+        visibility: visibility.split(' ')[0].toLowerCase(),
+        
+        dateTime: {
+          start: new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+            startTime.getHours(),
+            startTime.getMinutes()
+          ).toISOString(),
+          end: new Date(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            endTime.getHours(),
+            endTime.getMinutes()
+          ).toISOString(),
         },
-        longitude: markerCoords.longitude,
-        latitude: markerCoords.latitude,
-        accuracy: 10,
-      },
 
-      radius: Math.max(geofence, 25),
+        recurring: {
+          isRecurring: isRecurring,
+          ...(isRecurring && {
+            pattern: recurrence.toLowerCase(),
+            until: untilDate.toISOString(),
+          }),
+        },
 
-      // Include imageUrl if upload was successful
-      ...(imageUrl && { imageUrl }),
+        location: {
+          venue: venueName.trim(),
+          address: {
+            street: street.trim() || "",
+            city: city.trim() || "",
+            state: state.trim() || "",
+            zipCode: zip.trim() || "",
+          },
+          longitude: markerCoords.longitude,
+          latitude: markerCoords.latitude,
+          accuracy: 10,
+        },
 
-      // TODO: UNCOMMENT THIS!
-      // ...(additionalDescription?.trim() && {
-      //   additionalInfo: additionalDescription.trim(),
-      // }),
-    };
+        radius: Math.max(geofence, 25),
 
-    console.log("Creating event with data:", eventData);
+        // Include imageUrl if upload was successful
+        ...(imageUrl && { imageUrl }),
 
-    const response = await fetch(`${BACKEND_URL}/events/create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(eventData),
-    });
+        isPaidEvent,
+        ...(isPaidEvent && {
+          price: parseFloat(price),
+          currency,
+        }),
 
-    const data = await response.json();
-    console.log("Event creation response:", data);
+        // TODO: UNCOMMENT THIS!
+        // ...(additionalDescription?.trim() && {
+        //   additionalInfo: additionalDescription.trim(),
+        // }),
+      };
 
-    if (!response.ok) {
-      console.error("Event creation failed:", data);
-      alert(data.message || `Event creation failed: ${response.status}`);
-      return;
+      console.log("Creating event with data:", eventData);
+
+      const response = await fetch(`${BACKEND_URL}/events/create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      const data = await response.json();
+      console.log("Event creation response:", data);
+
+      if (!response.ok) {
+        console.error("Event creation failed:", data);
+        alert(data.message || `Event creation failed: ${response.status}`);
+        return;
+      }
+
+      // Show advertise prompt after successful event creation
+      setShowAdvertisePrompt(true);
+
+    } catch (err) {
+      console.error("Network error:", err);
+      alert("Network error. Please check your connection and try again.");
     }
-
-    console.log("Event created successfully:", data);
-    navigation.navigate("EventSuccess");
-    
-  } catch (err) {
-    console.error("Network error:", err);
-    alert("Network error. Please check your connection and try again.");
-  }
-};
+  };
 
   // Open modal and center on user location
   const openMapModal = async () => {
@@ -628,6 +639,61 @@ export default function CreateEventScreen() {
                   <Text style={styles.dropdownText}>{option}</Text>
                 </TouchableOpacity>
               ))}
+
+            {/* Paid Event Toggle */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Text style={styles.inputLabel}>Is this a paid event?</Text>
+              <Switch
+                value={isPaidEvent}
+                onValueChange={setIsPaidEvent}
+                thumbColor={isPaidEvent ? "#7F00FF" : "#ccc"}
+                trackColor={{ false: "#ccc", true: "#EFEAFE" }}
+                style={{ marginLeft: 12 }}
+              />
+            </View>
+
+            {/* Price and Currency */}
+            {isPaidEvent && (
+              <>
+                <Text style={styles.inputLabel}>Price</Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginLeft: 3 }]}
+                    placeholder="Enter price"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdown,
+                      { width: 80, marginLeft: 8, marginBottom: 15 },
+                    ]}
+                    onPress={() =>
+                      setCurrency(currency === "USD" ? "NGN" : "USD")
+                    }
+                  >
+                    <Text style={styles.dropdownText}>{currency}</Text>
+                    <DownArrow name="chevron-down" size={16} color="#999" />
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {/* Remove the duplicate Next/Finish button here! */}
           </View>
         );
       case "datetime":
@@ -1109,6 +1175,18 @@ export default function CreateEventScreen() {
               value={additionalDescription}
               onChangeText={setAdditionalDescription}
             />
+
+            {/* Advertise Event Option */}
+            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
+              <Text style={styles.inputLabel}>Advertise this event on Explore?</Text>
+              <Switch
+                value={showAdvertisePrompt}
+                onValueChange={setShowAdvertisePrompt}
+                thumbColor={showAdvertisePrompt ? "#7F00FF" : "#ccc"}
+                trackColor={{ false: "#ccc", true: "#EFEAFE" }}
+                style={{ marginLeft: 12 }}
+              />
+            </View>
           </View>
         );
       default:
@@ -1116,11 +1194,20 @@ export default function CreateEventScreen() {
     }
   };
 
+  // Add this function to handle navigation to payment page
+  const handleAdvertise = () => {
+    setShowAdvertisePrompt(false);
+    navigation.navigate("PaymentScreen", {
+      eventTitle: title,
+      eventId: "1234",/* pass the created event's ID here if available */
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // tweak if header overlaps
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -1196,6 +1283,55 @@ export default function CreateEventScreen() {
             </Animated.View>
           </View>
         </ScrollView>
+
+        {/* Advertise Prompt Modal */}
+        {showAdvertisePrompt && (
+          <Modal
+            visible={showAdvertisePrompt}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowAdvertisePrompt(false)}
+          >
+            <View style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <View style={{
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 24,
+                alignItems: "center",
+                width: "80%"
+              }}>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>
+                  Advertise Event?
+                </Text>
+                <Text style={{ fontSize: 15, color: "#555", marginBottom: 24, textAlign: "center" }}>
+                  Do you want to advertise this event on the Explore page? This will require a payment.
+                </Text>
+                <View style={{ flexDirection: "row", gap: 14 }}>
+                  <TouchableOpacity
+                    style={[styles.nextButton, { backgroundColor: "#7F00FF" }]}
+                    onPress={handleAdvertise}
+                  >
+                    <Text style={styles.nextButtonText}>Yes, Advertise</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.nextButton, { backgroundColor: "#ccc" }]}
+                    onPress={() => {
+                      setShowAdvertisePrompt(false);
+                      navigation.navigate("EventSuccess");
+                    }}
+                  >
+                    <Text style={styles.nextButtonText}>No, Thanks</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -1422,9 +1558,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#7F00FF",
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     borderRadius: 24,
-    marginTop: 16,
+    marginTop: 8,
     alignSelf: "flex-end",
     elevation: 2,
   },
@@ -1586,6 +1722,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
-    marginLeft: 8,
-  },
+    marginLeft: 8
+  }
 });
