@@ -1,12 +1,16 @@
-import {getUserData, setUserData} from "./user";
-import {getToken, setToken } from "./auth"; 
+import { getUserData, setUserData } from "./user";
+import { getToken, setToken } from "./auth";
+import Constants from "expo-constants";
+
+// Define your backend URL here or import it from a config file
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
 // Move this to a separate auth utility
 export const handleTokenRefresh = async () => {
   try {
     const userData = await getUserData();
-    if (!userData) throw new Error('No user data found');
-    
+    if (!userData) throw new Error("No user data found");
+
     const response = await fetch(`${BACKEND_URL}/auth/biometric-auth`, {
       method: "POST",
       headers: {
@@ -19,7 +23,7 @@ export const handleTokenRefresh = async () => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData?.message || 'Authentication failed');
+      throw new Error(errorData?.message || "Authentication failed");
     }
 
     const data = await response.json();
@@ -30,11 +34,10 @@ export const handleTokenRefresh = async () => {
       isGoogleUser: data.data.isGoogleUser || false,
       picture: { uri: data.data.picture || null },
     });
-    
+
     return data.data.token;
   } catch (error) {
-    console.error('Token refresh failed:', error);
+    console.error("Token refresh failed:", error);
     throw error;
   }
 };
-
