@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,48 +7,50 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  Animated,
 } from "react-native";
-import LottieView from "lottie-react-native";
 import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const slides = [
   {
     key: "1",
-    title: "Welcome to Georim!",
-    description: "Discover, create, and join amazing events around you.",
-    animation: require("../assets/onboarding-discover.json"),
+    header: "Events That\nMove With You",
+    description:
+      "Discover, create, and join unforgettable events happening around you—anytime, anywhere. Be part of a community, grow your network, or have fun with friends.",
+    image: require("../assets/onboarding.jpg"),
   },
   {
     key: "2",
-    title: "Easy Event Creation",
+    header: "When Moments\nCome To Life",
     description:
-      "Host your own events with just a few taps and share them with the world.",
-    animation: require("../assets/onboarding-create.json"),
+      "Whether you're planning a campus mixer, open mic night, or club launch, Georim helps you bring people together—seamlessly. No stress.Just vibes.",
+    image: require("../assets/onboarding-2.jpg"),
   },
   {
     key: "3",
-    title: "Seamless Check-In",
+    header: "All Eyes On\nYour Event",
     description:
-      "Check in to events using your phone and verify your location easily.",
-    animation: require("../assets/onboarding-checkin.json"),
+      "Make your next event the one everyone talks about. With Georim, you get the visibility and support to shine on your terms.",
+    image: require("../assets/onboarding-3.jpg"),
   },
   {
     key: "4",
-    title: "Secure & Fast Login",
+    header: "Organize Smarter,\nReach More People",
     description:
-      "Sign in with biometrics, Google, or email for a secure experience.",
-    animation: require("../assets/onboarding-login.json"),
+      "We handle the logistics—you handle the fun. Georim takes care of the backend so you can be fully present at the front of the party.",
+    image: require("../assets/onboarding-4.jpg"),
   },
   {
     key: "5",
-    title: "Explore & Connect",
+    header: "You Show Up,\nWe Handle The Rest",
     description:
-      "Find trending events, connect with others, and never miss out!",
-    animation: require("../assets/onboarding-explore.json"),
+      "No lines. No QR codes. As soon as you arrive, Georim’s live location feature checks you in automatically. Just pull up, and you’re counted",
+    image: require("../assets/onboarding-5.jpg"),
   },
 ];
 
@@ -62,20 +64,117 @@ export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
+  // Button bounce animation
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  // Dots animation
+  const dotWidths = useRef(
+    slides.map((_, i) => new Animated.Value(i === 0 ? 36 : 12))
+  ).current;
+
+  // Text entrance animation
+  const headerAnim = useRef(new Animated.Value(0)).current;
+  const descAnim = useRef(new Animated.Value(0)).current;
+  const imageOpacity = useRef(new Animated.Value(1)).current;
+
+  // Animate text entrance
+  const animateText = () => {
+    headerAnim.setValue(0);
+    descAnim.setValue(0);
+    Animated.stagger(120, [
+      Animated.spring(headerAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 7,
+      }),
+      Animated.spring(descAnim, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 7,
+      }),
+    ]).start();
+  };
+
+  const imageScale = useRef(new Animated.Value(1)).current;
+  
+  const animateImage = () => {
+    imageScale.setValue(0.92); // Start slightly smaller
+    Animated.spring(imageScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 7,
+      tension: 80,
+    }).start();
+  };
+
+  useEffect(() => {
+    animateText();
+    animateImage();
+    // Animate dots
+    dotWidths.forEach((dot, i) => {
+      Animated.spring(dot, {
+        toValue: i === currentIndex ? 36 : 12,
+        useNativeDriver: false,
+        friction: 6,
+        tension: 120,
+      }).start();
+    });
+  }, [currentIndex]);
+
   const handleNext = () => {
+    // Faster button pop animation
+    Animated.sequence([
+      Animated.spring(buttonScale, {
+        toValue: 0.98,
+        useNativeDriver: true,
+        friction: 2,
+        tension: 180,
+      }),
+      Animated.spring(buttonScale, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 2,
+        tension: 180,
+      }),
+    ]).start();
+
     if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      navigation.replace("Login"); // Go to Login after onboarding
+      navigation.replace("Login");
     }
   };
 
-  const renderItem = ({ item }: { item: (typeof slides)[0] }) => (
+  const handleSkip = () => {
+    flatListRef.current?.scrollToIndex({ index: slides.length - 1 });
+    setCurrentIndex(slides.length - 1);
+  };
+
+  const onMomentumScrollEnd = (e: any) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / width);
+    setCurrentIndex(index);
+  };
+
+  const renderItem = ({
+    item,
+    index,
+  }: {
+    item: (typeof slides)[0];
+    index: number;
+  }) => (
     <View style={styles.slide}>
-      <LottieView source={item.animation} autoPlay loop style={styles.lottie} />
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+      <Animated.Image
+        source={item.image}
+        style={[styles.fullImage, { opacity: imageOpacity }]}
+        resizeMode="cover"
+      />
+      {/* Gradient overlay at the bottom */}
+      <LinearGradient
+        colors={["transparent", "rgba(127,0,255,0.28)", "rgba(127,0,255,0.32)"]}
+        style={styles.gradient}
+        pointerEvents="none"
+      />
     </View>
   );
 
@@ -89,29 +188,92 @@ export default function OnboardingScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item.key}
-        onMomentumScrollEnd={(e) => {
-          const index = Math.round(e.nativeEvent.contentOffset.x / width);
-          setCurrentIndex(index);
-        }}
+        onMomentumScrollEnd={onMomentumScrollEnd}
         style={{ flexGrow: 0 }}
       />
-      <View style={styles.dotsContainer}>
-        {slides.map((_, idx) => (
-          <View
-            key={idx}
-            style={[styles.dot, currentIndex === idx && styles.activeDot]}
-          />
-        ))}
+      {/* Overlay content */}
+      <View style={styles.overlay}>
+        <View style={styles.dotsContainer}>
+          {slides.map((_, idx) => (
+            <Animated.View
+              key={idx}
+              style={[
+                styles.dot,
+                {
+                  width: dotWidths[idx],
+                  backgroundColor: idx === currentIndex ? "#7F00FF" : "#FFFFFF",
+                  borderRadius: 6,
+                  marginHorizontal: 4,
+                },
+              ]}
+            />
+          ))}
+        </View>
+        <View style={styles.bottomContainer}>
+          <View style={styles.textContainer}>
+            <Animated.Text
+              style={[
+                styles.header,
+                {
+                  opacity: headerAnim,
+                  transform: [
+                    {
+                      translateY: headerAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [30, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              {slides[currentIndex].header}
+            </Animated.Text>
+            <Animated.Text
+              style={[
+                styles.description,
+                {
+                  opacity: descAnim,
+                  transform: [
+                    {
+                      translateY: descAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [30, 0],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              {slides[currentIndex].description}
+            </Animated.Text>
+          </View>
+          <View style={styles.buttonRow}>
+            <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleNext}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.buttonText}>
+                  {currentIndex === slides.length - 1 ? "Get Started" : "Next"}
+                </Text>
+                <View style={styles.arrowCircle}>
+                  <Text style={styles.arrow}>&rarr;</Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+            {currentIndex !== slides.length - 1 && (
+              <TouchableOpacity
+                onPress={handleSkip}
+                style={styles.skipContainer}
+              >
+                <Text style={styles.skipText}>Skip</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleNext}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.buttonText}>
-          {currentIndex === slides.length - 1 ? "Get Started" : "Next"}
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -120,64 +282,130 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
   },
   slide: {
     width,
+    height,
+  },
+  fullImage: {
+    width: width,
+    height: height,
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  overlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "flex-end",
+    paddingLeft: 32,
+    paddingRight: 32,
+    paddingBottom: 55,
+  },
+  dotsContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
-    paddingTop: 60,
+    marginBottom: 6,
+    marginLeft: 0,
+    height: 24,
   },
-  lottie: {
-    width: 300,
-    height: 300,
-    marginBottom: 30,
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#FFFFFF",
+    marginHorizontal: 4,
   },
-  title: {
-    fontSize: 28,
+  activeDot: {
+    height: 12,
+    borderRadius: 6,
+    marginHorizontal: 6,
+  },
+  bottomContainer: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "flex-end",
+  },
+  textContainer: {
+    alignItems: "flex-start",
+    marginBottom: 17,
+  },
+  header: {
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#7F00FF",
-    textAlign: "center",
-    marginBottom: 12,
+    color: "#fff",
+    marginBottom: 6,
+    textAlign: "left",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
   },
   description: {
-    fontSize: 17,
-    color: "#555",
-    textAlign: "center",
-    marginBottom: 30,
+    fontSize: 16,
+    color: "#ffffff",
+    textAlign: "left",
+    maxWidth: width * 0.8,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    marginBottom: 0,
   },
   button: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: "#7F00FF",
-    paddingVertical: 16,
-    paddingHorizontal: 60,
+    paddingVertical: 10,
+    paddingHorizontal: 36,
     borderRadius: 12,
-    marginBottom: 40,
-    marginTop: 10,
-    alignSelf: "center",
+    marginRight: 16,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
     fontSize: 18,
+    marginRight: 12,
   },
-  dotsContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
+  arrowCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#fff",
     alignItems: "center",
-    marginBottom: 18,
-    marginTop: 10,
+    justifyContent: "center",
   },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#ccc",
-    marginHorizontal: 5,
+  arrow: {
+    color: "#7F00FF",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 1,
   },
-  activeDot: {
-    backgroundColor: "#7F00FF",
-    width: 22,
+  skipContainer: {
+    flex: 1,
+    alignItems: "flex-end",
+  },
+  skipText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "500",
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 4,
+  },
+  gradient: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: height * 0.22, // Adjust for how much shade you want
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
 });
