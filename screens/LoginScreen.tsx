@@ -1,0 +1,449 @@
+import React, { useEffect, useState } from "react";
+import {
+  ScrollView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Switch,
+  Alert,
+} from "react-native";
+import Logo from "../assets/Authentication.jpg";
+import Company from "../assets/Company_icon.png";
+import Icon from "react-native-vector-icons/Ionicons";
+import GoogleIcon from "../assets/Google.png";
+import { useGoogleAuth } from "../components/useGoogleAuth";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
+import { getToken, setBiometricEnabled } from "../utils/auth";
+import { isBiometricEnabled } from "../utils/auth";
+import { promptBiometric } from "../utils/biometric";
+
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../App";
+import { Platform, KeyboardAvoidingView } from "react-native";
+
+import Constants from "expo-constants";
+import { setToken, removeToken } from "../utils/auth"; // Use your helper
+import { setUserData } from "../utils/user";
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
+
+export default function LoginScreen() {
+  const navigation = useNavigation<NavigationProp>();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true); // default checked
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+
+  const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+  const USER_KEY = "user_data";
+
+  useEffect(() => {
+    (async () => {
+      const enabled = await isBiometricEnabled();
+      setBiometricAvailable(enabled);
+    })();
+  }, []);
+
+  // Handle Google OAuth
+  const { promptAsync, request } = useGoogleAuth((data) => {
+    // Handle login success, e.g., save token, navigate, etc.
+    console.log("Google login success:", data);
+    navigation.navigate("Dashboard"); // or wherever you want
+  });
+
+  const handleLogin = async () => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/auth/sign-in`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        alert(data?.data?.message || "Login failed");
+        return;
+      }
+
+      // Save JWT token and user Data if rememberMe is checked
+      if (data.data && data.data.token) {
+        if (rememberMe) {
+          await setToken(data.data.token);
+
+          // Prepare user data for AsyncStorage; 
+          let userData = {
+            email: data.data.email,
+            name: data.data.name,
+            isGoogleUser: data.data.isGoogleUser || false,
+            picture: { "uri": data.data.picture || null },
+          };
+          // Save user data to AsyncStorage
+          await setUserData(userData); 
+
+        } else {
+          await removeToken();
+        }
+
+        // Prompt for biometrics/Face ID
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        if (hasHardware && isEnrolled) {
+          Alert.alert(
+            "Enable Face ID or Biometrics?",
+            "Would you like to use Face ID or biometrics for future logins?",
+            [
+              {
+                text: "No",
+                style: "cancel",
+                onPress: async () => {
+                  await setBiometricEnabled(false);
+                  navigation.navigate("Dashboard");
+                },
+              },
+              {
+                text: "Yes",
+                onPress: async () => {
+                  await setBiometricEnabled(true);
+                  navigation.navigate("Dashboard");
+                },
+              },
+            ]
+          );
+          return;
+        }
+      }
+
+      alert("Login successful!");
+      navigation.navigate("Dashboard");
+    } catch (err) {
+      alert("Network error. Please try again.");
+      console.error("Network error:", err);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    // Get User Data from AsyncStorage;
+    let userData = await AsyncStorage.getItem(USER_KEY);
+
+    // If the user lacks the userData we should alert them
+    if (!userData) {
+      Alert.alert("You are not logged in. \n Please log in first.");
+      return;
+    }
+
+    // Disable the fingerprint icon while authenticating (optional UX improvement)
+    // You can add a loading state if desired
+
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: "Authenticate to continue",
+      fallbackLabel: "Use Passcode",
+      disableDeviceFallback: false,
+    });
+    if (result.success) {
+      let response = await fetch(`${BACKEND_URL}/auth/biometric-auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: JSON.parse(userData).email,
+        }),
+      });
+
+      if (!response.ok) {
+        // Show backend error message if available
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = {};
+        }
+        Alert.alert(
+          errorData?.data?.message || "We Had Issues Logging You In."
+        );
+        return;
+      }
+      const data = await response.json();
+      await setToken(data.data.token);
+      let userDataObj = {
+        email: data.data.email,
+        name: data.data.name,
+        isGoogleUser: data.data.isGoogleUser || false,
+        picture: { uri: data.data.picture || null },
+      };
+      await setUserData(userDataObj);
+      navigation.navigate("Dashboard");
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // tweak if header overlaps
+    >
+      <ScrollView style={styles.container}>
+        <View style={styles.container}>
+          {/* Company Logo */}
+          <View style={styles.CompanyLogo}>
+            <Image
+              source={Company}
+              style={styles.cimage}
+              resizeMode="contain"
+            />
+          </View>
+          {/* Top Image Box */}
+          <View style={styles.imageContainer}>
+            <Text style={styles.header}>Login</Text>
+            <Image
+              source={{
+                uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/Authentication_ympwp3.jpg",
+              }}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Input Section */}
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>Email</Text>
+            <View style={{ position: "relative", marginBottom: 16 }}>
+              <TextInput
+                placeholder="username@gmail.com"
+                placeholderTextColor="#999"
+                style={[
+                  styles.input,
+                  { paddingRight: biometricAvailable ? 40 : 12 },
+                ]}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+              {biometricAvailable && (
+                <TouchableOpacity
+                  onPress={handleBiometricLogin}
+                  style={{
+                    position: "absolute",
+                    right: 12,
+                    top: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon name="finger-print" size={22} color="#4f46e5" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
+            <View style={styles.passwordWrapper}>
+              <TextInput
+                placeholder="***********"
+                placeholderTextColor="#999"
+                style={[styles.input, { flex: 1 }]}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Icon
+                  name={showPassword ? "eye-off" : "eye"}
+                  size={20}
+                  color="#555"
+                  style={{ paddingHorizontal: 10 }}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Remember Me and Forgot Password Section */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginTop: 10,
+                marginBottom: 10,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color: "#333", fontSize: 15, marginRight: 6 }}>
+                  Remember me?
+                </Text>
+                <Switch
+                  value={rememberMe}
+                  onValueChange={setRememberMe}
+                  trackColor={{ false: "#ccc", true: "#4f46e5" }}
+                  thumbColor={rememberMe ? "#fff" : "#fff"}
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => navigation.navigate("ForgotPassword")}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Login Button */}
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <Text style={styles.orText}>OR</Text>
+
+            {/* Google Button */}
+            <TouchableOpacity
+              style={styles.googleButton}
+              disabled={!request}
+              onPress={() => promptAsync()}
+            >
+              <Image source={GoogleIcon} style={styles.googleLogo} />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
+
+            {/* Sign Up Link */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SignUp")}
+              style={{ marginTop: 20 }}
+            >
+              <Text style={styles.signupText}>
+                Don't have an account?{" "}
+                <Text style={styles.link}>Register for free</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+
+  imageContainer: {
+    paddingTop: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  header: {
+    position: "absolute",
+    top: 25,
+    left: 26,
+    fontSize: 36,
+    fontWeight: "bold",
+    color: "#000",
+    zIndex: 1,
+  },
+  image: {
+    height: 220,
+    width: "100%",
+  },
+  CompanyLogo: {
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginTop: 65,
+  },
+  cimage: {
+    height: 40,
+    width: "100%",
+  },
+  formContainer: {
+    paddingHorizontal: 20,
+    flex: 1,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "#7F00FF0D",
+  },
+  passwordWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 10,
+    backgroundColor: "#f9f9f9",
+  },
+  forgotPassword: {
+    alignItems: "flex-end",
+    marginTop: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 12,
+    color: "#4f46e5",
+    fontWeight: "500",
+  },
+  loginButton: {
+    backgroundColor: "#4f46e5",
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  loginButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  orText: {
+    textAlign: "center",
+    marginVertical: 10,
+    color: "#888",
+  },
+  googleButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    padding: 12,
+    borderRadius: 10,
+    borderColor: "#ccc",
+    backgroundColor: "#fff",
+  },
+  googleLogo: {
+    width: 20,
+    height: 20,
+    resizeMode: "contain",
+  },
+  googleButtonText: {
+    marginLeft: 10,
+    color: "#000",
+    fontWeight: "500",
+  },
+  signupText: {
+    textAlign: "center",
+    color: "#555",
+  },
+  link: {
+    color: "#4f46e5",
+    fontWeight: "600",
+  },
+});
