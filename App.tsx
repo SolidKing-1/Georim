@@ -18,6 +18,8 @@ export type RootStackParamList = {
   Profile: undefined;
   ForgotPassword: undefined;
   Onboarding: undefined;
+  Welcome: undefined;
+  Splash: undefined;
 };
 
 import React, { useEffect, useState } from "react";
@@ -44,6 +46,8 @@ import { promptBiometric } from "./utils/biometric";
 import Profile from "./screens/ProfileScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
+import SplashScreen from "./screens/SplashScreen";
+import Welcome from "./screens/Welcome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 
@@ -58,8 +62,8 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      // Force onboarding for testing:
-      setInitialRoute("Onboarding");
+      // Start with the splash screen, it will navigate onward when done
+      setInitialRoute("Splash");
       // --- original logic below ---
       // const token = await getToken();
       // if (token) {
@@ -147,6 +151,8 @@ export default function App() {
         />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen
           name="Onboarding"
           component={OnboardingScreen}

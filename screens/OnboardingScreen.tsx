@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
+import { Video, ResizeMode } from "expo-av";
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,35 +23,35 @@ const slides = [
     header: "Events That\nMove With You",
     description:
       "Discover, create, and join unforgettable events happening around you—anytime, anywhere. Be part of a community, grow your network, or have fun with friends.",
-    image: require("../assets/onboarding.jpg"),
+    video: require("../assets/onboarding/on-1.mp4"),
   },
   {
     key: "2",
-    header: "When Moments\nCome To Life",
+    header: "You Show Up.\nWe Check-In",
     description:
-      "Whether you're planning a campus mixer, open mic night, or club launch, Georim helps you bring people together—seamlessly. No stress.Just vibes.",
-    image: require("../assets/onboarding-2.jpg"),
+      "No lines. No QR codes. As soon as you arrive, Georim’s live location feature checks you in automatically. Just pull up, and you’re counted",
+    video: require("../assets/onboarding/on-2.mp4"),
   },
   {
     key: "3",
-    header: "All Eyes On\nYour Event",
+    header: "Organize smarter\nReach more people",
     description:
-      "Make your next event the one everyone talks about. With Georim, you get the visibility and support to shine on your terms.",
-    image: require("../assets/onboarding-3.jpg"),
+      "We handle the logistics—you handle the fun. Georim takes care of the backend so you can be fully present at the front of the party.",
+    video: require("../assets/onboarding/on-3.mp4"),
   },
   {
     key: "4",
-    header: "Organize Smarter,\nReach More People",
+    header: "All Eyes On\nYour Event",
     description:
-      "We handle the logistics—you handle the fun. Georim takes care of the backend so you can be fully present at the front of the party.",
-    image: require("../assets/onboarding-4.jpg"),
+      "Make your next event the one everyone talks about. With Georim, you get the visibility and support to shine on your terms.",
+    video: require("../assets/onboarding/on-4.mp4"),
   },
   {
     key: "5",
-    header: "You Show Up,\nWe Handle The Rest",
+    header: "When Moments\nCome To Life",
     description:
-      "No lines. No QR codes. As soon as you arrive, Georim’s live location feature checks you in automatically. Just pull up, and you’re counted",
-    image: require("../assets/onboarding-5.jpg"),
+      "Whether you're planning a campus mixer, open mic night, or club launch, Georim helps you bring people together—seamlessly. No stress.Just vibes.",
+    video: require("../assets/onboarding/on-5.mp4"),
   },
 ];
 
@@ -96,7 +97,7 @@ export default function OnboardingScreen() {
   };
 
   const imageScale = useRef(new Animated.Value(1)).current;
-  
+
   const animateImage = () => {
     imageScale.setValue(0.92); // Start slightly smaller
     Animated.spring(imageScale, {
@@ -142,7 +143,7 @@ export default function OnboardingScreen() {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      navigation.replace("Login");
+      navigation.replace("Welcome");
     }
   };
 
@@ -164,12 +165,14 @@ export default function OnboardingScreen() {
     index: number;
   }) => (
     <View style={styles.slide}>
-      <Animated.Image
-        source={item.image}
-        style={[styles.fullImage, { opacity: imageOpacity }]}
-        resizeMode="cover"
+      <Video
+        source={item.video}
+        style={styles.fullImage}
+        resizeMode={ResizeMode.COVER}
+        shouldPlay
+        isLooping
+        isMuted
       />
-      {/* Gradient overlay at the bottom */}
       <LinearGradient
         colors={["transparent", "rgba(127,0,255,0.28)", "rgba(127,0,255,0.32)"]}
         style={styles.gradient}
