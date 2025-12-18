@@ -7,13 +7,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  Switch,
   Alert,
+  Platform,
+  Keyboard,
 } from "react-native";
-import Logo from "../assets/Authentication.jpg";
-import Company from "../assets/Company_icon.png";
+import { LinearGradient } from "expo-linear-gradient";
+import BannerImage from "../assets/authScreens/party-image.jpg";
 import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
+import GlassButton from "../components/GlassButton";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
@@ -24,7 +26,6 @@ import { promptBiometric } from "../utils/biometric";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import { Platform, KeyboardAvoidingView } from "react-native";
 
 import Constants from "expo-constants";
 import { setToken, removeToken } from "../utils/auth"; // Use your helper
@@ -37,7 +38,6 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true); // default checked
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
@@ -75,24 +75,19 @@ export default function LoginScreen() {
         return;
       }
 
-      // Save JWT token and user Data if rememberMe is checked
+      // Save JWT token and user Data
       if (data.data && data.data.token) {
-        if (rememberMe) {
-          await setToken(data.data.token);
+        await setToken(data.data.token);
 
-          // Prepare user data for AsyncStorage; 
-          let userData = {
-            email: data.data.email,
-            name: data.data.name,
-            isGoogleUser: data.data.isGoogleUser || false,
-            picture: { "uri": data.data.picture || null },
-          };
-          // Save user data to AsyncStorage
-          await setUserData(userData); 
-
-        } else {
-          await removeToken();
-        }
+        // Prepare user data for AsyncStorage;
+        let userData = {
+          email: data.data.email,
+          name: data.data.name,
+          isGoogleUser: data.data.isGoogleUser || false,
+          picture: { uri: data.data.picture || null },
+        };
+        // Save user data to AsyncStorage
+        await setUserData(userData);
 
         // Prompt for biometrics/Face ID
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
@@ -141,9 +136,6 @@ export default function LoginScreen() {
       return;
     }
 
-    // Disable the fingerprint icon while authenticating (optional UX improvement)
-    // You can add a loading state if desired
-
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: "Authenticate to continue",
       fallbackLabel: "Use Passcode",
@@ -187,254 +179,265 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // tweak if header overlaps
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={() => Keyboard.dismiss()}
     >
-      <ScrollView style={styles.container}>
-        <View style={styles.container}>
-          {/* Company Logo */}
-          <View style={styles.CompanyLogo}>
-            <Image
-              source={Company}
-              style={styles.cimage}
-              resizeMode="contain"
+      <View style={styles.innerContainer}>
+        {/* Header */}
+        <Text style={styles.header}>Login</Text>
+
+        {/* Banner Image */}
+        <View style={styles.bannerContainer}>
+          <Image
+            source={BannerImage}
+            style={styles.bannerImage}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Input Section */}
+        <View style={styles.formContainer}>
+          <Text style={styles.label}>Email</Text>
+          <View style={styles.inputWrapper}>
+            <TextInput
+              placeholder="username@gmail.com"
+              placeholderTextColor="#6B7280"
+              style={[
+                styles.input,
+                { paddingRight: biometricAvailable ? 40 : 12 },
+              ]}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
             />
-          </View>
-          {/* Top Image Box */}
-          <View style={styles.imageContainer}>
-            <Text style={styles.header}>Login</Text>
-            <Image source={Logo} style={styles.image} resizeMode="contain" />
-          </View>
-
-          {/* Input Section */}
-          <View style={styles.formContainer}>
-            <Text style={styles.label}>Email</Text>
-            <View style={{ position: "relative", marginBottom: 16 }}>
-              <TextInput
-                placeholder="username@gmail.com"
-                placeholderTextColor="#999"
-                style={[
-                  styles.input,
-                  { paddingRight: biometricAvailable ? 40 : 12 },
-                ]}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-              {biometricAvailable && (
-                <TouchableOpacity
-                  onPress={handleBiometricLogin}
-                  style={{
-                    position: "absolute",
-                    right: 12,
-                    top: 0,
-                    bottom: 0,
-                    justifyContent: "center",
-                    height: "100%",
-                  }}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Icon name="finger-print" size={22} color="#4f46e5" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
-            <View style={styles.passwordWrapper}>
-              <TextInput
-                placeholder="***********"
-                placeholderTextColor="#999"
-                style={[styles.input, { flex: 1 }]}
-                secureTextEntry={!showPassword}
-                autoCapitalize="none"
-                value={password}
-                onChangeText={setPassword}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Icon
-                  name={showPassword ? "eye-off" : "eye"}
-                  size={20}
-                  color="#555"
-                  style={{ paddingHorizontal: 10 }}
-                />
+            {biometricAvailable && (
+              <TouchableOpacity
+                onPress={handleBiometricLogin}
+                style={styles.biometricIcon}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name="finger-print" size={22} color="#932FF8" />
               </TouchableOpacity>
-            </View>
+            )}
+          </View>
 
-            {/* Remember Me and Forgot Password Section */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginTop: 10,
-                marginBottom: 10,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ color: "#333", fontSize: 15, marginRight: 6 }}>
-                  Remember me?
-                </Text>
-                <Switch
-                  value={rememberMe}
-                  onValueChange={setRememberMe}
-                  trackColor={{ false: "#ccc", true: "#4f46e5" }}
-                  thumbColor={rememberMe ? "#fff" : "#fff"}
-                />
-              </View>
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Login Button */}
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Login</Text>
+          <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
+          <View style={styles.passwordWrapper}>
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#6B7280"
+              style={[styles.input, { flex: 1, borderWidth: 0 }]}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Icon
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
+                size={20}
+                color="#9CA3AF"
+                style={{ paddingHorizontal: 12 }}
+              />
             </TouchableOpacity>
+          </View>
 
-            {/* Divider */}
-            <Text style={styles.orText}>OR</Text>
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => navigation.navigate("ForgotPassword")}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
 
-            {/* Google Button */}
+          {/* Sign In Button */}
+          <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
+            <TouchableOpacity onPress={handleLogin}>
+              <LinearGradient
+                colors={["#6E23BA", "#282691"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.signInButton}
+              >
+                <Text style={styles.signInButtonText}>Sign In</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </GlassButton>
+
+          {/* Divider */}
+          <Text style={styles.orText}>Or Continue With</Text>
+
+          {/* Google Button */}
+          <GlassButton
+            style={styles.googleGlassWrapper}
+            borderRadius={50}
+            isCircular={true}
+          >
             <TouchableOpacity
               style={styles.googleButton}
               disabled={!request}
               onPress={() => promptAsync()}
             >
               <Image source={GoogleIcon} style={styles.googleLogo} />
-              <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>
+          </GlassButton>
 
-            {/* Sign Up Link */}
-            <TouchableOpacity
-              onPress={() => navigation.navigate("SignUp")}
-              style={{ marginTop: 20 }}
-            >
-              <Text style={styles.signupText}>
-                Don't have an account?{" "}
-                <Text style={styles.link}>Register for free</Text>
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {/* Sign Up Link */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("SignUp")}
+            style={styles.signupContainer}
+          >
+            <Text style={styles.signupText}>
+              Don't have an account yet?{" "}
+              <Text style={styles.link}>Register for free</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#05031B",
   },
-
-  imageContainer: {
-    paddingTop: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+  scrollContent: {
+    flexGrow: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 60,
   },
   header: {
-    position: "absolute",
-    top: 25,
-    left: 26,
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "bold",
-    color: "#000",
-    zIndex: 1,
+    color: "#FFFFFF",
+    fontFamily: "Hero",
+    marginBottom: 24,
   },
-  image: {
-    height: 220,
+  bannerContainer: {
     width: "100%",
+    height: 180,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 32,
   },
-  CompanyLogo: {
-    alignItems: "center",
-    justifyContent: "flex-start",
-    marginTop: 65,
-  },
-  cimage: {
-    height: 40,
+  bannerImage: {
     width: "100%",
+    height: "100%",
   },
   formContainer: {
-    paddingHorizontal: 20,
     flex: 1,
   },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 5,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginBottom: 8,
+    fontFamily: "Hero",
+  },
+  inputWrapper: {
+    position: "relative",
+    marginBottom: 16,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: "#7F00FF0D",
+    borderColor: "#374151",
+    padding: 14,
+    borderRadius: 8,
+    backgroundColor: "#1F2937",
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontFamily: "Hero",
+  },
+  biometricIcon: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    height: "100%",
   },
   passwordWrapper: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    backgroundColor: "#f9f9f9",
+    borderColor: "#374151",
+    borderRadius: 8,
+    backgroundColor: "#1F2937",
   },
   forgotPassword: {
     alignItems: "flex-end",
     marginTop: 8,
+    marginBottom: 24,
   },
   forgotPasswordText: {
-    fontSize: 12,
-    color: "#4f46e5",
+    fontSize: 13,
+    color: "#932FF8",
     fontWeight: "500",
+    fontFamily: "Hero",
   },
-  loginButton: {
-    backgroundColor: "#4f46e5",
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
+  glassButtonWrapper: {
+    marginBottom: 20,
   },
-  loginButtonText: {
-    color: "white",
+  signInButton: {
+    padding: 16,
+    borderRadius: 25,
+  },
+  signInButtonText: {
+    color: "#FFFFFF",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
+    fontFamily: "Hero",
+    textShadowColor: "rgba(0, 0, 0, 0.3)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   orText: {
     textAlign: "center",
-    marginVertical: 10,
-    color: "#888",
+    marginVertical: 16,
+    color: "#9CA3AF",
+    fontSize: 14,
+    fontFamily: "Hero",
+  },
+  googleGlassWrapper: {
+    alignSelf: "center",
   },
   googleButton: {
-    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
     padding: 12,
-    borderRadius: 10,
-    borderColor: "#ccc",
-    backgroundColor: "#fff",
+    borderRadius: 50,
+    backgroundColor: "#8F8E9B",
+    width: 56,
+    height: 56,
   },
   googleLogo: {
-    width: 20,
-    height: 20,
+    width: 28,
+    height: 28,
     resizeMode: "contain",
   },
-  googleButtonText: {
-    marginLeft: 10,
-    color: "#000",
-    fontWeight: "500",
+  signupContainer: {
+    marginTop: 24,
+    marginBottom: 40,
   },
   signupText: {
     textAlign: "center",
-    color: "#555",
+    color: "#9CA3AF",
+    fontSize: 14,
+    fontFamily: "Hero",
   },
   link: {
-    color: "#4f46e5",
+    color: "#932FF8",
     fontWeight: "600",
+    fontFamily: "Hero",
   },
 });
