@@ -12,12 +12,14 @@ import {
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import CountryFlag from "react-native-country-flag";
 import { COUNTRY_LIST } from "../utils/countryList";
 import Logo from "../assets/Authentication.jpg";
 import Company from "../assets/Company_icon.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
+import GlassButton from "../components/GlassButton";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
@@ -83,15 +85,15 @@ export default function SignUpScreen() {
   );
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // tweak if header overlaps
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={() => Keyboard.dismiss()}
     >
-      <ScrollView style={styles.container}>
-        <View style={styles.CompanyLogo}>
-          <Image source={Company} style={styles.cimage} resizeMode="contain" />
-        </View>
+      <View style={styles.innerContainer}>
+        {/* Header */}
+        <Text style={styles.header}>Sign Up</Text>
 
         {/* Top Image Box */}
         <View style={styles.imageContainer}>
@@ -112,8 +114,8 @@ export default function SignUpScreen() {
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.label}>First Name</Text>
               <TextInput
-                placeholder="First Name"
-                placeholderTextColor="#999"
+                placeholder="John"
+                placeholderTextColor="#6B7280"
                 style={styles.input}
                 value={first}
                 onChangeText={setFirst}
@@ -122,8 +124,8 @@ export default function SignUpScreen() {
             <View style={{ flex: 1, marginLeft: 8 }}>
               <Text style={styles.label}>Last Name</Text>
               <TextInput
-                placeholder="Surname"
-                placeholderTextColor="#999"
+                placeholder="Kwame"
+                placeholderTextColor="#6B7280"
                 style={styles.input}
                 value={last}
                 onChangeText={setLast}
@@ -132,10 +134,10 @@ export default function SignUpScreen() {
           </View>
 
           {/* Email */}
-          <Text style={[styles.label, { marginTop: 20 }]}>Email</Text>
+          <Text style={[styles.label, { marginTop: 10 }]}>Email</Text>
           <TextInput
             placeholder="username@gmail.com"
-            placeholderTextColor="#999"
+            placeholderTextColor="#6B7280"
             style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -144,26 +146,33 @@ export default function SignUpScreen() {
           />
 
           {/* Phone */}
-          <Text style={[styles.label, { marginTop: 20 }]}>Phone Number</Text>
+          <Text style={[styles.label, { marginTop: 10 }]}>Phone Number</Text>
           <View style={styles.phoneRow}>
             <TouchableOpacity
               style={styles.flagPicker}
               onPress={() => setShowCountryModal(true)}
             >
               <CountryFlag isoCode={selectedCountry.iso} size={22} />
-              <Text style={{ marginLeft: 6, fontWeight: "600" }}>
+              <Text
+                style={{
+                  marginLeft: 6,
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                  fontFamily: "Hero",
+                }}
+              >
                 {selectedCountry.code}
               </Text>
               <Icon
                 name="chevron-down"
                 size={16}
-                color="#555"
+                color="#9CA3AF"
                 style={{ marginLeft: 2 }}
               />
             </TouchableOpacity>
             <TextInput
-              placeholder="(---) --- ---"
-              placeholderTextColor="#999"
+              placeholder="+1 912-345-3322"
+              placeholderTextColor="#6B7280"
               style={[styles.input, { flex: 1, marginLeft: 8 }]}
               keyboardType="phone-pad"
               value={phone}
@@ -173,7 +182,7 @@ export default function SignUpScreen() {
 
           {/* Country Picker Modal */}
           <Modal visible={showCountryModal} animationType="slide">
-            <View style={{ flex: 1, backgroundColor: "#fff" }}>
+            <View style={{ flex: 1, backgroundColor: "#05031B" }}>
               <View
                 style={{
                   flexDirection: "row",
@@ -182,25 +191,35 @@ export default function SignUpScreen() {
                   paddingTop: 62,
                 }}
               >
-                <Text style={{ fontWeight: "bold", fontSize: 18, flex: 1 }}>
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    fontSize: 18,
+                    flex: 1,
+                    color: "#FFFFFF",
+                    fontFamily: "Hero",
+                  }}
+                >
                   Select Country
                 </Text>
                 <TouchableOpacity onPress={() => setShowCountryModal(false)}>
-                  <Icon name="close" size={24} color="#4f46e5" />
+                  <Icon name="close" size={24} color="#932FF8" />
                 </TouchableOpacity>
               </View>
               <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
                 <TextInput
                   placeholder="Search country..."
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#6B7280"
                   style={{
                     borderWidth: 1,
-                    borderColor: "#ccc",
+                    borderColor: "#374151",
                     borderRadius: 10,
                     paddingVertical: 10,
                     paddingHorizontal: 14,
-                    backgroundColor: "#f9f9f9",
+                    backgroundColor: "#1F2937",
+                    color: "#FFFFFF",
                     marginBottom: 10,
+                    fontFamily: "Hero",
                   }}
                   value={searchText}
                   onChangeText={setSearchText}
@@ -216,7 +235,7 @@ export default function SignUpScreen() {
                       alignItems: "center",
                       padding: 14,
                       borderBottomWidth: 1,
-                      borderBottomColor: "#eee",
+                      borderBottomColor: "#374151",
                     }}
                     onPress={() => {
                       setSelectedCountry(item);
@@ -225,10 +244,25 @@ export default function SignUpScreen() {
                     }}
                   >
                     <CountryFlag isoCode={item.iso} size={22} />
-                    <Text style={{ marginLeft: 12, fontSize: 16, flex: 1 }}>
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        fontSize: 16,
+                        flex: 1,
+                        color: "#FFFFFF",
+                        fontFamily: "Hero",
+                      }}
+                    >
                       {item.name}
                     </Text>
-                    <Text style={{ fontWeight: "600", fontSize: 16 }}>
+                    <Text
+                      style={{
+                        fontWeight: "600",
+                        fontSize: 16,
+                        color: "#9CA3AF",
+                        fontFamily: "Hero",
+                      }}
+                    >
                       {item.code}
                     </Text>
                   </TouchableOpacity>
@@ -238,12 +272,12 @@ export default function SignUpScreen() {
           </Modal>
 
           {/* Password */}
-          <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
+          <Text style={[styles.label, { marginTop: 10 }]}>Password</Text>
           <View style={styles.passwordWrapper}>
             <TextInput
-              placeholder="************"
-              placeholderTextColor="#999"
-              style={[styles.input, { flex: 1 }]}
+              placeholder="Password"
+              placeholderTextColor="#6B7280"
+              style={[styles.input, { flex: 1, borderWidth: 0 }]}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               value={password}
@@ -251,39 +285,62 @@ export default function SignUpScreen() {
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Icon
-                name={showPassword ? "eye-off" : "eye"}
+                name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={20}
-                color="#555"
-                style={{ paddingHorizontal: 10 }}
+                color="#9CA3AF"
+                style={{ paddingHorizontal: 12 }}
               />
             </TouchableOpacity>
           </View>
 
-          {/* Sign Up Button */}
-          <TouchableOpacity onPress={handleSignUp} style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Sign Up</Text>
+          {/* Forgot Password */}
+          <TouchableOpacity
+            style={styles.forgotPassword}
+            onPress={() => navigation.navigate("ForgotPassword")}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
+
+          {/* Sign Up Button */}
+          <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
+            <TouchableOpacity onPress={handleSignUp}>
+              <LinearGradient
+                colors={["#6E23BA", "#282691"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.signUpButton}
+              >
+                <Text style={styles.signUpButtonText}>Sign Up</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </GlassButton>
 
           {/* Divider */}
-          <Text style={styles.orText}>OR</Text>
+          <Text style={styles.orText}>Or Continue With</Text>
 
           {/* Google Button */}
-          <TouchableOpacity
-            style={styles.googleButton}
-            disabled={!request}
-            onPress={() => promptAsync()}
+          <GlassButton
+            style={styles.googleGlassWrapper}
+            borderRadius={50}
+            isCircular={true}
           >
-            <Image source={GoogleIcon} style={styles.googleLogo} />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.googleButton}
+              disabled={!request}
+              onPress={() => promptAsync()}
+            >
+              <Image source={GoogleIcon} style={styles.googleLogo} />
+            </TouchableOpacity>
+          </GlassButton>
 
           {/* Login Redirect */}
           <TouchableOpacity
             onPress={() => navigation.navigate("Login")}
-            style={{ marginTop: 20 }}
+            style={styles.loginContainer}
           >
-            <Text style={styles.signupText}>
-              Already have an account? <Text style={styles.link}>Login</Text>
+            <Text style={styles.loginText}>
+              Already have an account?{" "}
+              <Text style={styles.link}>Login here</Text>
             </Text>
           </TouchableOpacity>
         </View>
@@ -305,133 +362,143 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#05031B",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  innerContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 45,
+  },
+  header: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    fontFamily: "Hero",
+    marginBottom: 16,
+  },
+  bannerContainer: {
+    width: "100%",
+    height: 160,
+    borderRadius: 16,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
+  },
+  formContainer: {
+    flex: 1,
   },
   nameRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  imageContainer: {
-    paddingTop: 5,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  header: {
-    position: "absolute",
-    top: 0,
-    left: 26,
-    fontSize: 25,
-    fontWeight: "bold",
-    color: "#000",
-    zIndex: 1,
-  },
-  image: {
-    height: 195,
-    width: "100%",
-  },
-  CompanyLogo: {
-    alignItems: "center", // Center horizontally if needed
-    justifyContent: "flex-start",
-    marginTop: 45, // Adjust this value to move the logo down
-  },
-  cimage: {
-    height: 40,
-    width: "100%",
-  },
-  formContainer: {
-    paddingHorizontal: 20,
-    flex: 1,
-  },
   label: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginBottom: 6,
+    fontFamily: "Hero",
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 11,
-    borderRadius: 10,
-    backgroundColor: "#7F00FF0D",
-  },
-  passwordWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    backgroundColor: "#f9f9f9",
-  },
-  forgotPassword: {
-    alignItems: "flex-end",
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    fontSize: 12,
-    color: "#4f46e5",
-    fontWeight: "500",
-  },
-  loginButton: {
-    backgroundColor: "#4f46e5",
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 22,
-  },
-  loginButtonText: {
-    color: "white",
-    textAlign: "center",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  orText: {
-    textAlign: "center",
-    marginVertical: 8,
-    color: "#888",
-  },
-  googleButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
+    borderColor: "#374151",
     padding: 12,
-    borderRadius: 10,
-    borderColor: "#ccc",
-    backgroundColor: "#fff",
-  },
-  googleLogo: {
-    width: 20,
-    height: 20,
-    resizeMode: "contain",
-  },
-
-  googleButtonText: {
-    marginLeft: 10,
-    color: "#000",
-    fontWeight: "500",
-  },
-  signupText: {
-    textAlign: "center",
-    color: "#555",
-  },
-  link: {
-    color: "#4f46e5",
-    fontWeight: "600",
+    borderRadius: 8,
+    backgroundColor: "#1F2937",
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontFamily: "Hero",
   },
   phoneRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 6,
   },
   flagPicker: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
+    borderColor: "#374151",
+    borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "#f9f9f9",
+    paddingVertical: 12,
+    backgroundColor: "#1F2937",
+  },
+  passwordWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#374151",
+    borderRadius: 8,
+    backgroundColor: "#1F2937",
+  },
+  forgotPassword: {
+    alignItems: "flex-end",
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  forgotPasswordText: {
+    fontSize: 13,
+    color: "#932FF8",
+    fontWeight: "500",
+    fontFamily: "Hero",
+  },
+  glassButtonWrapper: {
+    marginBottom: 12,
+  },
+  signUpButton: {
+    padding: 14,
+    borderRadius: 25,
+  },
+  signUpButtonText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 16,
+    fontFamily: "Hero",
+  },
+  orText: {
+    textAlign: "center",
+    marginVertical: 10,
+    color: "#9CA3AF",
+    fontSize: 14,
+    fontFamily: "Hero",
+  },
+  googleGlassWrapper: {
+    alignSelf: "center",
+  },
+  googleButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 50,
+    backgroundColor: "#8F8E9B",
+    width: 56,
+    height: 56,
+  },
+  googleLogo: {
+    width: 28,
+    height: 28,
+    resizeMode: "contain",
+  },
+  loginContainer: {
+    marginTop: 12,
+    marginBottom: 24,
+  },
+  loginText: {
+    textAlign: "center",
+    color: "#9CA3AF",
+    fontSize: 14,
+    fontFamily: "Hero",
+  },
+  link: {
+    color: "#932FF8",
+    fontWeight: "600",
+    fontFamily: "Hero",
   },
 });
