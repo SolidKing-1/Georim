@@ -27,7 +27,9 @@ const RegistrationSuccessModal: React.FC<RegistrationSuccessModalProps> = ({
         />
         <Text style={styles.modalTitle}>Event Registration Successful</Text>
         <Image
-          source={require("../assets/registration-success.png")}
+          source={{
+            uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748657608573-303045f4-c258-49ee-8d14-540e5ea844d5-registration-success.png",
+          }}
           style={styles.modalImage}
           resizeMode="contain"
         />

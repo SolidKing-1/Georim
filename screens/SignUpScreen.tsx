@@ -10,12 +10,13 @@ import {
   Modal,
   FlatList,
   Platform,
-  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import CountryFlag from "react-native-country-flag";
 import { COUNTRY_LIST } from "../utils/countryList";
-import BannerImage from "../assets/authScreens/signUp.jpg";
+import Logo from "../assets/Authentication.jpg";
+import Company from "../assets/Company_icon.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
 import GlassButton from "../components/GlassButton";
@@ -25,7 +26,7 @@ import { RootStackParamList } from "../App";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-// Build a country list for the picker
+import CodeVerificationModal from "../components/CodeVerificationModal"; // <-- Import your modal
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
@@ -43,6 +44,7 @@ export default function SignUpScreen() {
   });
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [showCodeModal, setShowCodeModal] = useState(false); // <-- Add this state
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
   const { promptAsync, request } = useGoogleAuth((data) => {
@@ -54,7 +56,8 @@ export default function SignUpScreen() {
   const handleSignUp = async () => {
     try {
       const fullPhone = selectedCountry.code + phone.replace(/^0+/, "");
-
+      console.log("HERE");
+      // 1. Request code only, do not create user yet
       const response = await fetch(`${BACKEND_URL}/auth/sign-up`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,25 +69,14 @@ export default function SignUpScreen() {
           password,
         }),
       });
-
       const data = await response.json();
-      console.log("Response body:", data);
-
       if (!response.ok) {
         alert(data.message || "Sign up failed");
         return;
       }
-
-      // Save JWT token
-      if (data.token) {
-        await AsyncStorage.setItem("jwt", data.token);
-      }
-
-      alert("Sign up successful!");
-      navigation.navigate("Login");
+      setShowCodeModal(true);
     } catch (err) {
       alert("Network error. Please try again.");
-      console.error("Network error:", err);
     }
   };
 
@@ -103,12 +95,15 @@ export default function SignUpScreen() {
         {/* Header */}
         <Text style={styles.header}>Sign Up</Text>
 
-        {/* Banner Image */}
-        <View style={styles.bannerContainer}>
+        {/* Top Image Box */}
+        <View style={styles.imageContainer}>
+          <Text style={styles.header}>Sign Up</Text>
           <Image
-            source={BannerImage}
-            style={styles.bannerImage}
-            resizeMode="cover"
+            source={{
+              uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/Authentication_ympwp3.jpg",
+            }}
+            style={styles.image}
+            resizeMode="contain"
           />
         </View>
 
@@ -349,8 +344,18 @@ export default function SignUpScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+      {/* Code Verification Modal */}
+      <CodeVerificationModal
+        visible={showCodeModal}
+        email={email}
+        onClose={() => setShowCodeModal(false)}
+        onSuccess={() => {
+          setShowCodeModal(false);
+          navigation.replace("Login");
+        }}
+      />
+    </KeyboardAvoidingView>
   );
 }
 

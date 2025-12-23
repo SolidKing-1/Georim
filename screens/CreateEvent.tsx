@@ -14,19 +14,20 @@ import {
   Modal,
   ActivityIndicator,
   FlatList,
+  Switch,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import DownArrow from "react-native-vector-icons/Entypo";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import New_Event from "../assets/New_Event.jpg";
 import Slider from "@react-native-community/slider";
 import * as ImagePicker from "expo-image-picker";
-import DashedDropzone from "../components/DashedDropzone"; // Import the reusable DashedDropzone component
+import DashedDropzone from "../components/DashedDropzone";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
+import axios from "axios";
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
@@ -36,7 +37,7 @@ const { width } = Dimensions.get("window");
 const categoryOptions = [
   "Religious",
   "Entertainment",
-  "Education",
+  "Educational",
   "Corporate",
 ];
 const visibilityOptions = [
@@ -48,6 +49,7 @@ const steps = ["basic", "datetime", "location", "image", "additional"];
 
 type RootStackParamList = {
   EventSuccess: undefined;
+  PaymentScreen: { eventTitle: string; eventId?: string }; // add this line
   // add other routes if needed
 };
 
@@ -84,12 +86,12 @@ export default function CreateEventScreen() {
   // Location State
   const [geofence, setGeofence] = useState(50);
   const [mapModalVisible, setMapModalVisible] = useState(false);
-  const [mapRegion, setMapRegion] = useState({
-    latitude: 6.5244, // Default: Lagos
-    longitude: 3.3792,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  });
+  const [mapRegion, setMapRegion] = useState<{
+    latitude: number;
+    longitude: number;
+    latitudeDelta: number;
+    longitudeDelta: number;
+  } | null>(null);
   const [markerCoords, setMarkerCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -98,6 +100,19 @@ export default function CreateEventScreen() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<string>("");
+  const [checkInLocation, setCheckInLocation] = useState<string>("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
+
+  // For dropdown suggestions
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [stateSuggestions, setStateSuggestions] = useState<string[]>([]);
+  const [zipSuggestions, setZipSuggestions] = useState<string[]>([]);
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [showStateDropdown, setShowStateDropdown] = useState(false);
+  const [showZipDropdown, setShowZipDropdown] = useState(false);
 
   // Image State
   const [eventImage, setEventImage] =
@@ -135,7 +150,6 @@ export default function CreateEventScreen() {
       allowsEditing: true,
       aspect: [16, 9],
       quality: 1,
-      base64: true, // <-- add this line
     });
 
     if (!result.canceled) {
@@ -143,31 +157,153 @@ export default function CreateEventScreen() {
     }
   };
 
-  // Handler for Finish button
+  // More State.
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [venueName, setVenueName] = useState("");
+  const [isPaidEvent, setIsPaidEvent] = useState(false);
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("USD"); // or "NGN"
+  const [showAdvertisePrompt, setShowAdvertisePrompt] = useState(false);
+
   const handleFinish = async () => {
     try {
-      // Get JWT token for authentication
       const token = await AsyncStorage.getItem("jwt");
 
-      // Prepare event data
+      if (!token) {
+        alert("Authentication required. Please log in again.");
+        return;
+      }
+
+      // Validate Input
+      if (!title?.trim()) {
+        alert("Please enter an event title");
+        return;
+      }
+      if (!description?.trim()) {
+        alert("Please enter an event description");
+        return;
+      }
+      if (!category) {
+        alert("Please select a category");
+        return;
+      }
+      if (!visibility) {
+        alert("Please select visibility");
+        return;
+      }
+      if (!venueName?.trim()) {
+        alert("Please enter a venue name");
+        return;
+      }
+      if (!markerCoords) {
+        alert("Please select a location on the map");
+        return;
+      }
+
+      let imageUrl = null;
+
+      // Step 1: Upload image first if exists
+      if (eventImage) {
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append("image", {
+            uri: eventImage.uri,
+            type: eventImage.type || "image/jpeg",
+            name: eventImage.fileName || "event-image.jpg",
+          } as any);
+
+          console.log(`${BACKEND_URL}/file/upload/image`);
+          const imageResponse = await axios.post(
+            `${BACKEND_URL}/file/upload/image`,
+            imageFormData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
+              timeout: 20000,
+            }
+          );
+
+          if (imageResponse.status === 200 && imageResponse.data?.data?.imageUrl) {
+            imageUrl = imageResponse.data.data.imageUrl;
+            console.log("Image uploaded successfully:", imageUrl);
+          } else {
+            console.error("Image upload failed:", imageResponse.data);
+            alert("Image upload failed. Proceeding without image.");
+          }
+        } catch (imageError) {
+          console.error("Image upload error:", imageError);
+          alert("Image upload failed. Proceeding without image.");
+        }
+      }
+
+      // Step 2: Create event with JSON data
       const eventData = {
-        // Add all your fields here, e.g.:
-        category,
-        visibility,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        isRecurring,
-        recurrence: isRecurring ? recurrence : null,
-        untilDate: isRecurring ? untilDate.toISOString() : null,
-        geofence,
-        additionalDescription,
-        // Add more fields as needed from your form
-        eventImageString: eventImage?.base64 ? eventImage.base64 : null,
+        title: title.trim(),
+        description: description.trim(),
+        category: category.toLowerCase(),
+        visibility: visibility.split(' ')[0].toLowerCase(),
+        
+        dateTime: {
+          start: new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+            startTime.getHours(),
+            startTime.getMinutes()
+          ).toISOString(),
+          end: new Date(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            endTime.getHours(),
+            endTime.getMinutes()
+          ).toISOString(),
+        },
+
+        recurring: {
+          isRecurring: isRecurring,
+          ...(isRecurring && {
+            pattern: recurrence.toLowerCase(),
+            until: untilDate.toISOString(),
+          }),
+        },
+
+        location: {
+          venue: venueName.trim(),
+          address: {
+            street: street.trim() || "",
+            city: city.trim() || "",
+            state: state.trim() || "",
+            zipCode: zip.trim() || "",
+          },
+          longitude: markerCoords.longitude,
+          latitude: markerCoords.latitude,
+          accuracy: 10,
+        },
+
+        radius: Math.max(geofence, 25),
+
+        // Include imageUrl if upload was successful
+        ...(imageUrl && { imageUrl }),
+
+        isPaidEvent,
+        ...(isPaidEvent && {
+          price: parseFloat(price),
+          currency,
+        }),
+
+        // TODO: UNCOMMENT THIS!
+        // ...(additionalDescription?.trim() && {
+        //   additionalInfo: additionalDescription.trim(),
+        // }),
       };
 
-      const response = await fetch(`${BACKEND_URL}/api/events/create`, {
+      console.log("Creating event with data:", eventData);
+
+      const response = await fetch(`${BACKEND_URL}/events/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,22 +313,60 @@ export default function CreateEventScreen() {
       });
 
       const data = await response.json();
+      console.log("Event creation response:", data);
 
       if (!response.ok) {
-        alert(data.message || "Event creation failed");
+        console.error("Event creation failed:", data);
+        alert(data.message || `Event creation failed: ${response.status}`);
         return;
       }
 
-      alert("Event created successfully!");
-      navigation.navigate("EventSuccess");
+      // Show advertise prompt after successful event creation
+      setShowAdvertisePrompt(true);
+
     } catch (err) {
-      alert("Network error. Please try again.");
       console.error("Network error:", err);
+      alert("Network error. Please check your connection and try again.");
     }
   };
 
-  // Helper: Search address using Nominatim (OpenStreetMap)
+  // Open modal and center on user location
+  const openMapModal = async () => {
+    setMapModalVisible(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        alert(
+          "Location permission is required to select your current location."
+        );
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+      setMapRegion({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+        latitudeDelta: 0.01,
+        longitudeDelta: 0.01,
+      });
+      setMarkerCoords({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+      reverseGeocode(loc.coords.latitude, loc.coords.longitude);
+    } catch (e) {
+      alert("Could not fetch your current location. Please try again.");
+    }
+  };
+
+  // Live search for address
   const searchAddress = async (query: string) => {
+    setSearchQuery(query);
+    if (!query) {
+      setSearchResults([]);
+      return;
+    }
     setSearchLoading(true);
     try {
       const res = await fetch(
@@ -208,6 +382,59 @@ export default function CreateEventScreen() {
     setSearchLoading(false);
   };
 
+  const US_STATES = [
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY",
+  ];
+
   // Helper: Reverse geocode coordinates to address
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
@@ -216,35 +443,122 @@ export default function CreateEventScreen() {
       );
       const data = await res.json();
       setSelectedAddress(data.display_name || "");
+      setSearchQuery(data.display_name || "");
+
+      // Parse address fields
+      const addr = data.address || {};
+      setStreet(addr.road || addr.pedestrian || addr.footway || "");
+      setCity(addr.city || addr.town || addr.village || "");
+      setState(addr.state || "");
+      setZip(addr.postcode || "");
     } catch (e) {
       setSelectedAddress("");
+      setSearchQuery("");
+      setStreet("");
+      setCity("");
+      setState("");
+      setZip("");
     }
   };
 
-  // When marker moves, update address
-  const onMarkerDragEnd = async (e: any) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setMarkerCoords({ latitude, longitude });
-    setMapRegion({ ...mapRegion, latitude, longitude });
-    await reverseGeocode(latitude, longitude);
+  const onCityChange = (text: string) => {
+    setCity(text);
+    if (text.length > 1) {
+      // Optionally, fetch city suggestions from OpenStreetMap
+      fetch(
+        `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(
+          text
+        )}&country=USA&format=json`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setCitySuggestions([
+            ...new Set(
+              data
+                .map(
+                  (item: any) =>
+                    item.address.city ||
+                    item.address.town ||
+                    item.address.village
+                )
+                .filter(Boolean)
+            ),
+          ] as string[]);
+          setShowCityDropdown(true);
+        });
+    } else {
+      setShowCityDropdown(false);
+    }
+  };
+
+  const onStateChange = (text: string) => {
+    setState(text);
+    if (text.length > 0) {
+      setStateSuggestions(
+        US_STATES.filter((s) => s.startsWith(text.toUpperCase()))
+      );
+      setShowStateDropdown(true);
+    } else {
+      setShowStateDropdown(false);
+    }
+  };
+
+  const onZipChange = (text: string) => {
+    setZip(text);
+    if (text.length > 2) {
+      // Optionally, fetch zip suggestions from OpenStreetMap
+      fetch(
+        `https://nominatim.openstreetmap.org/search?postalcode=${encodeURIComponent(
+          text
+        )}&country=USA&format=json`
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setZipSuggestions([
+            ...new Set(
+              data.map((item: any) => item.address.postcode).filter(Boolean)
+            ),
+          ] as string[]);
+          setShowZipDropdown(true);
+        });
+    } else {
+      setShowZipDropdown(false);
+    }
   };
 
   // When user selects a search result
-  const onSelectSearchResult = async (item: any) => {
+  const onSelectSearchResult = (item: any) => {
     const latitude = parseFloat(item.lat);
     const longitude = parseFloat(item.lon);
     setMarkerCoords({ latitude, longitude });
-    setMapRegion({ ...mapRegion, latitude, longitude });
+    setMapRegion({
+      latitude,
+      longitude,
+      latitudeDelta: mapRegion ? mapRegion.latitudeDelta : 0.01,
+      longitudeDelta: mapRegion ? mapRegion.longitudeDelta : 0.01,
+    });
     setSelectedAddress(item.display_name);
-    setSearchResults([]);
     setSearchQuery(item.display_name);
+    setSearchResults([]);
+  };
+
+  // When user taps on map
+  const onMapPress = async (e: any) => {
+    const { latitude, longitude } = e.nativeEvent.coordinate;
+    setMarkerCoords({ latitude, longitude });
+    setMapRegion({
+      latitude,
+      longitude,
+      latitudeDelta: mapRegion ? mapRegion.latitudeDelta : 0.01,
+      longitudeDelta: mapRegion ? mapRegion.longitudeDelta : 0.01,
+    });
+    await reverseGeocode(latitude, longitude);
   };
 
   // Confirm location
   const confirmLocation = () => {
-    // Save to your form state as needed
+    setCheckInLocation(selectedAddress || searchQuery);
     setMapModalVisible(false);
-    // Example: setCheckInLocation({ coords: markerCoords, address: selectedAddress });
   };
 
   // Card Renderer
@@ -256,20 +570,22 @@ export default function CreateEventScreen() {
             <Text style={styles.cardHeader}>Basic Information</Text>
 
             {/* Title */}
-            <Text style={styles.inputLabel}>Title</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter event title"
               placeholderTextColor="#999"
+              value={title}
+              onChangeText={setTitle}
             />
 
             {/* Description */}
-            <Text style={styles.inputLabel}>Description</Text>
             <TextInput
               style={[styles.input, styles.largeInput]}
               placeholder="Enter event description"
               placeholderTextColor="#999"
               multiline
+              value={description}
+              onChangeText={setDescription}
             />
 
             {/* Category */}
@@ -323,6 +639,61 @@ export default function CreateEventScreen() {
                   <Text style={styles.dropdownText}>{option}</Text>
                 </TouchableOpacity>
               ))}
+
+            {/* Paid Event Toggle */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 16,
+              }}
+            >
+              <Text style={styles.inputLabel}>Is this a paid event?</Text>
+              <Switch
+                value={isPaidEvent}
+                onValueChange={setIsPaidEvent}
+                thumbColor={isPaidEvent ? "#7F00FF" : "#ccc"}
+                trackColor={{ false: "#ccc", true: "#EFEAFE" }}
+                style={{ marginLeft: 12 }}
+              />
+            </View>
+
+            {/* Price and Currency */}
+            {isPaidEvent && (
+              <>
+                <Text style={styles.inputLabel}>Price</Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginLeft: 3 }]}
+                    placeholder="Enter price"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdown,
+                      { width: 80, marginLeft: 8, marginBottom: 15 },
+                    ]}
+                    onPress={() =>
+                      setCurrency(currency === "USD" ? "NGN" : "USD")
+                    }
+                  >
+                    <Text style={styles.dropdownText}>{currency}</Text>
+                    <DownArrow name="chevron-down" size={16} color="#999" />
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {/* Remove the duplicate Next/Finish button here! */}
           </View>
         );
       case "datetime":
@@ -528,36 +899,124 @@ export default function CreateEventScreen() {
             <Text style={styles.inputLabel}>Check-In-Location</Text>
             <TouchableOpacity
               style={[styles.input, { justifyContent: "center" }]}
-              onPress={() => setMapModalVisible(true)}
+              onPress={openMapModal}
             >
               <Text
                 style={{
                   fontSize: 14,
-                  color: selectedAddress ? "#333" : "#999",
+                  color: checkInLocation ? "#333" : "#999",
                 }}
               >
-                {selectedAddress || "Choose coordinates from map"}
+                {checkInLocation || "Choose coordinates from map"}
               </Text>
             </TouchableOpacity>
 
             <Text style={styles.inputLabel}>Venue Name</Text>
-            <TextInput style={styles.input} />
+                      <TextInput 
+            style={styles.input} 
+            placeholder="Enter venue name"
+            value={venueName}
+            onChangeText={setVenueName}
+          />
 
             <Text style={styles.inputLabel}>Street Address</Text>
-            <TextInput style={styles.input} />
+            <TextInput
+              style={styles.input}
+              value={street}
+              onChangeText={setStreet}
+            />
 
             <View style={styles.row}>
-              <View style={[styles.inputGroup, { marginRight: 8 }]}>
+              {/* City */}
+              <View style={[styles.inputGroup, { marginRight: 6 }]}>
                 <Text style={styles.inputLabel}>City</Text>
-                <TextInput style={styles.input} />
+                <TextInput
+                  style={styles.input}
+                  value={city}
+                  placeholder="City"
+                  onChangeText={onCityChange}
+                  onFocus={() => city && setShowCityDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowCityDropdown(false), 200)
+                  }
+                />
+                {showCityDropdown && citySuggestions.length > 0 && (
+                  <View style={styles.dropdownList}>
+                    {citySuggestions.map((suggestion, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setCity(suggestion);
+                          setShowCityDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItem}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
-              <View style={[styles.inputGroup, { marginHorizontal: 4 }]}>
+              {/* State */}
+              <View style={[styles.inputGroup, { marginHorizontal: 6 }]}>
                 <Text style={styles.inputLabel}>State</Text>
-                <TextInput style={styles.input} />
+                <TextInput
+                  style={styles.input}
+                  value={state}
+                  placeholder="State"
+                  onChangeText={onStateChange}
+                  onFocus={() => state && setShowStateDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowStateDropdown(false), 200)
+                  }
+                  maxLength={2}
+                  autoCapitalize="characters"
+                />
+                {showStateDropdown && stateSuggestions.length > 0 && (
+                  <View style={styles.dropdownList}>
+                    {stateSuggestions.map((suggestion, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setState(suggestion);
+                          setShowStateDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItem}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
-              <View style={[styles.inputGroup, { marginLeft: 8 }]}>
+              {/* Zip */}
+              <View style={[styles.inputGroup, { marginLeft: 6 }]}>
                 <Text style={styles.inputLabel}>Zip</Text>
-                <TextInput style={styles.input} />
+                <TextInput
+                  style={styles.input}
+                  value={zip}
+                  placeholder="Zip"
+                  onChangeText={onZipChange}
+                  onFocus={() => zip && setShowZipDropdown(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowZipDropdown(false), 200)
+                  }
+                  keyboardType="numeric"
+                  maxLength={10}
+                />
+                {showZipDropdown && zipSuggestions.length > 0 && (
+                  <View style={styles.dropdownList}>
+                    {zipSuggestions.map((suggestion, idx) => (
+                      <TouchableOpacity
+                        key={idx}
+                        onPress={() => {
+                          setZip(suggestion);
+                          setShowZipDropdown(false);
+                        }}
+                      >
+                        <Text style={styles.dropdownItem}>{suggestion}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </View>
             </View>
 
@@ -578,7 +1037,7 @@ export default function CreateEventScreen() {
             </View>
             {geofence < 50 && (
               <Text style={{ fontSize: 12, color: "red", marginTop: 4 }}>
-                Minimum radius should be at least 100m
+                Minimum radius should be at least 50m
               </Text>
             )}
 
@@ -597,35 +1056,36 @@ export default function CreateEventScreen() {
               animationType="slide"
               transparent={true}
             >
-              <View style={styles.modalContainer}>
-                <View style={styles.modalContent}>
+              <KeyboardAvoidingView
+                style={styles.modalContainer}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+              >
+                <View style={styles.modalContentExpanded}>
                   <Text style={styles.modalTitle}>Select Location on Map</Text>
-
-                  {/* Map View */}
                   <MapView
                     provider={PROVIDER_GOOGLE}
-                    style={styles.map}
-                    region={mapRegion}
-                    onRegionChangeComplete={(region) => setMapRegion(region)}
+                    style={styles.mapExpanded}
+                    region={
+                      mapRegion || {
+                        latitude: 37.0902, // fallback: center of USA
+                        longitude: -95.7129,
+                        latitudeDelta: 0.5,
+                        longitudeDelta: 0.5,
+                      }
+                    }
+                    onRegionChangeComplete={setMapRegion}
+                    onPress={onMapPress}
                   >
-                    {markerCoords && (
-                      <Marker
-                        coordinate={markerCoords}
-                        draggable
-                        onDragEnd={onMarkerDragEnd}
-                      />
-                    )}
+                    {markerCoords && <Marker coordinate={markerCoords} />}
                   </MapView>
-
-                  {/* Search Bar */}
                   <View style={styles.searchContainer}>
                     <TextInput
                       style={styles.searchInput}
                       placeholder="Search address..."
                       placeholderTextColor="#999"
                       value={searchQuery}
-                      onChangeText={setSearchQuery}
-                      onSubmitEditing={() => searchAddress(searchQuery)}
+                      onChangeText={searchAddress}
                     />
                     {searchLoading && (
                       <ActivityIndicator
@@ -635,8 +1095,6 @@ export default function CreateEventScreen() {
                       />
                     )}
                   </View>
-
-                  {/* Search Results List */}
                   {searchResults.length > 0 && (
                     <FlatList
                       data={searchResults}
@@ -652,10 +1110,9 @@ export default function CreateEventScreen() {
                         </TouchableOpacity>
                       )}
                       style={styles.searchResultsList}
+                      keyboardShouldPersistTaps="handled"
                     />
                   )}
-
-                  {/* Confirm Button */}
                   <TouchableOpacity
                     style={styles.confirmLocationButton}
                     onPress={confirmLocation}
@@ -664,8 +1121,6 @@ export default function CreateEventScreen() {
                       Confirm Location
                     </Text>
                   </TouchableOpacity>
-
-                  {/* Close Button */}
                   <TouchableOpacity
                     style={styles.closeModalButton}
                     onPress={() => setMapModalVisible(false)}
@@ -673,7 +1128,7 @@ export default function CreateEventScreen() {
                     <Ionicons name="close" size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </Modal>
           </View>
         );
@@ -683,26 +1138,6 @@ export default function CreateEventScreen() {
             {/* Upload Event Image */}
             <Text style={styles.cardHeader}>Upload Event Image</Text>
 
-            {/* Dashed Dropzone */}
-            {/*
-            <TouchableOpacity
-              style={styles.dashedDropzone}
-              onPress={pickImage}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name="cloud-upload-outline"
-                size={38}
-                color="#7F00FF"
-                style={{ marginBottom: 6 }}
-              />
-              <Text style={{ color: "#888", fontSize: 14 }}>
-                Browse Files to Upload
-              </Text>
-            </TouchableOpacity>
-            */}
-
-            {/* Use the reusable DashedDropzone component */}
             <DashedDropzone onPress={pickImage} />
 
             {/* File Info Row */}
@@ -740,6 +1175,18 @@ export default function CreateEventScreen() {
               value={additionalDescription}
               onChangeText={setAdditionalDescription}
             />
+
+            {/* Advertise Event Option */}
+            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
+              <Text style={styles.inputLabel}>Advertise this event on Explore?</Text>
+              <Switch
+                value={showAdvertisePrompt}
+                onValueChange={setShowAdvertisePrompt}
+                thumbColor={showAdvertisePrompt ? "#7F00FF" : "#ccc"}
+                trackColor={{ false: "#ccc", true: "#EFEAFE" }}
+                style={{ marginLeft: 12 }}
+              />
+            </View>
           </View>
         );
       default:
@@ -747,11 +1194,20 @@ export default function CreateEventScreen() {
     }
   };
 
+  // Add this function to handle navigation to payment page
+  const handleAdvertise = () => {
+    setShowAdvertisePrompt(false);
+    navigation.navigate("PaymentScreen", {
+      eventTitle: title,
+      eventId: "1234",/* pass the created event's ID here if available */
+    });
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0} // tweak if header overlaps
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -759,7 +1215,9 @@ export default function CreateEventScreen() {
           <View style={styles.topRow}>
             <Text style={styles.createTitle}>Create A New Event</Text>
             <Image
-              source={New_Event}
+              source={{
+                uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655652532-4860d545-2e1c-4eaf-a156-a189ae3dc8c9-New_Event.jpg",
+              }}
               style={styles.headerImage}
               resizeMode="contain"
             />
@@ -825,6 +1283,55 @@ export default function CreateEventScreen() {
             </Animated.View>
           </View>
         </ScrollView>
+
+        {/* Advertise Prompt Modal */}
+        {showAdvertisePrompt && (
+          <Modal
+            visible={showAdvertisePrompt}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setShowAdvertisePrompt(false)}
+          >
+            <View style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              justifyContent: "center",
+              alignItems: "center"
+            }}>
+              <View style={{
+                backgroundColor: "#fff",
+                borderRadius: 16,
+                padding: 24,
+                alignItems: "center",
+                width: "80%"
+              }}>
+                <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 12 }}>
+                  Advertise Event?
+                </Text>
+                <Text style={{ fontSize: 15, color: "#555", marginBottom: 24, textAlign: "center" }}>
+                  Do you want to advertise this event on the Explore page? This will require a payment.
+                </Text>
+                <View style={{ flexDirection: "row", gap: 14 }}>
+                  <TouchableOpacity
+                    style={[styles.nextButton, { backgroundColor: "#7F00FF" }]}
+                    onPress={handleAdvertise}
+                  >
+                    <Text style={styles.nextButtonText}>Yes, Advertise</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.nextButton, { backgroundColor: "#ccc" }]}
+                    onPress={() => {
+                      setShowAdvertisePrompt(false);
+                      navigation.navigate("EventSuccess");
+                    }}
+                  >
+                    <Text style={styles.nextButtonText}>No, Thanks</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -1051,9 +1558,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#7F00FF",
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 18,
     borderRadius: 24,
-    marginTop: 16,
+    marginTop: 8,
     alignSelf: "flex-end",
     elevation: 2,
   },
@@ -1082,6 +1589,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
 
+  modalContentExpanded: {
+    width: "96%",
+    maxWidth: 500,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    elevation: 4,
+    maxHeight: "90%",
+    alignSelf: "center",
+  },
+
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -1092,6 +1610,13 @@ const styles = StyleSheet.create({
   map: {
     width: "100%",
     height: 200,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+
+  mapExpanded: {
+    width: "100%",
+    height: 340,
     borderRadius: 10,
     marginBottom: 12,
   },
@@ -1131,6 +1656,26 @@ const styles = StyleSheet.create({
   },
 
   searchResultText: {
+    fontSize: 14,
+    color: "#333",
+  },
+
+  dropdownList: {
+    position: "absolute",
+    top: 48,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    zIndex: 10,
+    maxHeight: 120,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
     fontSize: 14,
     color: "#333",
   },
@@ -1177,6 +1722,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     fontSize: 16,
-    marginLeft: 8,
-  },
+    marginLeft: 8
+  }
 });

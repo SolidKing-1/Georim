@@ -10,6 +10,7 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  Pressable,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -23,18 +24,26 @@ import TicketIcon from "../assets/ticket.png";
 import ProfileIcon from "../assets/user.png";
 import * as Location from "expo-location";
 import Constants from "expo-constants";
-import { getToken } from "../utils/auth";
+import { getToken, setToken } from "../utils/auth";
 import BottomNavComplete from "../components/BottomNavComplete"; // Import the reusable bottom nav component
-
+import { handleTokenRefresh } from "../utils/tokenRefresh"; 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
 const { width } = Dimensions.get("window");
 // Slideshow images
 const slideshowImages = [
-  require("../assets/slide1.jpg"),
-  require("../assets/slide2.jpg"),
-  require("../assets/slide3.jpg"),
-  require("../assets/slide4.jpg"),
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587724462-76b4b302-e6fe-4358-80cf-038dbea99af7-slide1.jpg",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587771409-76d2a879-0ae5-4b69-a8f5-2c727483817d-slide2.jpg",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588842532-41a63b0a-a69b-474e-b26c-48d538f34a9d-slide3.jpg",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588074446-41748066-679a-4487-ae22-a088c5cf388e-slide4.jpg",
+  },
 ];
 
 // Dummy data for events
@@ -48,7 +57,9 @@ const events = [
     price: "Free",
     description:
       "Join us for the biggest festival in Ruston! Featuring live music, food vendors, local artisans, and family-friendly activities. A celebration of our community's culture and spirit.",
-    image: require("../assets/ruston-fest.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748584776376-117c9360-6dad-4de0-ba1a-26bf85cd3f71-ruston-fest.png",
+    },
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 156,
@@ -62,7 +73,9 @@ const events = [
     price: "Free",
     description:
       "Master calculus with Professor Dembele. This comprehensive course covers differential and integral calculus, with practical applications and problem-solving sessions.",
-    image: require("../assets/calculus.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587113583-cefb5eee-97f8-48a3-b913-460ffb550e0d-calculus.png",
+    },
     latitude: 32.5251,
     longitude: -92.7146,
     attendees: 45,
@@ -76,7 +89,9 @@ const events = [
     price: "$30",
     description:
       "Show off your vocal talents at our weekly karaoke night! Wide selection of songs, great atmosphere, and prizes for the best performers.",
-    image: require("../assets/karaoke.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748584473395-ca9266b9-b7bb-4380-94e0-3a65d1f590c9-karaoke.png",
+    },
     latitude: 32.5254,
     longitude: -92.7141,
     attendees: 89,
@@ -90,7 +105,9 @@ const events = [
     price: "$10",
     description:
       "Experience the future of technology at Tech Expo 2025. Featuring cutting-edge innovations, interactive demos, and inspiring talks from industry leaders.",
-    image: require("../assets/tech_expo.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587214000-48ea3778-476a-4e6e-ae0c-2ff7211a521f-tech_expo.png",
+    },
     latitude: 32.5295,
     longitude: -92.6379,
     attendees: 234,
@@ -104,7 +121,9 @@ const events = [
     price: "$15",
     description:
       "An evening of smooth jazz and sophisticated ambiance. Local and guest musicians perform classic jazz standards and original compositions.",
-    image: require("../assets/jazz_night.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587258505-0c0ca507-814c-41ed-b10e-044c0a1aae7d-jazz_night.png",
+    },
     latitude: 32.5232,
     longitude: -92.6379,
     attendees: 67,
@@ -118,7 +137,9 @@ const events = [
     price: "Free",
     description:
       "Watch promising startups pitch their ideas to investors. Network with entrepreneurs and learn about the latest innovations in technology and business.",
-    image: require("../assets/startup_pitch.jpg"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587304323-c0743b62-0b5d-4eda-8803-a9a79c9b7a01-startup_pitch.jpg",
+    },
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 112,
@@ -132,7 +153,9 @@ const events = [
     price: "$5",
     description:
       "A culinary adventure featuring the best food trucks in the region. Enjoy diverse cuisines, live music, and family entertainment.",
-    image: require("../assets/food_truck.jpg"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587336349-b8411f81-a49a-4f16-8f54-530dc1322d3b-food_truck.jpg",
+    },
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 445,
@@ -146,7 +169,9 @@ const events = [
     price: "$99",
     description:
       "Intensive coding bootcamp covering web development fundamentals. Learn HTML, CSS, JavaScript, and modern frameworks. Perfect for beginners!",
-    image: require("../assets/coding_bootcamp.jpg"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587369591-5cded716-afac-452b-b3f7-7f2374b9d50f-coding_bootcamp.jpg",
+    },
     attendees: 78,
   },
   {
@@ -158,7 +183,9 @@ const events = [
     price: "Free",
     description:
       "Showcase of local artisans featuring handmade crafts, artwork, jewelry, and more. Support local artists and find unique pieces for your collection.",
-    image: require("../assets/art_&_craft.webp"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587415658-05e28872-5536-438b-9780-b6feefdc0b14-art_%26_craft.webp",
+    },
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 223,
@@ -172,7 +199,9 @@ const events = [
     price: "$8",
     description:
       "Outdoor movie screening under the stars. Bring your blankets and enjoy classic films in a beautiful outdoor setting. Concessions available.",
-    image: require("../assets/movie_under_the_stars.jpg"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748587464347-0fdced07-89b4-4233-b3d0-6acd6a7f8931-movie_under_the_stars.jpg",
+    },
     latitude: 32.5272,
     longitude: -92.6379,
     attendees: 167,
@@ -301,11 +330,19 @@ export default function DashboardScreen() {
           longitude: location.coords.longitude,
         }),
       });
-      console.log(token);
+
       const data = await response.json();
+      // Check if the request returned succesfully; 
       if (!response.ok) {
-        alert(data.message || "Failed to update location");
-        return;
+          // If the request failed and it was a jwt expired error, use the handle token refresh function; 
+           
+          if(data.message == "jwt expired"){
+              await handleTokenRefresh(); 
+          }else{
+            alert(data.message || "Failed to update location");
+            return;
+          }
+
       }
     })();
   }, []);
@@ -318,6 +355,32 @@ export default function DashboardScreen() {
   }, [route.params]);
 
   const [showCategoriesModal, setShowCategoriesModal] = useState(false);
+  const dropdownAnim = useRef(new Animated.Value(0)).current;
+  const iconRef = useRef<View>(null);
+  const [iconPosition, setIconPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+  });
+
+  // Animate dropdown in/out
+  useEffect(() => {
+    Animated.timing(dropdownAnim, {
+      toValue: showCategoriesModal ? 1 : 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [showCategoriesModal]);
+
+  // Find the position of the icon so the dropdown can be attached to it
+  const handleShowCategories = () => {
+    if (iconRef.current) {
+      iconRef.current.measureInWindow((x, y, width, height) => {
+        setIconPosition({ top: y + height, left: x, width });
+        setShowCategoriesModal(true);
+      });
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -390,13 +453,30 @@ export default function DashboardScreen() {
         {/* Icons Row */}
         <View style={styles.midNavbar}>
           {[
-            { label: "Religious", icon: require("../assets/Worship.png") },
+            {
+              label: "Religious",
+              icon: {
+                uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/v1748463744/Worship_ji1tkp.png",
+              },
+            },
             {
               label: "Entertainment",
-              icon: require("../assets/Entertainment.png"),
+              icon: {
+                uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588164320-72f017e5-bc92-44fa-a796-013471879c1c-Entertainment.png",
+              },
             },
-            { label: "Corporate", icon: require("../assets/Corporate.png") },
-            { label: "Educational", icon: require("../assets/Education.png") },
+            {
+              label: "Corporate",
+              icon: {
+                uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748588962985-374a54fa-c5e5-4777-a838-581b4121764a-Corporate.png",
+              },
+            },
+            {
+              label: "Educational",
+              icon: {
+                uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748589043443-c22d024f-db5d-4fbc-9384-7f6e60edf950-Education.png",
+              },
+            },
           ].map(({ label, icon }, index) => (
             <View key={index} style={styles.iconCircleWrapper}>
               <TouchableOpacity style={styles.iconCircle}>
@@ -407,17 +487,17 @@ export default function DashboardScreen() {
           ))}
 
           {/* Options icon moreCategories */}
-          <TouchableOpacity
-            onPress={() => {
-              setShowCategoriesModal(true);
-            }}
-            style={styles.iconCircleWrapper}
-          >
-            <Image
-              source={require("../assets/menu.png")}
-              style={[styles.optionsIcon, { tintColor: "#7F00FF" }]}
-            />
-          </TouchableOpacity>
+          <View ref={iconRef} collapsable={false}>
+            <TouchableOpacity
+              onPress={handleShowCategories}
+              style={styles.iconCircleWrapper}
+            >
+              <Image
+                source={require("../assets/menu.png")}
+                style={[styles.optionsIcon, { tintColor: "#7F00FF" }]}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -440,6 +520,57 @@ export default function DashboardScreen() {
         setActiveTab={setActiveTab}
         navSlideAnim={navSlideAnim}
       />
+
+      {/* Dropdown Modal (attached to icon, not full height) */}
+      {showCategoriesModal && (
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => setShowCategoriesModal(false)}
+        >
+          <Animated.View
+            style={[
+              styles.dropdownMenu,
+              {
+                top: iconPosition.top + 4,
+                left: iconPosition.left - 120 + iconPosition.width / 2,
+                opacity: dropdownAnim,
+                transform: [
+                  {
+                    scale: dropdownAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              },
+            ]}
+            pointerEvents="box-none"
+          >
+            <View style={styles.dropdownContent}>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Religious</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Entertainment</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Corporate</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>Educational</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.dropdownItem, { marginTop: 8 }]}
+                onPress={() => setShowCategoriesModal(false)}
+              >
+                <Text style={[styles.dropdownText, { color: "#A259FF" }]}>
+                  Close
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -635,4 +766,127 @@ const styles = StyleSheet.create({
   eventTitle: { fontSize: 16, fontWeight: "500" },
   eventDate: { fontSize: 12, color: "#666", marginTop: 2 },
   eventPrice: { fontSize: 12, color: "#000", marginTop: 2 },
+
+  // Modal styles
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 20,
+    alignItems: "center",
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+  },
+  closeModal: {
+    marginTop: 12,
+    color: "#007BFF",
+    fontWeight: "500",
+  },
+
+  // Side navigation styles
+  sideNavOverlay: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "100%",
+    flexDirection: "row",
+    zIndex: 2000,
+  },
+  sideNavBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  sideNavContent: {
+    width: 260,
+    backgroundColor: "#fff",
+    paddingTop: 48,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 0 },
+    borderTopRightRadius: 16,
+    borderBottomRightRadius: 16,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+  },
+  sideNavItem: {
+    paddingVertical: 16,
+    width: "100%",
+  },
+  sideNavText: {
+    fontSize: 16,
+    color: "#181818",
+    fontWeight: "500",
+  },
+  attachedSideNav: {
+    position: "absolute",
+    width: 220,
+    minHeight: 220,
+    maxHeight: 320,
+    backgroundColor: "transparent",
+    zIndex: 3000,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 0 },
+    elevation: 10,
+  },
+  attachedSideNavContent: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingTop: 18,
+    paddingBottom: 12,
+    paddingHorizontal: 18,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    width: 160,
+    backgroundColor: "transparent",
+    zIndex: 3000,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 2, height: 2 },
+    elevation: 10,
+  },
+  dropdownContent: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+  },
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    width: "100%",
+  },
+  dropdownText: {
+    fontSize: 15,
+    color: "#181818",
+    fontWeight: "500",
+  },
 });

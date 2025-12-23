@@ -1,240 +1,227 @@
 import React, { useState } from "react";
 import {
-  ScrollView,
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Platform,
-  Keyboard,
   Image,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Linking,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import KeyIcon from "../assets/authScreens/key-01.png";
-import GlassButton from "../components/GlassButton";
+import Icon from "react-native-vector-icons/Ionicons";
+import Company from "../assets/Company_icon.png";
+import Constants from "expo-constants";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import Constants from "expo-constants";
 
-type NavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "ForgotPassword"
->;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "ForgotPassword">;
 
 export default function ForgotPasswordScreen() {
   const navigation = useNavigation<NavigationProp>();
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
-  const handleEmailVerification = async () => {
-    if (!email.trim()) {
-      alert("Please enter your email address");
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert("Please enter your email address.");
       return;
     }
-
-    // Navigate immediately so the user sees the OTP screen
-    navigation.navigate("VerifyPasscode", { email });
-
-    // Fire-and-forget the email request; warn if misconfigured
-    if (!BACKEND_URL) {
-      console.warn("BACKEND_URL missing; cannot request OTP");
-      return;
-    }
-
-    setIsSubmitting(true);
+    setLoading(true);
     try {
       const response = await fetch(`${BACKEND_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        alert(data?.message || "Failed to send reset instructions");
+      if (response.ok && data.success) {
+        Alert.alert(
+          "Check your email",
+          "A password reset link has been sent to your email address."
+        );
+        navigation.goBack();
+      } else {
+        Alert.alert(
+          "Error",
+          data?.data?.message || "Could not send reset link. Please try again."
+        );
       }
     } catch (err) {
-      console.error("Network error:", err);
-    } finally {
-      setIsSubmitting(false);
+      Alert.alert("Network error", "Please try again.");
     }
+    setLoading(false);
+  };
+
+  // Example backend personnel contact (customize as needed)
+  const backendContact = {
+    email: "geo.rim.app@gmail.com",
+    whatsapp: "https://wa.me/3185481042",
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      onScrollBeginDrag={() => Keyboard.dismiss()}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
     >
-      <View style={styles.innerContainer}>
-        {/* Icon with Glass Effect */}
-        <View style={styles.iconContainer}>
-          <GlassButton
-            style={styles.iconGlassWrapper}
-            borderRadius={60}
-            isCircular={true}
-          >
-            <View style={styles.iconCircle}>
-              <Image source={KeyIcon} style={styles.keyImage} />
-            </View>
-          </GlassButton>
+      <View style={styles.container}>
+        {/* Company Logo */}
+        <View style={styles.CompanyLogo}>
+          <Image
+            source={Company}
+            style={styles.cimage}
+            resizeMode="contain"
+          />
         </View>
-
-        {/* Heading */}
-        <Text style={styles.heading}>Forgot password?</Text>
-
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>
-          No worries, we'll send you reset{"\n"}instructions.
-        </Text>
-
-        {/* Form */}
         <View style={styles.formContainer}>
+          <Text style={styles.header}>Forgot Password</Text>
+          <Text style={styles.infoText}>
+            Enter your email address and we'll send you a link to reset your password.
+          </Text>
           <Text style={styles.label}>Email</Text>
           <TextInput
             placeholder="username@gmail.com"
-            placeholderTextColor="#6B7280"
+            placeholderTextColor="#999"
             style={styles.input}
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
             onChangeText={setEmail}
           />
-
-          {/* Email Verification Button */}
-          <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleForgotPassword}
+            disabled={loading}
+          >
+            <Text style={styles.submitButtonText}>
+              {loading ? "Sending..." : "Send Reset Link"}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginTop: 18, alignSelf: "center" }}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.backToLogin}>
+              <Icon name="arrow-back" size={16} color="#4f46e5" /> Back to Login
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.contactBox}>
+            <Text style={styles.contactTitle}>Need help?</Text>
+            <Text style={styles.contactText}>
+              Contact our help personnel:
+            </Text>
             <TouchableOpacity
-              onPress={handleEmailVerification}
-              disabled={isSubmitting}
-              activeOpacity={0.8}
+              onPress={() => Linking.openURL(`mailto:${backendContact.email}`)}
             >
-              <LinearGradient
-                colors={["#6E23BA", "#282691"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.verificationButton}
-              >
-                <Text style={styles.verificationButtonText}>
-                  {isSubmitting ? "Sending..." : "Email Verification Code"}
-                </Text>
-              </LinearGradient>
+              <Text style={styles.contactLink}>
+                <Icon name="mail" size={16} color="#4f46e5" /> {backendContact.email}
+              </Text>
             </TouchableOpacity>
-          </GlassButton>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.copyright}>
-            © 2026 Georim. All right reserved
-          </Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL(backendContact.whatsapp)}
+            >
+              <Text style={styles.contactLink}>
+                <Icon name="logo-whatsapp" size={16} color="#25D366" /> WhatsApp Support
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#05031B",
+    backgroundColor: "#fff",
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  innerContainer: {
-    flex: 1,
-    paddingHorizontal: 28,
-    paddingTop: 80,
-    paddingBottom: 40,
-  },
-  iconContainer: {
+  CompanyLogo: {
     alignItems: "center",
-    marginTop: 60,
-    marginBottom: 40,
+    justifyContent: "flex-start",
+    marginTop: 65,
   },
-  iconGlassWrapper: {
-    width: 100,
-    height: 100,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#331057",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  keyImage: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-  },
-  heading: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    fontFamily: "Hero",
-    textAlign: "center",
-    marginBottom: 16,
-  },
-  subtitle: {
-    fontSize: 20,
-    color: "#9CA3AF",
-    fontFamily: "Hero",
-    textAlign: "center",
-    marginBottom: 20,
-    lineHeight: 24,
+  cimage: {
+    height: 40,
+    width: "100%",
   },
   formContainer: {
-    marginBottom: 60,
+    paddingHorizontal: 20,
+    flex: 1,
+    marginTop: 30,
+  },
+  header: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  infoText: {
+    color: "#555",
+    fontSize: 15,
+    marginBottom: 18,
+    textAlign: "center",
   },
   label: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#FFFFFF",
-    marginBottom: 8,
-    fontFamily: "Hero",
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 5,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#0E0D32",
-    padding: 14,
-    borderRadius: 8,
-    backgroundColor: "#0E0D32",
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontFamily: "Hero",
-    marginBottom: 48,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: "#7F00FF0D",
+    marginBottom: 18,
   },
-  glassButtonWrapper: {
-    marginBottom: 0,
+  submitButton: {
+    backgroundColor: "#4f46e5",
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
   },
-  verificationButton: {
-    padding: 14,
-    borderRadius: 25,
-  },
-  verificationButtonText: {
-    color: "#FFFFFF",
+  submitButtonText: {
+    color: "white",
     textAlign: "center",
     fontWeight: "bold",
     fontSize: 16,
-    fontFamily: "Hero",
   },
-  footer: {
-    position: "absolute",
-    bottom: 30,
-    left: 0,
-    right: 0,
+  backToLogin: {
+    color: "#4f46e5",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  contactBox: {
+    marginTop: 32,
+    backgroundColor: "#f7f7fa",
+    borderRadius: 10,
+    padding: 16,
     alignItems: "center",
   },
-  copyright: {
-    fontSize: 12,
-    color: "#6B7280",
-    fontFamily: "Hero",
+  contactTitle: {
+    fontWeight: "bold",
+    color: "#333",
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  contactText: {
+    color: "#555",
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  contactLink: {
+    color: "#4f46e5",
+    fontWeight: "500",
+    fontSize: 15,
+    marginTop: 4,
   },
 });

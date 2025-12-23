@@ -11,6 +11,14 @@ import {
 } from "react-native";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import Constants from "expo-constants";
+import { getUserData } from "../utils/user";
+import { getToken } from "../utils/auth";
+import * as Animatable from "react-native-animatable";
+
+// Constsants.
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+// USER_TOKEN will be fetched asynchronously inside useEffect
 
 type Event = {
   id: string;
@@ -30,64 +38,62 @@ const EventCreatedPage = () => {
   const navSlideAnim = useRef(new Animated.Value(100)).current;
 
   useEffect(() => {
-    Animated.timing(navSlideAnim, {
-      toValue: 0,
-      duration: 500,
-      useNativeDriver: true,
-    }).start();
+    const fetchEvents = async () => {
+      Animated.timing(navSlideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+
+      try {
+        const USER_TOKEN = await getToken();
+        console.log("User Token:", USER_TOKEN);
+
+        const response = await fetch(`${BACKEND_URL}/user/created-events`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${USER_TOKEN}`,
+          },
+        });
+
+        if (!response.ok) {
+          console.error("Failed to fetch created events from backend");
+          // Optionally set an error state here
+        } else {
+          const responseData = await response.json();
+          const fetchedEvents: Event[] = responseData.data.map(
+            (event: any) => ({
+              id: event.id,
+              title: event.title,
+              description: event.description,
+              image: { uri: event.imageUrl },
+            })
+          );
+          setEvents(fetchedEvents);
+        }
+      } catch (error) {
+        console.error("Error fetching user data or events:", error);
+        // Optionally set an error state here
+      }
+    };
+
+    fetchEvents();
   }, []); // Initialize navigation slide animation
 
   // Add more dummy events using only images that already exist in assets
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: "1",
-      title: "Ruston Fest!!! - Revival",
-      description: "Sat, May 17 - LA Tech Basketball Stadium Free",
-      image: require("../assets/ruston-fest.png"),
-    },
-    {
-      id: "2",
-      title: "Dembele Calculus - Education",
-      description: "May 17 - Dec 1 - Grambing, Carver Hall 234 Free",
-      image: require("../assets/calculus.png"),
-    },
-    {
-      id: "3",
-      title: "Open Mic Night",
-      description: "Sat, May 24 - Grambling, McDinning $10",
-      image: require("../assets/ruston-fest.png"),
-    },
-    {
-      id: "4",
-      title: "Tech Soccer Finals",
-      description: "Sun, May 25 - LA Sports Stadium Free",
-      image: require("../assets/calculus.png"),
-    },
-    {
-      id: "5",
-      title: "Science Seminar",
-      description: "Mon, May 26 - Grambling, SOC Faculty Free",
-      image: require("../assets/ruston-fest.png"),
-    },
-    {
-      id: "6",
-      title: "Live Band Night",
-      description: "Tue, May 27 - Grambling, McDinning $20",
-      image: require("../assets/calculus.png"),
-    },
-    {
-      id: "7",
-      title: "Basketball Showdown",
-      description: "Wed, May 28 - LA Tech Basketball Stadium Free",
-      image: require("../assets/ruston-fest.png"),
-    },
-    {
-      id: "8",
-      title: "Social Science Workshop",
-      description: "Thu, May 29 - Grambling, SOC Faculty Free",
-      image: require("../assets/calculus.png"),
-    },
-  ]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const emojiList = ["🎉", "😅", "🤔", "🎈", "🙌", "📝", "✨"];
+  const [emojiIndex, setEmojiIndex] = useState(0);
+
+  useEffect(() => {
+    if (events.length === 0) {
+      const interval = setInterval(() => {
+        setEmojiIndex((prev) => (prev + 1) % emojiList.length);
+      }, 1200);
+      return () => clearInterval(interval);
+    }
+  }, [events]);
 
   const renderEvent = ({ item }: { item: Event }) => (
     <TouchableOpacity
@@ -124,13 +130,44 @@ const EventCreatedPage = () => {
         <Text style={styles.headerText}>Events Created</Text>
       </View>
 
-      {/* Event List */}
-      <FlatList
-        data={events}
-        keyExtractor={(item) => item.id}
-        renderItem={renderEvent}
-        contentContainerStyle={styles.eventList}
-      />
+      {/* Event List or No Events Animation */}
+      {events.length === 0 ? (
+        <View style={styles.noEventsContainer}>
+          <Animatable.Text
+            animation="bounceIn"
+            iterationCount="infinite"
+            direction="alternate"
+            style={styles.emoji}
+          >
+            {emojiList[emojiIndex]}
+          </Animatable.Text>
+          <Animatable.Text
+            animation="fadeInDown"
+            iterationCount="infinite"
+            direction="alternate"
+            duration={1800}
+            style={styles.noEventsText}
+          >
+            No events yet!
+          </Animatable.Text>
+          <Animatable.Text
+            animation="pulse"
+            iterationCount="infinite"
+            duration={2200}
+            style={styles.noEventsSubText}
+          >
+            Create your first event and it will show up here. 🚀{"\n"}
+            Tap the "+" button below to get started!
+          </Animatable.Text>
+        </View>
+      ) : (
+        <FlatList
+          data={events}
+          keyExtractor={(item) => item.id}
+          renderItem={renderEvent}
+          contentContainerStyle={styles.eventList}
+        />
+      )}
 
       <BottomNavComplete
         activeTab={activeTab}
@@ -204,6 +241,28 @@ const styles = StyleSheet.create({
   eventDescription: {
     fontSize: 14,
     color: "#666",
+  },
+  noEventsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 160,
+  },
+  emoji: {
+    fontSize: 64,
+    marginBottom: 10,
+  },
+  noEventsText: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#7F00FF",
+    marginBottom: 6,
+  },
+  noEventsSubText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    paddingHorizontal: 24,
   },
 });
 

@@ -17,8 +17,9 @@ export type RootStackParamList = {
   HelpAndSupportScreen: undefined;
   Profile: undefined;
   ForgotPassword: undefined;
-  VerifyPasscode: { email: string } | undefined;
-  ResetPassword: { email: string; code: string };
+  Onboarding: undefined;
+  Welcome: undefined;
+  Splash: undefined;
 };
 
 import React, { useEffect, useState } from "react";
@@ -44,10 +45,15 @@ import { getToken, isBiometricEnabled } from "./utils/auth";
 import { promptBiometric } from "./utils/biometric";
 import Profile from "./screens/ProfileScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
-import VerifyPasscodeScreen from "./screens/VerifyPasscodeScreen";
-import ResetPasswordScreen from "./screens/ResetPasswordScreen";
+import OnboardingScreen from "./screens/OnboardingScreen";
+import SplashScreen from "./screens/SplashScreen";
+import Welcome from "./screens/Welcome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Linking from "expo-linking";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const prefix = Linking.createURL("/");
 
 export default function App() {
   const [initialRoute, setInitialRoute] = useState<
@@ -56,18 +62,21 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const token = await getToken();
-      if (token) {
-        const biometric = await isBiometricEnabled();
-        if (biometric) {
-          const success = await promptBiometric();
-          setInitialRoute(success ? "Dashboard" : "Login");
-        } else {
-          setInitialRoute("Dashboard");
-        }
-      } else {
-        setInitialRoute("Login");
-      }
+      // Start with the splash screen, it will navigate onward when done
+      setInitialRoute("Splash");
+      // --- original logic below ---
+      // const token = await getToken();
+      // if (token) {
+      //   const biometric = await isBiometricEnabled();
+      //   if (biometric) {
+      //     const success = await promptBiometric();
+      //     setInitialRoute(success ? "Dashboard" : "Login");
+      //   } else {
+      //     setInitialRoute("Dashboard");
+      //   }
+      // } else {
+      //   setInitialRoute("Login");
+      // }
     })();
   }, []);
 
@@ -86,7 +95,17 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      linking={{
+        prefixes: [prefix, "georim://"],
+        config: {
+          screens: {
+            Login: "login",
+            // ...other screens
+          },
+        },
+      }}
+    >
       <Stack.Navigator
         initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}
@@ -132,8 +151,13 @@ export default function App() {
         />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        <Stack.Screen name="VerifyPasscode" component={VerifyPasscodeScreen} />
-        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="Welcome" component={Welcome} />
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
         {/* Add more screens as needed */}
       </Stack.Navigator>
     </NavigationContainer>
