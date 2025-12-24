@@ -17,6 +17,8 @@ export type RootStackParamList = {
   HelpAndSupportScreen: undefined;
   Profile: undefined;
   ForgotPassword: undefined;
+  VerifyPasscode: { email: string } | undefined;
+  ResetPassword: { email: string; code: string };
   Onboarding: undefined;
   Welcome: undefined;
   Splash: undefined;
@@ -45,6 +47,8 @@ import { getToken, isBiometricEnabled } from "./utils/auth";
 import { promptBiometric } from "./utils/biometric";
 import Profile from "./screens/ProfileScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import VerifyPasscodeScreen from "./screens/VerifyPasscodeScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import OnboardingScreen from "./screens/OnboardingScreen";
 import SplashScreen from "./screens/SplashScreen";
 import Welcome from "./screens/Welcome";
@@ -151,6 +155,8 @@ export default function App() {
         />
         <Stack.Screen name="Profile" component={Profile} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        <Stack.Screen name="VerifyPasscode" component={VerifyPasscodeScreen} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Welcome" component={Welcome} />
         <Stack.Screen
