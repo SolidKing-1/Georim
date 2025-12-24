@@ -214,7 +214,6 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
             />
-<<<<<<< HEAD
             {biometricAvailable && (
               <TouchableOpacity
                 onPress={handleBiometricLogin}
@@ -224,19 +223,6 @@ export default function LoginScreen() {
                 <Icon name="finger-print" size={22} color="#932FF8" />
               </TouchableOpacity>
             )}
-=======
-          </View>
-          {/* Top Image Box */}
-          <View style={styles.imageContainer}>
-            <Text style={styles.header}>Login</Text>
-            <Image
-              source={{
-                uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/Authentication_ympwp3.jpg",
-              }}
-              style={styles.image}
-              resizeMode="contain"
-            />
->>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
           </View>
 
           <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
@@ -260,7 +246,6 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </View>
 
-<<<<<<< HEAD
           {/* Forgot Password */}
           <TouchableOpacity
             style={styles.forgotPassword}
@@ -268,36 +253,6 @@ export default function LoginScreen() {
           >
             <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
-=======
-            {/* Remember Me and Forgot Password Section */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginTop: 10,
-                marginBottom: 10,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ color: "#333", fontSize: 15, marginRight: 6 }}>
-                  Remember me?
-                </Text>
-                <Switch
-                  value={rememberMe}
-                  onValueChange={setRememberMe}
-                  trackColor={{ false: "#ccc", true: "#4f46e5" }}
-                  thumbColor={rememberMe ? "#fff" : "#fff"}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.forgotPassword}
-                onPress={() => navigation.navigate("ForgotPassword")}
-              >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
->>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
 
           {/* Sign In Button */}
           <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>

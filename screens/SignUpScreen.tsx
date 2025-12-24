@@ -10,21 +10,12 @@ import {
   Modal,
   FlatList,
   Platform,
-<<<<<<< HEAD
   Keyboard,
-=======
-  KeyboardAvoidingView,
->>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import CountryFlag from "react-native-country-flag";
 import { COUNTRY_LIST } from "../utils/countryList";
-<<<<<<< HEAD
 import BannerImage from "../assets/authScreens/signUp.jpg";
-=======
-import Logo from "../assets/Authentication.jpg";
-import Company from "../assets/Company_icon.png";
->>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
 import Icon from "react-native-vector-icons/Ionicons";
 import GoogleIcon from "../assets/Google.png";
 import GlassButton from "../components/GlassButton";
@@ -103,24 +94,12 @@ export default function SignUpScreen() {
         {/* Header */}
         <Text style={styles.header}>Sign Up</Text>
 
-<<<<<<< HEAD
         {/* Banner Image */}
         <View style={styles.bannerContainer}>
           <Image
             source={BannerImage}
             style={styles.bannerImage}
             resizeMode="cover"
-=======
-        {/* Top Image Box */}
-        <View style={styles.imageContainer}>
-          <Text style={styles.header}>Sign Up</Text>
-          <Image
-            source={{
-              uri: "https://res.cloudinary.com/dcw9wgjq5/image/upload/Authentication_ympwp3.jpg",
-            }}
-            style={styles.image}
-            resizeMode="contain"
->>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
           />
         </View>
 
@@ -361,23 +340,8 @@ export default function SignUpScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-<<<<<<< HEAD
       </View>
     </ScrollView>
-=======
-      </ScrollView>
-      {/* Code Verification Modal */}
-      <CodeVerificationModal
-        visible={showCodeModal}
-        email={email}
-        onClose={() => setShowCodeModal(false)}
-        onSuccess={() => {
-          setShowCodeModal(false);
-          navigation.replace("Login");
-        }}
-      />
-    </KeyboardAvoidingView>
->>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
   );
 }
 
