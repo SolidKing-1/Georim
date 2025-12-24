@@ -13,9 +13,18 @@
     "@callstack/liquid-glass": "^0.6.1",
     "@expo/metro-runtime": "~6.1.2",
     "@gorhom/bottom-sheet": "^5.1.4",
+<<<<<<< HEAD
+=======
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/datetimepicker": "8.4.1",
+    "@react-native-community/slider": "4.5.6",
+    "@react-navigation/native": "^7.1.9",
+    "@react-navigation/native-stack": "^7.3.13",
+>>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
     "@react-navigation/stack": "^7.3.3",
     "axios": "^1.9.0",
     "lottie-react-native": "7.2.2",
+<<<<<<< HEAD
     "expo-sharing": "~13.1.5",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
@@ -40,6 +49,11 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
+=======
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-native": "0.79.5",
+>>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
     "react-native-animatable": "^1.4.0",
     "react-native-circular-progress": "^1.4.1",
     "react-native-country-flag": "^2.0.2",
@@ -50,10 +64,17 @@
     "react-native-maps": "1.20.1",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-qrcode-svg": "^6.3.15",
+<<<<<<< HEAD
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
+=======
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-svg": "15.11.2",
+>>>>>>> c23fa7f3812817b3c53aa48aa9c7010980302b0d
     "react-native-vector-icons": "^10.2.0",
     "react-native-video": "^6.14.0",
     "react-native-web": "^0.21.0",
