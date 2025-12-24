@@ -27,6 +27,13 @@ const FavouriteScreen = ({ route }: any) => {
     }).start();
   }, []);
 
+  const KARAOKE_IMG =
+    "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748584473395-ca9266b9-b7bb-4380-94e0-3a65d1f590c9-karaoke.png";
+  const FOOTBALL_IMG =
+    "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748584538134-66f95ea7-d203-4a7c-8ba9-738a1e9c7bb7-football.png";
+  const RUSTON_FEST_IMG =
+    "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748584776376-117c9360-6dad-4de0-ba1a-26bf85cd3f71-ruston-fest.png";
+
   // Track which events are favourited
   const [favourites, setFavourites] = useState<{ [key: string]: boolean }>({
     "1": true,
@@ -46,63 +53,79 @@ const FavouriteScreen = ({ route }: any) => {
       title: "Karaoke - Live Singing",
       date: "Fri, June 11 - Grambling, McDinning",
       price: "$30",
-      image: require("../assets/karaoke.png"),
+      image: {
+        uri: KARAOKE_IMG,
+      },
     },
     {
       id: "2",
       title: "Grambling vs LA Tech",
       date: "Fri, June 11 - LA Sports Stadium",
       price: "Free",
-      image: require("../assets/football.png"),
+      image: {
+        uri: FOOTBALL_IMG,
+      },
     },
     {
       id: "3",
       title: "Marry's Social Science Class",
       date: "Fri, June 11 - Grambling,SOC Faculty",
       price: "Free",
-      image: require("../assets/ruston-fest.png"),
+      image: { uri: RUSTON_FEST_IMG },
     },
     {
       id: "4",
       title: "Open Mic Night",
       date: "Sat, June 12 - Grambling, McDinning",
       price: "$10",
-      image: require("../assets/karaoke.png"),
+      image: {
+        uri: KARAOKE_IMG,
+      },
     },
     {
       id: "5",
       title: "Tech Soccer Finals",
       date: "Sun, June 13 - LA Sports Stadium",
       price: "Free",
-      image: require("../assets/football.png"),
+      image: {
+        uri: FOOTBALL_IMG,
+      },
     },
     {
       id: "6",
       title: "Science Seminar",
       date: "Mon, June 14 - Grambling, SOC Faculty",
       price: "Free",
-      image: require("../assets/ruston-fest.png"),
+      image: {
+        uri: RUSTON_FEST_IMG,
+      },
     },
     {
       id: "7",
       title: "Live Band Night",
       date: "Tue, June 15 - Grambling, McDinning",
       price: "$20",
-      image: require("../assets/karaoke.png"),
+      image: {
+        uri: KARAOKE_IMG,
+      },
     },
     {
       id: "8",
       title: "LA Tech vs Grambling Basketball",
       date: "Wed, June 16 - LA Sports Stadium",
       price: "Free",
-      image: require("../assets/football.png"),
+      image: {
+        uri: FOOTBALL_IMG,
+      },
     },
     {
       id: "9",
       title: "Social Science Workshop",
       date: "Thu, June 17 - Grambling, SOC Faculty",
       price: "Free",
-      image: require("../assets/ruston-fest.png"),
+      image: {
+        uri: RUSTON_FEST_IMG,
+      },
     },
   ];
 
@@ -125,7 +148,9 @@ const FavouriteScreen = ({ route }: any) => {
     <View style={styles.container}>
       {/* Top Illustration */}
       <Image
-        source={require("../assets/top_image.jpg")}
+        source={{
+          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748585647352-409f9970-04b4-42c0-9fca-815b35ce124c-top_image.jpg",
+        }}
         style={styles.topImage}
         resizeMode="contain"
       />
@@ -159,7 +184,7 @@ const FavouriteScreen = ({ route }: any) => {
               <TouchableOpacity onPress={() => toggleFavourite(event.id)}>
                 <Ionicons
                   name={favourites[event.id] ? "heart" : "heart-outline"}
-                  size={22}
+                  size={20}
                   color="#7F00FF"
                   style={styles.heartIcon}
                 />
@@ -246,13 +271,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
   },
-  eventTitle: {
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#181818",
-    marginBottom: 2,
-    textDecorationLine: "underline",
-  },
+  eventTitle: { fontSize: 16, fontWeight: "500" },
   eventDate: {
     fontSize: 13,
     color: "#444",

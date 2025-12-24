@@ -13,60 +13,92 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import Home from "../assets/home.png";
-import Explore from "../assets/Explore.png";
-import TicketIcon from "../assets/ticket.png";
-import ProfileIcon from "../assets/user.png";
+import RegisterIcon from "../assets/explore_page/register.png";
+import LikeIcon from "../assets/explore_page/like.png";
+import SendIcon from "../assets/explore_page/send.png";
+import * as Sharing from "expo-sharing";
+import * as Animatable from "react-native-animatable";
 import { Video, ResizeMode } from "expo-av";
 import BottomNavComplete from "../components/BottomNavComplete";
+import Icon from "react-native-vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
 
 // Sample data for banner images
 const bannerImages = [
-  require("../assets/explore_page/banner1.png"),
-  require("../assets/explore_page/banner2.png"),
-  require("../assets/explore_page/banner3.png"),
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654341940-52731232-6446-4e80-bc89-270b3f97c813-banner1.png",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654400542-c21f053c-586a-4b56-a445-3f4918e434b2-banner2.png",
+  },
+  {
+    uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654422791-0aff7f94-4f9c-43b7-b718-99895a81e0ee-banner3.png",
+  },
 ];
 
 const eventCards = [
   {
     id: "1",
-    image: require("../assets/explore_page/event1.jpg"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654473358-d256bcd2-f1ce-4238-931c-159eb2071074-event1.jpg",
+    },
     title: "Summer Music Festival",
     date: "Sat, May 17 - 18",
     location: "New Orleans",
     type: "Free",
     attendees: [
-      require("../assets/explore_page/profile1.png"),
-      require("../assets/explore_page/profile2.png"),
-      require("../assets/explore_page/profile3.png"),
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654826648-fee7c89b-60a1-48ea-9e2b-e21575bcd45f-profile1.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654850394-6348ea54-01c9-4d8c-a9c9-6d92fc01a537-profile2.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654871281-e9ed77f7-9c71-4521-a7d3-c1357dafdc0e-profile3.png",
+      },
     ],
   },
   {
     id: "2",
-    image: require("../assets/explore_page/event2.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654782845-1cf52141-9856-4ba8-8a7e-e8658211651c-event2.png",
+    },
     title: "G-Men vs LSU Men's Football",
     date: "Wed, May 15 - 16",
     location: "Grambling, LA",
     type: "$20",
     attendees: [
-      require("../assets/explore_page/profile1.png"),
-      require("../assets/explore_page/profile2.png"),
-      require("../assets/explore_page/profile3.png"),
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654826648-fee7c89b-60a1-48ea-9e2b-e21575bcd45f-profile1.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654850394-6348ea54-01c9-4d8c-a9c9-6d92fc01a537-profile2.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654871281-e9ed77f7-9c71-4521-a7d3-c1357dafdc0e-profile3.png",
+      },
     ],
   },
   {
     id: "3",
-    image: require("../assets/explore_page/event3.png"),
+    image: {
+      uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654804260-e6847c74-b255-474d-bf42-df31646bb92f-event3.png",
+    },
     title: "Black History Month Celebration",
     date: "Sun, May 14 - 15",
     location: "Manhattan, NY",
     type: "Free",
     attendees: [
-      require("../assets/explore_page/profile1.png"),
-      require("../assets/explore_page/profile2.png"),
-      require("../assets/explore_page/profile3.png"),
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654826648-fee7c89b-60a1-48ea-9e2b-e21575bcd45f-profile1.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654850394-6348ea54-01c9-4d8c-a9c9-6d92fc01a537-profile2.png",
+      },
+      {
+        uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748654871281-e9ed77f7-9c71-4521-a7d3-c1357dafdc0e-profile3.png",
+      },
     ],
   },
   // Add more event objects...
@@ -115,20 +147,80 @@ export default function ExploreScreen() {
     attendees: any[];
   };
 
+  // Add this to your videoData array for demo descriptions:
   const videoData = [
-    { id: "1", source: require("../assets/videos/video.mp4") },
-    { id: "2", source: require("../assets/videos/video1.mp4") },
-    { id: "3", source: require("../assets/videos/video2.mp4") },
-    { id: "4", source: require("../assets/videos/video3.mp4") },
-    { id: "5", source: require("../assets/videos/video4.mp4") },
-    { id: "6", source: require("../assets/videos/video5.mp4") },
-    { id: "7", source: require("../assets/videos/video6.mp4") },
-    { id: "8", source: require("../assets/videos/video7.mp4") },
-    { id: "9", source: require("../assets/videos/video8.mp4") },
-    { id: "10", source: require("../assets/videos/video9.mp4") },
-    { id: "11", source: require("../assets/videos/video10.mp4") },
-    { id: "12", source: require("../assets/videos/video11.mp4") },
-    // Add more videos...
+    {
+      id: "1",
+      source: require("../assets/videos/video.mp4"),
+      description:
+        "TechSpotlight 2026. TechSpotlight 2026 is a premier innovation showcase that brings together the brightest minds in technology, entrepreneurship, and design. This dynamic event spotlights groundbreaking solutions, emerging startups, and the latest advancements shaping the future of tech. Attendees will experience live demos, engaging panel discussions, and networking opportunities with industry leaders, investors, and next-gen innovators. Whether you're a developer, student, founder, or tech enthusiast, TechSpotlight 2026.",
+    },
+    {
+      id: "2",
+      source: require("../assets/videos/video1.mp4"),
+      description:
+        "Urban Beats Festival 2026. Dive into a world of rhythm and culture at Urban Beats Festival! Experience electrifying performances, street art showcases, and interactive workshops led by top artists. Connect with fellow music lovers, enjoy gourmet food trucks, and dance the night away. Urban Beats is where creativity and community collide for an unforgettable celebration.",
+    },
+    {
+      id: "3",
+      source: require("../assets/videos/video2.mp4"),
+      description:
+        "Startup Ignite 2026. Join the next wave of entrepreneurs at Startup Ignite! This event features pitch competitions, mentorship sessions, and networking with investors and industry experts. Discover innovative products, attend hands-on workshops, and get inspired by keynote speakers who are shaping the future of business.",
+    },
+    {
+      id: "4",
+      source: require("../assets/videos/video3.mp4"),
+      description:
+        "ArtFusion Expo 2026. Explore the intersection of art and technology at ArtFusion Expo. Enjoy immersive installations, live painting, and digital art experiences. Meet visionary artists, participate in creative labs, and take home unique pieces from the expo’s curated marketplace.",
+    },
+    {
+      id: "5",
+      source: require("../assets/videos/video4.mp4"),
+      description:
+        "Health & Wellness Summit 2026. Prioritize your well-being at the Health & Wellness Summit. Attend expert-led seminars, fitness classes, and mindfulness workshops. Connect with wellness brands, try new health products, and leave feeling rejuvenated and empowered.",
+    },
+    {
+      id: "6",
+      source: require("../assets/videos/video5.mp4"),
+      description:
+        "EcoFuture Conference 2026. Be part of the solution at EcoFuture! Learn about sustainable innovations, green startups, and environmental advocacy. Engage in panel discussions, eco-friendly product demos, and community clean-up initiatives.",
+    },
+    {
+      id: "7",
+      source: require("../assets/videos/video6.mp4"),
+      description:
+        "FilmFest 2026. Celebrate cinematic excellence at FilmFest! Watch exclusive premieres, meet filmmakers, and join Q&A sessions. Enjoy themed parties, networking mixers, and workshops for aspiring directors and actors.",
+    },
+    {
+      id: "8",
+      source: require("../assets/videos/video7.mp4"),
+      description:
+        "Culinary Carnival 2026. Savor flavors from around the world at Culinary Carnival! Enjoy live cooking demos, tasting sessions, and chef competitions. Discover new cuisines, meet food influencers, and take part in interactive culinary classes.",
+    },
+    {
+      id: "9",
+      source: require("../assets/videos/video8.mp4"),
+      description:
+        "Fashion Forward 2026. Step into the future of style at Fashion Forward. Experience runway shows, designer pop-ups, and trend talks. Network with fashion icons, shop exclusive collections, and get personalized styling tips.",
+    },
+    {
+      id: "10",
+      source: require("../assets/videos/video9.mp4"),
+      description:
+        "SportsMania 2026. Get your adrenaline pumping at SportsMania! Participate in tournaments, meet pro athletes, and enjoy live sports entertainment. Try out new gear, join fitness challenges, and celebrate the spirit of competition.",
+    },
+    {
+      id: "11",
+      source: require("../assets/videos/video10.mp4"),
+      description:
+        "BookVerse 2026. Immerse yourself in stories at BookVerse! Meet bestselling authors, attend readings, and join writing workshops. Explore book markets, literary panels, and connect with fellow book lovers.",
+    },
+    {
+      id: "12",
+      source: require("../assets/videos/video11.mp4"),
+      description:
+        "ScienceQuest 2026. Ignite your curiosity at ScienceQuest! Enjoy interactive exhibits, science shows, and hands-on experiments. Meet researchers, explore new discoveries, and inspire the next generation of innovators.",
+    },
   ];
 
   const renderEventCard = ({ item }: { item: EventCard }) => (
@@ -175,14 +267,38 @@ export default function ExploreScreen() {
     setPausedVideos((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleShare = (id: string) => {
-    // Implement your share logic here (e.g. Share API)
-    alert("Share video " + id);
+  const handleVideoPress = (index: number) => {
+    if (expandedDescIndex === index) return; // Don't toggle play/pause if description is expanded
+    setIsVideoPlaying((prev) => !prev);
+    if (fullscreenVideoRefs.current[videoData[index].id]) {
+      if (isVideoPlaying) {
+        fullscreenVideoRefs.current[videoData[index].id]?.pauseAsync();
+      } else {
+        fullscreenVideoRefs.current[videoData[index].id]?.playAsync();
+      }
+    }
   };
 
-  const handleRegister = (id: string) => {
-    // Implement your register logic here
-    alert("Registered for event/video " + id);
+  const handleDescPress = (index: number) => {
+    if (expandedDescIndex === index) {
+      setExpandedDescIndex(null);
+    } else {
+      setExpandedDescIndex(index);
+    }
+  };
+
+  const handleRegister = (index: number) => {
+    setRegisterAnimIndex(index);
+    setTimeout(() => setRegisterAnimIndex(null), 500);
+    // Your register logic here
+  };
+
+  const handleShare = async (index: number) => {
+    try {
+      await Sharing.shareAsync(videoData[index].source);
+    } catch (e) {
+      alert("Unable to share this video.");
+    }
   };
 
   // Unload preview video when leaving screen
@@ -208,6 +324,34 @@ export default function ExploreScreen() {
     }
   }, [videoModalVisible]);
 
+  const [expandedDescIndex, setExpandedDescIndex] = useState<number | null>(
+    null
+  );
+  const [registerAnimIndex, setRegisterAnimIndex] = useState<number | null>(
+    null
+  );
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+
+  const renderDescriptionWithHashtags = (desc: string = "") => {
+    const parts = desc.split(/(\#[a-zA-Z0-9_]+)/g);
+    return parts.map((part, idx) =>
+      part.startsWith("#") ? (
+        <Text
+          key={idx}
+          style={{ color: "#7F00FF", fontWeight: "bold" }}
+          onPress={() => {
+            // Handle hashtag click (e.g., search or filter)
+            alert(`Clicked hashtag: ${part}`);
+          }}
+        >
+          {part}
+        </Text>
+      ) : (
+        <Text key={idx}>{part}</Text>
+      )
+    );
+  };
+
   return (
     <View style={styles.container}>
       {/* Banner Carousel */}
@@ -221,10 +365,13 @@ export default function ExploreScreen() {
             [{ nativeEvent: { contentOffset: { x: bannerScrollX } } }],
             { useNativeDriver: true }
           )}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Image
               source={bannerImages[currentBannerIndex]}
-              style={styles.bannerImage}
+              style={[
+                styles.bannerImage,
+                currentBannerIndex === 0 && { marginRight: 20 }, // Shift banner1 to the left
+              ]}
             />
           )}
           keyExtractor={(_, index) => index.toString()}
@@ -274,213 +421,126 @@ export default function ExploreScreen() {
           keyExtractor={(item) => item.id}
           renderItem={({ item, index }) => (
             <View style={styles.fullscreenVideoBox}>
-              <Video
-                ref={(ref) => {
-                  fullscreenVideoRefs.current[item.id] = ref;
-                }}
-                source={item.source}
-                style={styles.fullscreenVideo}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay={
-                  currentVideoIndex === index && !pausedVideos[item.id]
-                }
-                isLooping
-                isMuted={false}
-              />
-              {/* Overlay controls */}
-              <View style={styles.videoControls}>
-                {/* Like Button */}
-                <TouchableOpacity
-                  style={styles.controlButton}
-                  onPress={() => toggleLike(item.id)}
-                >
-                  <Text
-                    style={{
-                      color: likedVideos[item.id] ? "#7F00FF" : "#fff",
-                      fontSize: 26,
-                    }}
+              <TouchableOpacity
+                activeOpacity={1}
+                style={{ flex: 1, width: "100%", height: "100%" }}
+                onPress={() => handleVideoPress(index)}
+              >
+                <Video
+                  ref={(ref) => {
+                    fullscreenVideoRefs.current[item.id] = ref;
+                  }}
+                  source={item.source}
+                  style={styles.fullscreenVideo}
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={
+                    isVideoPlaying &&
+                    expandedDescIndex !== index &&
+                    currentVideoIndex === index &&
+                    !pausedVideos[item.id]
+                  }
+                  isLooping
+                  isMuted={false}
+                />
+                {/* Description Preview/Expanded */}
+                {expandedDescIndex === index ? (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={[
+                      styles.descContainer,
+                      {
+                        ...styles.descContainerExpanded,
+                        maxHeight: undefined, // Remove maxHeight
+                        minHeight: undefined, // Remove minHeight
+                        height: undefined, // Let it grow with content
+                      },
+                    ]}
+                    onPress={() => handleDescPress(index)}
                   >
-                    ♥
-                  </Text>
-                </TouchableOpacity>
-                {/* Register Button */}
-                <TouchableOpacity
-                  style={styles.controlButton}
-                  onPress={() => handleRegister(item.id)}
-                >
-                  <Text
-                    style={{
-                      color: "#fff",
-                      fontSize: 18,
-                      fontWeight: "bold",
-                    }}
+                    <Text style={[styles.descText, styles.descTextExpanded]}>
+                      {renderDescriptionWithHashtags(item.description)}
+                    </Text>
+                    <Text style={styles.descCollapseHint}>Tap to collapse</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    style={styles.descContainer}
+                    onPress={() => handleDescPress(index)}
                   >
-                    Register
-                  </Text>
-                </TouchableOpacity>
-                {/* Share Button */}
-                <TouchableOpacity
-                  style={styles.controlButton}
-                  onPress={() => handleShare(item.id)}
-                >
-                  <Text style={{ color: "#fff", fontSize: 22 }}>⤴</Text>
-                </TouchableOpacity>
-                {/* Play/Pause Button */}
-                <TouchableOpacity
-                  style={styles.controlButton}
-                  onPress={() => togglePause(item.id)}
-                >
-                  <Text style={{ color: "#fff", fontSize: 22 }}>
-                    {pausedVideos[item.id] ? "▶" : "⏸"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                    <Text style={styles.descText} numberOfLines={2}>
+                      {renderDescriptionWithHashtags(item.description)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                {/* Icons */}
+                <View style={styles.videoControlsRow}>
+                  <Animatable.View
+                    animation={
+                      registerAnimIndex === index ? "bounceIn" : undefined
+                    }
+                    duration={500}
+                    style={{ alignItems: "center" }}
+                  >
+                    <TouchableOpacity onPress={() => handleRegister(index)}>
+                      <Image
+                        source={{
+                          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655210270-e781ce15-9e4d-4e94-9e26-520cd02a937f-register.png",
+                        }}
+                        style={styles.icon}
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.iconLabel}>Register</Text>
+                  </Animatable.View>
+                  {/* Like button with white outline and purple fill when liked */}
+                  <View style={{ alignItems: "center" }}>
+                    <TouchableOpacity onPress={() => toggleLike(item.id)}>
+                      <Icon
+                        name={likedVideos[item.id] ? "heart" : "heart-outline"}
+                        size={34}
+                        color={likedVideos[item.id] ? "#7F00FF" : "#fff"}
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.iconLabel}>Like</Text>
+                  </View>
+                  <View style={{ alignItems: "center" }}>
+                    <TouchableOpacity onPress={() => handleShare(index)}>
+                      <Image
+                        source={{
+                          uri: "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748655276169-168fc654-0016-4bc2-a532-0b1a5cd17da0-send.png",
+                        }}
+                        style={styles.icon}
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.iconLabel}>Share</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
             </View>
           )}
           onMomentumScrollEnd={(e) => {
-            const index = Math.round(
+            const idx = Math.round(
               e.nativeEvent.contentOffset.y / Dimensions.get("window").height
             );
-            setCurrentVideoIndex(index);
+            setCurrentVideoIndex(idx);
+            setExpandedDescIndex(null);
+            setIsVideoPlaying(true);
           }}
         />
         {/* Close button */}
         <TouchableOpacity
-          style={styles.closeButton}
+          style={{
+            position: "absolute",
+            top: 50,
+            left: 20,
+            zIndex: 10,
+            padding: 4, // just a little touch area
+          }}
           onPress={() => setVideoModalVisible(false)}
         >
-          <Text style={{ color: "#fff", fontSize: 18 }}>Close</Text>
+          <Icon name="arrow-back" size={32} color="#7F00FF" />
         </TouchableOpacity>
       </Modal>
-
-      {/* Bottom Navigation */}
-      {/*
-      <View style={styles.bottomNav}>
-        {/* Home Tab *}
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Home");
-            navigation.navigate("Dashboard");
-          }}
-        >
-          <Image
-            source={Home}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Home" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Home" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Home
-          </Text>
-        </TouchableOpacity>
-
-        {/* Explore Tab *}
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => setActiveTab("Explore")}
-        >
-          <Image
-            source={Explore}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Explore" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Explore" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Explore
-          </Text>
-        </TouchableOpacity>
-
-        {/* Spacer *}
-        <View style={styles.navSpacer} />
-
-        {/* Check-In Tab *}
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Check-In");
-            navigation.navigate("CheckinScreen");
-          }}
-        >
-          <Image
-            source={TicketIcon}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Check-In" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Check-In" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Check-In
-          </Text>
-        </TouchableOpacity>
-
-        {/* Profile Tab *}
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={() => {
-            setActiveTab("Profile");
-            navigation.navigate("AccountScreen");
-          }}
-        >
-          <Image
-            source={ProfileIcon}
-            style={{
-              width: 24,
-              height: 24,
-              tintColor: activeTab === "Profile" ? "#7F00FF" : "#333",
-            }}
-          />
-          <Text
-            style={[
-              styles.navText,
-              activeTab === "Profile" && {
-                color: "#7F00FF",
-                fontWeight: "600",
-              },
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.bowlCutout}>
-        <TouchableOpacity
-          style={styles.floatingButton}
-          onPress={() => navigation.navigate("CreateEvent")}
-        >
-          <Text style={styles.plusText}>+</Text>
-        </TouchableOpacity>
-      </View>
-      */}
       <BottomNavComplete
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -698,5 +758,58 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 20,
     zIndex: 10,
+  },
+  descContainer: {
+    position: "absolute",
+    left: 7,
+    bottom: 55,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    maxWidth: "80%",
+  },
+  descContainerExpanded: {
+    width: "100%",
+    left: "3%",
+    bottom: "5%",
+    zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  descText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "400",
+  },
+  descTextExpanded: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  descCollapseHint: {
+    color: "#bbb",
+    fontSize: 12,
+    marginTop: 7,
+    textAlign: "center",
+  },
+  videoControlsRow: {
+    position: "absolute",
+    right: 20,
+    bottom: 210,
+    flexDirection: "column",
+    alignItems: "center",
+    zIndex: 20,
+  },
+  icon: {
+    width: 32,
+    height: 32,
+    marginVertical: 10,
+    tintColor: "#fff",
+  },
+  iconLabel: {
+    color: "#fff",
+    fontSize: 12,
+    textAlign: "center",
   },
 });

@@ -13,9 +13,10 @@ import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
-const helpImage = require("../assets/help_banner.png"); // Replace with your image
-const emailIcon = require("../assets/email-icon.png"); // Replace with your email icon
-const faqIcon = require("../assets/conversation.png"); // Add this import
+const helpImage = "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748586125288-1d612b2b-bb7a-4b7c-8e77-f7d34d3955ce-help_banner.png"; 
+const emailIcon = "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748586423147-7890d7a0-f1b6-4c48-a727-cffb282dc15c-email-icon.png";
+const faqIcon =
+  "https://eliazar-applications.s3.us-east-2.amazonaws.com/georim/1748586470505-52c2b586-c010-4504-bdaa-844f9f697062-conversation.png"; 
 
 const FAQS = [
   {
@@ -71,7 +72,7 @@ export default function HelpAndSupport() {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Top Image */}
         <Image
-          source={helpImage}
+          source={{ uri: helpImage }}
           style={styles.bannerImage}
           resizeMode="cover"
         />
@@ -94,7 +95,7 @@ export default function HelpAndSupport() {
             activeOpacity={0.8}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Image source={emailIcon} style={styles.cardIcon} />
+              <Image source={{ uri: emailIcon }} style={styles.cardIcon} />
               <View style={{ marginLeft: 12 }}>
                 <Text style={styles.cardTitle}>Email Admin</Text>
                 <Text style={styles.cardDesc}>
@@ -138,7 +139,7 @@ export default function HelpAndSupport() {
             activeOpacity={0.8}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Image source={faqIcon} style={styles.cardIcon} />
+              <Image source={{ uri: faqIcon }} style={styles.cardIcon} />
               {/* Use your image here */}
               <View style={{ marginLeft: 12 }}>
                 <Text style={styles.cardTitle}>FAQs</Text>
