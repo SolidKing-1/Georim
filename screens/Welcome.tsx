@@ -76,7 +76,7 @@ export default function Welcome() {
     setActive(index);
   };
 
-  // Interpolate opacity for the slider hint text
+  
   const sliderHintOpacity = knobX.interpolate({
     inputRange: [0, maxTranslate],
     outputRange: [1, 0],
