@@ -28,7 +28,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 
 import Constants from "expo-constants";
-import { setToken, removeToken } from "../utils/auth"; // Use your helper
+import { setToken, removeToken } from "../utils/auth"; 
 import { setUserData } from "../utils/user";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
@@ -41,8 +41,11 @@ export default function LoginScreen() {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+  // This is the backend enpoint for this request. 
+  const ENDPOINT = 'api/v1/auth/login';
   const USER_KEY = "user_data";
 
+  // TODO: Remove the Biometrics. 
   useEffect(() => {
     (async () => {
       const enabled = await isBiometricEnabled();
@@ -59,7 +62,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/auth/sign-in`, {
+      const response = await fetch(`${BACKEND_URL}${ENDPOINT}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -70,21 +73,23 @@ export default function LoginScreen() {
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        alert(data?.data?.message || "Login failed");
+      if (!response.ok) {
+        alert(data?.message || "Login failed");
         return;
       }
 
-      // Save JWT token and user Data
-      if (data.data && data.data.token) {
-        await setToken(data.data.token);
+      // Save JWT token and user Data - backend returns { user, token } directly
+      if (data.user && data.token) {
+        await setToken(data.token);
 
-        // Prepare user data for AsyncStorage;
+        // Prepare user data for AsyncStorage matching backend response
         let userData = {
-          email: data.data.email,
-          name: data.data.name,
-          isGoogleUser: data.data.isGoogleUser || false,
-          picture: { uri: data.data.picture || null },
+          id: data.user.id,
+          email: data.user.email,
+          first: data.user.first,
+          last: data.user.last,
+          phone: data.user.phone,
+          avatarUrl: data.user.avatarUrl,
         };
         // Save user data to AsyncStorage
         await setUserData(userData);
@@ -116,6 +121,9 @@ export default function LoginScreen() {
           );
           return;
         }
+        
+        navigation.navigate("Dashboard");
+        return;
       }
 
       alert("Login successful!");

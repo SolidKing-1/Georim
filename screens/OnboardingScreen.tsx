@@ -10,7 +10,6 @@ import {
   Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import { Video, ResizeMode } from "expo-av";
@@ -172,11 +171,6 @@ export default function OnboardingScreen() {
         shouldPlay
         isLooping
         isMuted
-      />
-      <LinearGradient
-        colors={["transparent", "rgba(127,0,255,0.28)", "rgba(127,0,255,0.32)"]}
-        style={styles.gradient}
-        pointerEvents="none"
       />
     </View>
   );
@@ -367,7 +361,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#7F00FF",
     paddingVertical: 10,
     paddingHorizontal: 36,
-    borderRadius: 12,
+    borderRadius: 27,
     marginRight: 16,
   },
   buttonText: {

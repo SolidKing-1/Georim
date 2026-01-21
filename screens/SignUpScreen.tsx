@@ -25,7 +25,9 @@ import { RootStackParamList } from "../App";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import CodeVerificationModal from "../components/CodeVerificationModal"; // <-- Import your modal
+import CodeVerificationModal from "../components/CodeVerificationModal";
+import { setToken } from "../utils/auth";
+import { setUserData } from "../utils/user";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
@@ -44,7 +46,10 @@ export default function SignUpScreen() {
   const [showCountryModal, setShowCountryModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [showCodeModal, setShowCodeModal] = useState(false); // <-- Add this state
+  // This is the endpoint fot the BACKEND URL. 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+  // This is the endpoint for user registeration. 
+  const ENDPOINT = `/api/v1/auth/register`; 
 
   const { promptAsync, request } = useGoogleAuth((data) => {
     // Handle signup success, e.g., save token, navigate, etc.
@@ -55,9 +60,7 @@ export default function SignUpScreen() {
   const handleSignUp = async () => {
     try {
       const fullPhone = selectedCountry.code + phone.replace(/^0+/, "");
-      console.log("HERE");
-      // 1. Request code only, do not create user yet
-      const response = await fetch(`${BACKEND_URL}/auth/sign-up`, {
+      const response = await fetch(`${BACKEND_URL}${ENDPOINT}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,14 +71,39 @@ export default function SignUpScreen() {
           password,
         }),
       });
+      
       const data = await response.json();
+      
       if (!response.ok) {
         alert(data.message || "Sign up failed");
         return;
       }
-      setShowCodeModal(true);
+
+      // Backend returns { user, token } - save both after registration
+      if (data.user && data.token) {
+        await setToken(data.token);
+
+        const userData = {
+          id: data.user.id,
+          email: data.user.email,
+          first: data.user.first,
+          last: data.user.last,
+          phone: data.user.phone,
+          avatarUrl: data.user.avatarUrl,
+        };
+        await setUserData(userData);
+
+        // Navigate to Dashboard after successful registration
+        navigation.navigate("Dashboard");
+        return;
+      }
+
+      // Fallback if response structure is unexpected
+      alert("Registration successful! Please log in.");
+      navigation.navigate("Login");
     } catch (err) {
       alert("Network error. Please try again.");
+      console.error("Network error:", err);
     }
   };
 
