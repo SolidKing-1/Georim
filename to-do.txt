@@ -2,3 +2,5 @@ Try to display phone design on the screen.
 Get cdn for assets folder
 Work on splash screen
 Remove purple shadow at onboarding screen
+
+Splash screen ---> 

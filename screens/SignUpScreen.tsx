@@ -94,7 +94,7 @@ export default function SignUpScreen() {
         await setUserData(userData);
 
         // Navigate to Dashboard after successful registration
-        navigation.navigate("Dashboard");
+        navigation.navigate("WelcomeNew");
         return;
       }
 

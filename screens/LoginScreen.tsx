@@ -122,12 +122,12 @@ export default function LoginScreen() {
           return;
         }
         
-        navigation.navigate("Dashboard");
+        navigation.navigate("WelcomeExisting");
         return;
       }
 
       alert("Login successful!");
-      navigation.navigate("Dashboard");
+      navigation.navigate("WelcomeExisting");
     } catch (err) {
       alert("Network error. Please try again.");
       console.error("Network error:", err);
@@ -182,7 +182,7 @@ export default function LoginScreen() {
         picture: { uri: data.data.picture || null },
       };
       await setUserData(userDataObj);
-      navigation.navigate("Dashboard");
+      navigation.navigate("WelcomeExisting");
     }
   };
 

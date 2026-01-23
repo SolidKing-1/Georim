@@ -20,7 +20,8 @@ export type RootStackParamList = {
   VerifyPasscode: { email: string } | undefined;
   ResetPassword: { email: string; code: string };
   Onboarding: undefined;
-  Welcome: undefined;
+  WelcomeNew: undefined;
+  WelcomeExisting: undefined;
   Splash: undefined;
 };
 
@@ -158,7 +159,24 @@ export default function App() {
         <Stack.Screen name="VerifyPasscode" component={VerifyPasscodeScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Welcome" component={Welcome} />
+        <Stack.Screen name="WelcomeNew" options={{ headerShown: false }}>
+          {() => (
+            <Welcome
+              title={["Find Your", "First Event"]}
+              nextRoute="Dashboard"
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen name="WelcomeExisting" options={{ headerShown: false }}>
+          {() => (
+            <Welcome
+              title={["Hey", "Ready for Tonight?"]}
+              nextRoute="Dashboard"
+            />
+          )}
+        </Stack.Screen>
+
         <Stack.Screen
           name="Onboarding"
           component={OnboardingScreen}
