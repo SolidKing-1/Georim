@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ImageSourcePropType,
 } from "react-native";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import ProfileStack from "./ProfileStack";
 import CircleGlassEffect from "./GlassEffects/circleGlassEffect.png";
@@ -60,11 +60,11 @@ export default function EventCard({
       activeOpacity={0.8}
     >
       <View style={styles.imageContainer}>
-        <Image source={image} style={styles.cardImage} />
+        <Image source={image} style={styles.cardImage} contentFit="cover" transition={200} />
 
         {/* Date badge - top left */}
         <View style={styles.dateBadge}>
-          <Image source={CircleGlassEffect} style={styles.dateBadgeOverlay} />
+          <Image source={CircleGlassEffect} style={styles.dateBadgeOverlay} contentFit="fill" />
           <View style={styles.dateMonthStrip}>
             <Text style={styles.dateMonth}>{month}</Text>
           </View>
@@ -139,13 +139,13 @@ const styles = StyleSheet.create({
     top: 8,
     left: 8,
     backgroundColor: "rgba(10, 6, 48, 0.4)",
-    borderRadius: 18,
-    paddingHorizontal: 10,
-    paddingTop: 22,
-    paddingBottom: 6,
+    borderRadius: 16,
+    paddingHorizontal: 8,
+    paddingTop: 18,
+    paddingBottom: 3,
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 48,
+    minWidth: 40,
     overflow: "hidden",
   },
   dateMonthStrip: {
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 18,
+    height: 16,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -163,25 +163,26 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -2,
     left: -6,
-    right: 6,
+    right: -6,
     bottom: -2,
-    resizeMode: "stretch",
+    width: undefined,
+    height: undefined,
     opacity: 0.7,
     zIndex: 0,
   },
   dateMonth: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "400",
     textTransform: "capitalize",
     zIndex: 1,
   },
   dateDay: {
     color: "#FFFFFF",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "400",
-    marginTop: -4,
-    marginBottom: -2,
+    marginTop: -3,
+    marginBottom: -1,
     zIndex: 1,
   },
   bookmarkButton: {

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   ScrollView,
   Modal,
   TextInput,
@@ -12,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -114,6 +114,7 @@ export default function AllEventsScreen() {
       <Image
         source={require("../assets/homePage/birthday-decoration.png")}
         style={styles.topDecoration}
+        contentFit="cover"
       />
 
       {/* Fixed Back Button */}
@@ -123,6 +124,7 @@ export default function AllEventsScreen() {
           <Image
             source={CircleGlassEffect}
             style={styles.homeShine}
+            contentFit="fill"
           />
           <TouchableOpacity
             style={styles.homeBtn}
@@ -142,12 +144,15 @@ export default function AllEventsScreen() {
             <Image
               source={require("../components/GlassEffects/profile-liquid-glass.png")}
               style={styles.circleOverlay}
+              contentFit="contain"
             />
             <Image
               source={{
                 uri: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop",
               }}
               style={styles.avatarOnCircle}
+              contentFit="cover"
+              transition={200}
             />
           </View>
         </View>
@@ -353,6 +358,7 @@ export default function AllEventsScreen() {
           <Image
             source={require("../assets/homePage/birthday-decoration.png")}
             style={styles.topDecoration}
+            contentFit="cover"
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -366,12 +372,15 @@ export default function AllEventsScreen() {
                 <Image
                   source={require("../components/GlassEffects/profile-liquid-glass.png")}
                   style={styles.modalCircleOverlay}
+                  contentFit="contain"
                 />
                 <Image
                   source={{
                     uri: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop",
                   }}
                   style={styles.modalAvatarOnCircle}
+                  contentFit="cover"
+                  transition={200}
                 />
               </View>
             </View>
@@ -425,6 +434,7 @@ export default function AllEventsScreen() {
               <Image
                 source={require("../components/GlassEffects/Glass Effect.png")}
                 style={styles.modalShineOverlay}
+                contentFit="fill"
               />
               <View style={styles.modalSearchBarInput}>
                 <Ionicons
@@ -449,6 +459,7 @@ export default function AllEventsScreen() {
               <Image
                 source={require("../components/GlassEffects/circleGlassEffect.png")}
                 style={styles.modalCloseShine}
+                contentFit="fill"
               />
               <TouchableOpacity
                 style={styles.modalSearchBarCloseBtn}

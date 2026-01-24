@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   TextInput,
   ScrollView,
   Keyboard,
@@ -12,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { Image } from "expo-image";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -116,6 +116,7 @@ export default function SearchScreen() {
       <Image
         source={require("../assets/homePage/birthday-decoration.png")}
         style={styles.topDecoration}
+        contentFit="cover"
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 70 }}>
         {/* Header */}
@@ -125,12 +126,15 @@ export default function SearchScreen() {
               <Image
                 source={require("../components/GlassEffects/profile-liquid-glass.png")}
                 style={styles.circleOverlay}
+                contentFit="contain"
               />
               <Image
                 source={{
                   uri: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop",
                 }}
                 style={styles.avatarOnCircle}
+                contentFit="cover"
+                transition={200}
               />
           </View>
         </View>
@@ -160,7 +164,7 @@ export default function SearchScreen() {
             ].map((c, i) => (
               <View key={i}>
                 <View style={styles.channelListItem}>
-                  <Image source={c.logo} style={styles.channelLogo} />
+                  <Image source={c.logo} style={styles.channelLogo} contentFit="cover" />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.channelName}>{c.name}</Text>
                     <Text style={styles.channelSub}>{c.subtitle}</Text>
@@ -193,7 +197,7 @@ export default function SearchScreen() {
             ].map((c, i) => (
               <View key={i}>
                 <View style={styles.channelListItem}>
-                  <Image source={c.logo} style={styles.channelLogo} />
+                  <Image source={c.logo} style={styles.channelLogo} contentFit="cover" />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.channelName}>{c.name}</Text>
                     <Text style={styles.channelSub}>{c.subtitle}</Text>
@@ -293,7 +297,7 @@ export default function SearchScreen() {
               onPress={openAllEvents}
             >
               <View style={styles.pillContent}>
-                <Image source={AllEventsPill} style={styles.pillOverlay} />
+                <Image source={AllEventsPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={35}
                   height={32}
@@ -322,7 +326,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Music")}
             >
               <View style={styles.pillContent}>
-                <Image source={MusicPill} style={styles.pillOverlay} />
+                <Image source={MusicPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={40}
                   height={34}
@@ -354,7 +358,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Corporate")}
             >
               <View style={styles.pillContent}>
-                <Image source={CooporatePill} style={styles.pillOverlay} />
+                <Image source={CooporatePill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={34}
                   height={34}
@@ -383,7 +387,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Religious")}
             >
               <View style={styles.pillContent}>
-                <Image source={ReligiousPill} style={styles.pillOverlay} />
+                <Image source={ReligiousPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={25}
                   height={34}
@@ -412,7 +416,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Arts & Culture")}
             >
               <View style={styles.pillContent}>
-                <Image source={ArtsPill} style={styles.pillOverlay} />
+                <Image source={ArtsPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={47}
                   height={34}
@@ -446,7 +450,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Parties")}
             >
               <View style={styles.pillContent}>
-                <Image source={PartiesPill} style={styles.pillOverlay} />
+                <Image source={PartiesPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={38}
                   height={34}
@@ -475,7 +479,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Sports")}
             >
               <View style={styles.pillContent}>
-                <Image source={SportsPill} style={styles.pillOverlay} />
+                <Image source={SportsPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={35}
                   height={34}
@@ -504,7 +508,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Movies")}
             >
               <View style={styles.pillContent}>
-                <Image source={MoviesPill} style={styles.pillOverlay} />
+                <Image source={MoviesPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={32}
                   height={34}
@@ -533,7 +537,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Fashion")}
             >
               <View style={styles.pillContent}>
-                <Image source={FashionPill} style={styles.pillOverlay} />
+                <Image source={FashionPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={40}
                   height={34}
@@ -555,7 +559,7 @@ export default function SearchScreen() {
               onPress={() => openCategory("Health & Wellness")}
             >
               <View style={styles.pillContent}>
-                <Image source={HealthPill} style={styles.pillOverlay} />
+                <Image source={HealthPill} style={styles.pillOverlay} contentFit="fill" />
                 <Svg
                   width={39}
                   height={39}
@@ -611,6 +615,7 @@ export default function SearchScreen() {
           <Image
             source={require("../assets/homePage/birthday-decoration.png")}
             style={styles.topDecoration}
+            contentFit="cover"
           />
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -624,12 +629,15 @@ export default function SearchScreen() {
                 <Image
                   source={require("../components/GlassEffects/profile-liquid-glass.png")}
                   style={styles.circleOverlay}
+                  contentFit="contain"
                 />
                 <Image
                   source={{
                     uri: "https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=100&h=100&fit=crop",
                   }}
                   style={styles.avatarOnCircle}
+                  contentFit="cover"
+                  transition={200}
                 />
               </View>
             </View>
@@ -683,6 +691,7 @@ export default function SearchScreen() {
               <Image
                 source={require("../components/GlassEffects/Glass Effect.png")}
                 style={styles.modalShineOverlay}
+                contentFit="fill"
               />
               <View style={styles.modalSearchBarInput}>
                 <Ionicons
@@ -707,6 +716,7 @@ export default function SearchScreen() {
               <Image
                 source={require("../components/GlassEffects/circleGlassEffect.png")}
                 style={styles.modalCloseShine}
+                contentFit="fill"
               />
               <TouchableOpacity
                 style={styles.modalSearchBarCloseBtn}
