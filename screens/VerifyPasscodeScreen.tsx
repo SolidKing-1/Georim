@@ -11,8 +11,7 @@ import {
   KeyboardAvoidingView,
   Animated,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import GlassButton from "../components/GlassButton";
+import PrimaryButton from "../components/PrimaryButton";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import Constants from "expo-constants";
@@ -194,7 +193,7 @@ export default function VerifyPasscodeScreen({ route, navigation }: Props) {
             style={[styles.otpRow, { transform: [{ translateX: shakeAnim }] }]}
           >
             {digits.map((d, i) => (
-              <GlassButton key={i} style={styles.otpGlass} borderRadius={14}>
+              <View key={i} style={styles.otpGlass}>
                 <View style={styles.otpBox}>
                   <TextInput
                     ref={inputs[i]}
@@ -209,7 +208,7 @@ export default function VerifyPasscodeScreen({ route, navigation }: Props) {
                     returnKeyType="next"
                   />
                 </View>
-              </GlassButton>
+              </View>
             ))}
           </Animated.View>
 
@@ -228,18 +227,9 @@ export default function VerifyPasscodeScreen({ route, navigation }: Props) {
 
           <View style={{ height: 24 }} />
 
-          <GlassButton style={styles.ctaWrapper} borderRadius={25}>
-            <TouchableOpacity onPress={handleContinue}>
-              <LinearGradient
-                colors={["#6E23BA", "#282691"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.cta}
-              >
-                <Text style={styles.ctaText}>Continue</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </GlassButton>
+          <View style={styles.ctaWrapper}>
+            <PrimaryButton title="Continue" onPress={handleContinue} />
+          </View>
         </View>
       </ScrollView>
 
@@ -313,7 +303,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    color: "#FFFFFF",
+    color: "#F6F8F9",
     fontWeight: "700",
     fontFamily: "Hero",
     textAlign: "center",
@@ -351,7 +341,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 16,
-    color: "#9CA3AF",
+    color: "#4B5563",
     fontSize: 14,
     textAlign: "center",
     fontFamily: "Hero",
@@ -359,7 +349,7 @@ const styles = StyleSheet.create({
   },
   resend: {
     marginTop: 14,
-    color: "#932FF8",
+    color: "#6E23BA",
     fontSize: 14,
     textAlign: "center",
     fontFamily: "Hero",
@@ -372,18 +362,8 @@ const styles = StyleSheet.create({
   ctaWrapper: {
     marginTop: 16,
     width: "100%",
-    alignSelf: "stretch",
-  },
-  cta: {
-    paddingVertical: 14,
-    borderRadius: 25,
-  },
-  ctaText: {
-    color: "#FFFFFF",
-    textAlign: "center",
-    fontWeight: "700",
-    fontSize: 16,
-    fontFamily: "Hero",
+    alignSelf: "center",
+    alignItems: "center",
   },
   footer: {
     position: "absolute",

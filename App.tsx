@@ -10,6 +10,10 @@ export type RootStackParamList = {
   CheckinScreen: undefined;
   Cancelpage: undefined;
   ExploreScreen: undefined;
+  Search: undefined;
+  CategoryList: { category: string };
+  AllEvents: undefined;
+  BrowseAll: undefined;
   PaymentScreen: undefined;
   EventCreatedPage: undefined;
   AccountScreen: undefined;
@@ -39,6 +43,10 @@ import CancelScreen from "./screens/CancelScreen";
 import EventDetailsScreen from "./screens/EventDetailsScreen";
 import PaymentScreen from "./screens/PaymentScreen";
 import ExploreScreen from "./screens/ExploreScreen";
+import SearchScreen from "./screens/SearchScreen";
+import CategoryListScreen from "./screens/CategoryListScreen";
+import AllEventsScreen from "./screens/AllEventsScreen";
+import BrowseAllScreen from "./screens/BrowseAllScreen";
 import AccountScreen from "./screens/AccountScreen";
 import ActivitySnapshot from "./screens/ActivitySnapshot";
 import EventCreatedPage from "./screens/EventCreatedScreen";
@@ -137,6 +145,10 @@ export default function App() {
           component={ExploreScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="Search" component={SearchScreen} />
+        <Stack.Screen name="CategoryList" component={CategoryListScreen} />
+        <Stack.Screen name="AllEvents" component={AllEventsScreen} />
+        <Stack.Screen name="BrowseAll" component={BrowseAllScreen} />
         <Stack.Screen name="AccountScreen" component={AccountScreen} />
         <Stack.Screen
           name="EventCreatedPage"

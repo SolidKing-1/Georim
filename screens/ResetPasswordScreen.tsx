@@ -11,13 +11,12 @@ import {
   KeyboardAvoidingView,
   Image,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import GlassButton from "../components/GlassButton";
+import PrimaryButton from "../components/PrimaryButton";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import Constants from "expo-constants";
 import { Ionicons } from "@expo/vector-icons";
-import KeyIcon from "../assets/authScreens/key-01.png";
+import KeyIconGlass from "../components/KeyIconGlass";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ResetPassword">;
 
@@ -113,15 +112,7 @@ export default function ResetPasswordScreen({ route, navigation }: Props) {
 
           {/* Icon */}
           <View style={styles.iconContainer}>
-            <GlassButton
-              style={styles.iconGlassWrapper}
-              borderRadius={60}
-              isCircular={true}
-            >
-              <View style={styles.iconCircle}>
-                <Image source={KeyIcon} style={styles.keyImage} />
-              </View>
-            </GlassButton>
+            <KeyIconGlass size={100} />
           </View>
 
           {/* Title */}
@@ -176,20 +167,13 @@ export default function ResetPasswordScreen({ route, navigation }: Props) {
             </View>
 
             {/* Done Button */}
-            <GlassButton style={styles.ctaWrapper} borderRadius={25}>
-              <TouchableOpacity onPress={handleDone} disabled={isSubmitting}>
-                <LinearGradient
-                  colors={["#6E23BA", "#282691"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.cta}
-                >
-                  <Text style={styles.ctaText}>
-                    {isSubmitting ? "Resetting..." : "Done"}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </GlassButton>
+            <View style={styles.ctaWrapper}>
+              <PrimaryButton
+                title={isSubmitting ? "Resetting..." : "Done"}
+                onPress={handleDone}
+                disabled={isSubmitting}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -252,27 +236,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30,
   },
-  iconGlassWrapper: {
-    width: 100,
-    height: 100,
-  },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#331057",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  keyImage: {
-    width: 60,
-    height: 60,
-    resizeMode: "contain",
-  },
   title: {
     fontSize: 20,
     color: "#F6F8F9",
-    fontWeight: "700",
+    fontWeight: "600",
     fontFamily: "Hero",
     textAlign: "center",
     marginBottom: 28,
@@ -282,7 +249,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "400",
     color: "#F6F8F9",
     marginBottom: 8,
     fontFamily: "Hero",
@@ -309,19 +276,8 @@ const styles = StyleSheet.create({
   },
   ctaWrapper: {
     marginTop: 28,
-    width: "90%",
-    alignSelf: "center",
-  },
-  cta: {
-    paddingVertical: 14,
-    borderRadius: 25,
-  },
-  ctaText: {
-    color: "#F6F8F9",
-    textAlign: "center",
-    fontWeight: "700",
-    fontSize: 16,
-    fontFamily: "Hero",
+    width: "100%",
+    alignItems: "center",
   },
   footer: {
     position: "absolute",
