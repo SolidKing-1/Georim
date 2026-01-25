@@ -19,16 +19,18 @@ import GlassButton from "../components/GlassButton";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
-import { getToken, setBiometricEnabled } from "../utils/auth";
-import { isBiometricEnabled } from "../utils/auth";
-import { promptBiometric } from "../utils/biometric";
-
+import {
+  getToken,
+  setToken,
+  removeToken,
+  setBiometricEnabled,
+  isBiometricEnabled,
+} from "../utils/auth";
+import { KeyboardAvoidingView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-
-import Constants from "expo-constants";
-import { setToken, removeToken } from "../utils/auth"; 
+import Constants from "expo-constants"; 
 import { setUserData } from "../utils/user";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
@@ -42,7 +44,7 @@ export default function LoginScreen() {
 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
   // This is the backend enpoint for this request. 
-  const ENDPOINT = 'api/v1/auth/login';
+  const ENDPOINT = "/api/v1/auth/login";
   const USER_KEY = "user_data";
 
   // TODO: Remove the Biometrics. 
@@ -57,7 +59,7 @@ export default function LoginScreen() {
   const { promptAsync, request } = useGoogleAuth((data) => {
     // Handle login success, e.g., save token, navigate, etc.
     console.log("Google login success:", data);
-    navigation.navigate("Dashboard"); // or wherever you want
+    navigation.navigate("WelcomeExisting"); 
   });
 
   const handleLogin = async () => {
@@ -107,14 +109,14 @@ export default function LoginScreen() {
                 style: "cancel",
                 onPress: async () => {
                   await setBiometricEnabled(false);
-                  navigation.navigate("Dashboard");
+                  navigation.navigate("WelcomeExisting");
                 },
               },
               {
                 text: "Yes",
                 onPress: async () => {
                   await setBiometricEnabled(true);
-                  navigation.navigate("Dashboard");
+                  navigation.navigate("WelcomeExisting");
                 },
               },
             ]
@@ -135,178 +137,158 @@ export default function LoginScreen() {
   };
 
   const handleBiometricLogin = async () => {
-    // Get User Data from AsyncStorage;
-    let userData = await AsyncStorage.getItem(USER_KEY);
+    const token = await getToken();
+    if (!token) {
+      Alert.alert("Please log in with email and password first.");
+      return;
+    }
 
-    // If the user lacks the userData we should alert them
-    if (!userData) {
-      Alert.alert("You are not logged in. \n Please log in first.");
+    const hasHardware = await LocalAuthentication.hasHardwareAsync();
+    const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+    if (!hasHardware || !isEnrolled) {
+      Alert.alert("Biometrics not available on this device.");
       return;
     }
 
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: "Authenticate to continue",
       fallbackLabel: "Use Passcode",
-      disableDeviceFallback: false,
     });
-    if (result.success) {
-      let response = await fetch(`${BACKEND_URL}/auth/biometric-auth`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: JSON.parse(userData).email,
-        }),
-      });
 
-      if (!response.ok) {
-        // Show backend error message if available
-        let errorData;
-        try {
-          errorData = await response.json();
-        } catch {
-          errorData = {};
-        }
-        Alert.alert(
-          errorData?.data?.message || "We Had Issues Logging You In."
-        );
-        return;
-      }
-      const data = await response.json();
-      await setToken(data.data.token);
-      let userDataObj = {
-        email: data.data.email,
-        name: data.data.name,
-        isGoogleUser: data.data.isGoogleUser || false,
-        picture: { uri: data.data.picture || null },
-      };
-      await setUserData(userDataObj);
-      navigation.navigate("WelcomeExisting");
+    if (result.success) {
+      navigation.replace("WelcomeExisting");
     }
   };
 
+
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      onScrollBeginDrag={() => Keyboard.dismiss()}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#05031B" }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <View style={styles.innerContainer}>
-        {/* Header */}
-        <Text style={styles.header}>Login</Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.innerContainer}>
+          {/* Header */}
+          <Text style={styles.header}>Login</Text>
 
-        {/* Banner Image */}
-        <View style={styles.bannerContainer}>
-          <Image
-            source={BannerImage}
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-        </View>
-
-        {/* Input Section */}
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Email</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              placeholder="username@gmail.com"
-              placeholderTextColor="#6B7280"
-              style={[
-                styles.input,
-                { paddingRight: biometricAvailable ? 40 : 12 },
-              ]}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
+          {/* Banner Image */}
+          <View style={styles.bannerContainer}>
+            <Image
+              source={BannerImage}
+              style={styles.bannerImage}
+              resizeMode="cover"
             />
-            {biometricAvailable && (
-              <TouchableOpacity
-                onPress={handleBiometricLogin}
-                style={styles.biometricIcon}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Icon name="finger-print" size={22} color="#932FF8" />
-              </TouchableOpacity>
-            )}
           </View>
 
-          <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
-          <View style={styles.passwordWrapper}>
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor="#6B7280"
-              style={[styles.input, { flex: 1, borderWidth: 0 }]}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Icon
-                name={showPassword ? "eye-off-outline" : "eye-outline"}
-                size={20}
-                color="#9CA3AF"
-                style={{ paddingHorizontal: 12 }}
+          {/* Input Section */}
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>Email</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                placeholder="username@gmail.com"
+                placeholderTextColor="#6B7280"
+                style={[
+                  styles.input,
+                  { paddingRight: biometricAvailable ? 40 : 12 },
+                ]}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
               />
+              {biometricAvailable && (
+                <TouchableOpacity
+                  onPress={handleBiometricLogin}
+                  style={styles.biometricIcon}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon name="finger-print" size={22} color="#932FF8" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <Text style={[styles.label, { marginTop: 20 }]}>Password</Text>
+            <View style={styles.passwordWrapper}>
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor="#6B7280"
+                style={[styles.input, { flex: 1, borderWidth: 0 }]}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Icon
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#9CA3AF"
+                  style={{ paddingHorizontal: 12 }}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {/* Sign In Button */}
+            <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
+              <TouchableOpacity onPress={handleLogin}>
+                <LinearGradient
+                  colors={["#6E23BA", "#282691"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.signInButton}
+                >
+                  <Text style={styles.signInButtonText}>Sign In</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </GlassButton>
+
+            {/* Divider */}
+            <Text style={styles.orText}>Or Continue With</Text>
+
+            {/* Google Button */}
+            <GlassButton
+              style={styles.googleGlassWrapper}
+              borderRadius={50}
+              isCircular={true}
+            >
+              <TouchableOpacity
+                style={styles.googleButton}
+                disabled={!request}
+                onPress={() => promptAsync()}
+              >
+                <Image source={GoogleIcon} style={styles.googleLogo} />
+              </TouchableOpacity>
+            </GlassButton>
+
+            {/* Sign Up Link */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("SignUp")}
+              style={styles.signupContainer}
+            >
+              <Text style={styles.signupText}>
+                Don't have an account yet?{" "}
+                <Text style={styles.link}>Register for free</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate("ForgotPassword")}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          {/* Sign In Button */}
-          <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
-            <TouchableOpacity onPress={handleLogin}>
-              <LinearGradient
-                colors={["#6E23BA", "#282691"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.signInButton}
-              >
-                <Text style={styles.signInButtonText}>Sign In</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </GlassButton>
-
-          {/* Divider */}
-          <Text style={styles.orText}>Or Continue With</Text>
-
-          {/* Google Button */}
-          <GlassButton
-            style={styles.googleGlassWrapper}
-            borderRadius={50}
-            isCircular={true}
-          >
-            <TouchableOpacity
-              style={styles.googleButton}
-              disabled={!request}
-              onPress={() => promptAsync()}
-            >
-              <Image source={GoogleIcon} style={styles.googleLogo} />
-            </TouchableOpacity>
-          </GlassButton>
-
-          {/* Sign Up Link */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate("SignUp")}
-            style={styles.signupContainer}
-          >
-            <Text style={styles.signupText}>
-              Don't have an account yet?{" "}
-              <Text style={styles.link}>Register for free</Text>
-            </Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

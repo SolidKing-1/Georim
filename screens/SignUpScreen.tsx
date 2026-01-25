@@ -24,10 +24,12 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
 import { useGoogleAuth } from "../components/useGoogleAuth";
 import Constants from "expo-constants";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import CodeVerificationModal from "../components/CodeVerificationModal";
+// import AsyncStorage from "@react-native-async-storage/async-storage";
+// import CodeVerificationModal from "../components/CodeVerificationModal";
 import { setToken } from "../utils/auth";
 import { setUserData } from "../utils/user";
+import { KeyboardAvoidingView } from "react-native";
+
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "SignUp">;
 
@@ -49,12 +51,14 @@ export default function SignUpScreen() {
   // This is the endpoint fot the BACKEND URL. 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
   // This is the endpoint for user registeration. 
-  const ENDPOINT = `/api/v1/auth/register`; 
+  const ENDPOINT = "/api/v1/auth/register";
+  fetch(`${BACKEND_URL}${ENDPOINT}`);
+
 
   const { promptAsync, request } = useGoogleAuth((data) => {
     // Handle signup success, e.g., save token, navigate, etc.
     console.log("Google signup success:", data);
-    navigation.navigate("Dashboard"); // or wherever you want
+    navigation.navigate("WelcomeNew"); 
   });
 
   const handleSignUp = async () => {
@@ -112,264 +116,270 @@ export default function SignUpScreen() {
   );
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
-      onScrollBeginDrag={() => Keyboard.dismiss()}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: "#05031B" }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
     >
-      <View style={styles.innerContainer}>
-        {/* Header */}
-        <Text style={styles.header}>Sign Up</Text>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.innerContainer}>
+          {/* Header */}
+          <Text style={styles.header}>Sign Up</Text>
 
-        {/* Banner Image */}
-        <View style={styles.bannerContainer}>
-          <Image
-            source={BannerImage}
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-        </View>
-
-        {/* Form Section */}
-        <View style={styles.formContainer}>
-          {/* First & Last Name Row */}
-          <View style={styles.nameRow}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={styles.label}>First Name</Text>
-              <TextInput
-                placeholder="John"
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-                value={first}
-                onChangeText={setFirst}
-              />
-            </View>
-            <View style={{ flex: 1, marginLeft: 8 }}>
-              <Text style={styles.label}>Last Name</Text>
-              <TextInput
-                placeholder="Kwame"
-                placeholderTextColor="#6B7280"
-                style={styles.input}
-                value={last}
-                onChangeText={setLast}
-              />
-            </View>
-          </View>
-
-          {/* Email */}
-          <Text style={[styles.label, { marginTop: 10 }]}>Email</Text>
-          <TextInput
-            placeholder="username@gmail.com"
-            placeholderTextColor="#6B7280"
-            style={styles.input}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-
-          {/* Phone */}
-          <Text style={[styles.label, { marginTop: 10 }]}>Phone Number</Text>
-          <View style={styles.phoneRow}>
-            <TouchableOpacity
-              style={styles.flagPicker}
-              onPress={() => setShowCountryModal(true)}
-            >
-              <CountryFlag isoCode={selectedCountry.iso} size={22} />
-              <Text
-                style={{
-                  marginLeft: 6,
-                  fontWeight: "600",
-                  color: "#FFFFFF",
-                  fontFamily: "Hero",
-                }}
-              >
-                {selectedCountry.code}
-              </Text>
-              <Icon
-                name="chevron-down"
-                size={16}
-                color="#9CA3AF"
-                style={{ marginLeft: 2 }}
-              />
-            </TouchableOpacity>
-            <TextInput
-              placeholder="+1 912-345-3322"
-              placeholderTextColor="#6B7280"
-              style={[styles.input, { flex: 1, marginLeft: 8 }]}
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
+          {/* Banner Image */}
+          <View style={styles.bannerContainer}>
+            <Image
+              source={BannerImage}
+              style={styles.bannerImage}
+              resizeMode="cover"
             />
           </View>
 
-          {/* Country Picker Modal */}
-          <Modal visible={showCountryModal} animationType="slide">
-            <View style={{ flex: 1, backgroundColor: "#05031B" }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  padding: 16,
-                  paddingTop: 62,
-                }}
+          {/* Form Section */}
+          <View style={styles.formContainer}>
+            {/* First & Last Name Row */}
+            <View style={styles.nameRow}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.label}>First Name</Text>
+                <TextInput
+                  placeholder="John"
+                  placeholderTextColor="#6B7280"
+                  style={styles.input}
+                  value={first}
+                  onChangeText={setFirst}
+                />
+              </View>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={styles.label}>Last Name</Text>
+                <TextInput
+                  placeholder="Kwame"
+                  placeholderTextColor="#6B7280"
+                  style={styles.input}
+                  value={last}
+                  onChangeText={setLast}
+                />
+              </View>
+            </View>
+
+            {/* Email */}
+            <Text style={[styles.label, { marginTop: 10 }]}>Email</Text>
+            <TextInput
+              placeholder="username@gmail.com"
+              placeholderTextColor="#6B7280"
+              style={styles.input}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+            />
+
+            {/* Phone */}
+            <Text style={[styles.label, { marginTop: 10 }]}>Phone Number</Text>
+            <View style={styles.phoneRow}>
+              <TouchableOpacity
+                style={styles.flagPicker}
+                onPress={() => setShowCountryModal(true)}
               >
+                <CountryFlag isoCode={selectedCountry.iso} size={22} />
                 <Text
                   style={{
-                    fontWeight: "bold",
-                    fontSize: 18,
-                    flex: 1,
+                    marginLeft: 6,
+                    fontWeight: "600",
                     color: "#FFFFFF",
                     fontFamily: "Hero",
                   }}
                 >
-                  Select Country
+                  {selectedCountry.code}
                 </Text>
-                <TouchableOpacity onPress={() => setShowCountryModal(false)}>
-                  <Icon name="close" size={24} color="#932FF8" />
-                </TouchableOpacity>
-              </View>
-              <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
-                <TextInput
-                  placeholder="Search country..."
-                  placeholderTextColor="#6B7280"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: "#374151",
-                    borderRadius: 10,
-                    paddingVertical: 10,
-                    paddingHorizontal: 14,
-                    backgroundColor: "#1F2937",
-                    color: "#FFFFFF",
-                    marginBottom: 10,
-                    fontFamily: "Hero",
-                  }}
-                  value={searchText}
-                  onChangeText={setSearchText}
+                <Icon
+                  name="chevron-down"
+                  size={16}
+                  color="#9CA3AF"
+                  style={{ marginLeft: 2 }}
                 />
-              </View>
-              <FlatList
-                data={filteredCountries}
-                keyExtractor={(item) => item.code}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      padding: 14,
-                      borderBottomWidth: 1,
-                      borderBottomColor: "#374151",
-                    }}
-                    onPress={() => {
-                      setSelectedCountry(item);
-                      setShowCountryModal(false);
-                      setSearchText("");
-                    }}
-                  >
-                    <CountryFlag isoCode={item.iso} size={22} />
-                    <Text
-                      style={{
-                        marginLeft: 12,
-                        fontSize: 16,
-                        flex: 1,
-                        color: "#FFFFFF",
-                        fontFamily: "Hero",
-                      }}
-                    >
-                      {item.name}
-                    </Text>
-                    <Text
-                      style={{
-                        fontWeight: "600",
-                        fontSize: 16,
-                        color: "#9CA3AF",
-                        fontFamily: "Hero",
-                      }}
-                    >
-                      {item.code}
-                    </Text>
-                  </TouchableOpacity>
-                )}
+              </TouchableOpacity>
+              <TextInput
+                placeholder="+1 912-345-3322"
+                placeholderTextColor="#6B7280"
+                style={[styles.input, { flex: 1, marginLeft: 8 }]}
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
               />
             </View>
-          </Modal>
 
-          {/* Password */}
-          <Text style={[styles.label, { marginTop: 10 }]}>Password</Text>
-          <View style={styles.passwordWrapper}>
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor="#6B7280"
-              style={[styles.input, { flex: 1, borderWidth: 0 }]}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Icon
-                name={showPassword ? "eye-off-outline" : "eye-outline"}
-                size={20}
-                color="#9CA3AF"
-                style={{ paddingHorizontal: 12 }}
+            {/* Country Picker Modal */}
+            <Modal visible={showCountryModal} animationType="slide">
+              <View style={{ flex: 1, backgroundColor: "#05031B" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    padding: 16,
+                    paddingTop: 62,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontWeight: "bold",
+                      fontSize: 18,
+                      flex: 1,
+                      color: "#FFFFFF",
+                      fontFamily: "Hero",
+                    }}
+                  >
+                    Select Country
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowCountryModal(false)}>
+                    <Icon name="close" size={24} color="#932FF8" />
+                  </TouchableOpacity>
+                </View>
+                <View style={{ paddingHorizontal: 16, marginBottom: 10 }}>
+                  <TextInput
+                    placeholder="Search country..."
+                    placeholderTextColor="#6B7280"
+                    style={{
+                      borderWidth: 1,
+                      borderColor: "#374151",
+                      borderRadius: 10,
+                      paddingVertical: 10,
+                      paddingHorizontal: 14,
+                      backgroundColor: "#1F2937",
+                      color: "#FFFFFF",
+                      marginBottom: 10,
+                      fontFamily: "Hero",
+                    }}
+                    value={searchText}
+                    onChangeText={setSearchText}
+                  />
+                </View>
+                <FlatList
+                  data={filteredCountries}
+                  keyExtractor={(item) => item.code}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        padding: 14,
+                        borderBottomWidth: 1,
+                        borderBottomColor: "#374151",
+                      }}
+                      onPress={() => {
+                        setSelectedCountry(item);
+                        setShowCountryModal(false);
+                        setSearchText("");
+                      }}
+                    >
+                      <CountryFlag isoCode={item.iso} size={22} />
+                      <Text
+                        style={{
+                          marginLeft: 12,
+                          fontSize: 16,
+                          flex: 1,
+                          color: "#FFFFFF",
+                          fontFamily: "Hero",
+                        }}
+                      >
+                        {item.name}
+                      </Text>
+                      <Text
+                        style={{
+                          fontWeight: "600",
+                          fontSize: 16,
+                          color: "#9CA3AF",
+                          fontFamily: "Hero",
+                        }}
+                      >
+                        {item.code}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                />
+              </View>
+            </Modal>
+
+            {/* Password */}
+            <Text style={[styles.label, { marginTop: 10 }]}>Password</Text>
+            <View style={styles.passwordWrapper}>
+              <TextInput
+                placeholder="Password"
+                placeholderTextColor="#6B7280"
+                style={[styles.input, { flex: 1, borderWidth: 0 }]}
+                secureTextEntry={!showPassword}
+                autoCapitalize="none"
+                value={password}
+                onChangeText={setPassword}
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <Icon
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color="#9CA3AF"
+                  style={{ paddingHorizontal: 12 }}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Forgot Password */}
+            <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {/* Sign Up Button */}
+            <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
+              <TouchableOpacity onPress={handleSignUp}>
+                <LinearGradient
+                  colors={["#6E23BA", "#282691"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.signUpButton}
+                >
+                  <Text style={styles.signUpButtonText}>Sign Up</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </GlassButton>
+
+            {/* Divider */}
+            <Text style={styles.orText}>Or Continue With</Text>
+
+            {/* Google Button */}
+            <GlassButton
+              style={styles.googleGlassWrapper}
+              borderRadius={50}
+              isCircular={true}
+            >
+              <TouchableOpacity
+                style={styles.googleButton}
+                disabled={!request}
+                onPress={() => promptAsync()}
+              >
+                <Image source={GoogleIcon} style={styles.googleLogo} />
+              </TouchableOpacity>
+            </GlassButton>
+
+            {/* Login Redirect */}
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Login")}
+              style={styles.loginContainer}
+            >
+              <Text style={styles.loginText}>
+                Already have an account?{" "}
+                <Text style={styles.link}>Login here</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate("ForgotPassword")}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          {/* Sign Up Button */}
-          <GlassButton style={styles.glassButtonWrapper} borderRadius={25}>
-            <TouchableOpacity onPress={handleSignUp}>
-              <LinearGradient
-                colors={["#6E23BA", "#282691"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.signUpButton}
-              >
-                <Text style={styles.signUpButtonText}>Sign Up</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </GlassButton>
-
-          {/* Divider */}
-          <Text style={styles.orText}>Or Continue With</Text>
-
-          {/* Google Button */}
-          <GlassButton
-            style={styles.googleGlassWrapper}
-            borderRadius={50}
-            isCircular={true}
-          >
-            <TouchableOpacity
-              style={styles.googleButton}
-              disabled={!request}
-              onPress={() => promptAsync()}
-            >
-              <Image source={GoogleIcon} style={styles.googleLogo} />
-            </TouchableOpacity>
-          </GlassButton>
-
-          {/* Login Redirect */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Login")}
-            style={styles.loginContainer}
-          >
-            <Text style={styles.loginText}>
-              Already have an account?{" "}
-              <Text style={styles.link}>Login here</Text>
-            </Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
