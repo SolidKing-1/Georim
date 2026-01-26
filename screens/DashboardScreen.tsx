@@ -1,7 +1,8 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
+import SearchNavBar from "../components/SearchNavBar";
 
 const DashboardScreen = () => {
   const userName = "John Doe"; // Replace with dynamic user data
@@ -54,8 +55,13 @@ const DashboardScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Top Section */}
-      <View style={styles.topSection}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Section */}
+        <View style={styles.topSection}>
         {/* Profile */}
         <View style={styles.profileContainer}>
           <View style={styles.profileCircle}>
@@ -265,6 +271,12 @@ const DashboardScreen = () => {
           ))}
         </View>
       </View>
+      </ScrollView>
+      
+      {/* Bottom Navigation Bar */}
+      <View style={styles.bottomNavContainer}>
+        <SearchNavBar variant="dashboard" activeTab="Home" />
+      </View>
     </View>
   );
 };
@@ -273,8 +285,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#421570",
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: 16,
     paddingTop: 48,
+    paddingBottom: 100, // Space for bottom navbar
+  },
+  bottomNavContainer: {
+    position: "absolute",
+    bottom: 16,
+    left: 0,
+    right: 0,
+    backgroundColor: "transparent",
   },
 
   topSection: {
