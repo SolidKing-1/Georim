@@ -1,5 +1,15 @@
 const { getDefaultConfig } = require("expo/metro-config");
 
-module.exports = getDefaultConfig(__dirname);
-// This configuration file is used by Metro, the JavaScript bundler for React Native.
-// It exports the default configuration provided by Expo, which includes settings for resolving modules,    
+const config = getDefaultConfig(__dirname);
+
+config.transformer = {
+  babelTransformerPath: require.resolve("react-native-svg-transformer"),
+  ...config.transformer,
+};
+
+config.resolver = {
+  assetExts: config.resolver.assetExts.filter((ext) => ext !== "svg"),
+  sourceExts: [...config.resolver.sourceExts, "svg"],
+};
+
+module.exports = config;
