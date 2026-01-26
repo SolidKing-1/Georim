@@ -10,17 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-  EventDetails: { event: typeof dummyEvent };
-  VerifyLocation: undefined;
-  Cancelpage: { event: typeof dummyEvent };
-  // Add other routes as needed
-};
-
-type CheckinScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-import BottomNavComplete from "../components/BottomNavComplete";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Animatable from "react-native-animatable";
 
 // Dummy event data for testing
@@ -147,12 +137,6 @@ export default function CheckinScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         style={{ marginBottom: 0 }}
-      />
-
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
       />
     </View>
   );

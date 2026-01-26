@@ -10,7 +10,6 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import BottomNavComplete from "../components/BottomNavComplete";
 import DashedDropzone from "../components/DashedDropzone";
 import * as ImagePicker from "expo-image-picker";
 import { getCountryCode } from "../utils/countryCodes";
@@ -239,17 +238,7 @@ export default function ProfileScreen() {
         </Animated.View>
       )}
 
-      {/* Animated BottomNavBar */}
-      <Animated.View
-        style={[{ transform: [{ translateY: navbarTranslateY }] }]}
-      >
-        {/* Use the reusable BottomNavBar component */}
-        <BottomNavComplete
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          navSlideAnim={navSlideAnim}
-        />
-      </Animated.View>
+      {/* Animated BottomNavBar (handled by global Navbar now) */}
     </View>
   );
 }

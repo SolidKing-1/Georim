@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import BottomNavComplete from "../components/BottomNavComplete";
 import {
   View,
   Text,
@@ -168,12 +167,6 @@ const EventCreatedPage = () => {
           contentContainerStyle={styles.eventList}
         />
       )}
-
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
-      />
     </View>
   );
 };

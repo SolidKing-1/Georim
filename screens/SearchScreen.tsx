@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { G, Path, Defs, ClipPath, Rect } from "react-native-svg";
 import AllEventsPill from "../components/GlassEffects/allEventsPill.png";
@@ -34,7 +34,6 @@ import { BlurView } from "expo-blur";
 import { RootStackParamList } from "../App";
 import ProfileStack from "../components/ProfileStack";
 import EventCard from "../components/EventCard";
-import SearchNavBar from "../components/SearchNavBar";
 import GlassSearchBar from "../components/GlassSearchBar";
 
 // Using SVG Ad badge component
@@ -59,9 +58,11 @@ const demoEvents = [
 ];
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "Search">;
+type SearchRoute = RouteProp<RootStackParamList, "Search">;
 
 export default function SearchScreen() {
   const navigation = useNavigation<Nav>();
+  const route = useRoute<SearchRoute>();
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -105,6 +106,17 @@ export default function SearchScreen() {
     };
   }, []);
 
+  // When navigated to Search with openSearchModalToken from Navbar, open the modal and focus input
+  useEffect(() => {
+    if (route.params?.openSearchModalToken) {
+      setIsFocused(true);
+      // Small delay to ensure TextInput is mounted
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
+  }, [route.params?.openSearchModalToken]);
+
   return (
     <LinearGradient
         colors={["#0E0D32", "#060616", "#060616"]}
@@ -118,7 +130,7 @@ export default function SearchScreen() {
         style={styles.topDecoration}
         contentFit="cover"
       />
-      <ScrollView contentContainerStyle={{ paddingBottom: 70 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
         {/* Header */}
         <View style={styles.headerRow}>
           <Text style={styles.header}>Search</Text>
@@ -581,19 +593,6 @@ export default function SearchScreen() {
           </View>
         )}
       </ScrollView>
-
-      {/* Bottom Search Bar - visible when not searching */}
-      {!isFocused && (
-        <View style={styles.bottomBarContainer}>
-          <SearchNavBar
-            onHomePress={() => navigation.navigate("Dashboard")}
-            onSearchPress={() => {
-              setIsFocused(true);
-              inputRef.current?.focus();
-            }}
-          />
-        </View>
-      )}
 
       {/* Full Screen Search Modal */}
       <Modal

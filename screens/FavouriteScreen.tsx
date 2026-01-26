@@ -9,7 +9,6 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
-import BottomNavComplete from "../components/BottomNavComplete";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -193,13 +192,6 @@ const FavouriteScreen = ({ route }: any) => {
           ))}
         </ScrollView>
       </View>
-
-      {/* Bottom Navbar */}
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
-      />
     </View>
   );
 };
