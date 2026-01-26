@@ -208,14 +208,23 @@ export default function Navbar({
   }));
 
   const selectorAnimatedStyle = useAnimatedStyle(() => {
-    if (!navWidth.value) {
-      return {
-        opacity: 0,
-      };
+    const fallbackWidth = Math.max(
+      containerWidth.value -
+        NAV_HORIZONTAL_PADDING * 2 -
+        SEARCH_CIRCLE_SIZE -
+        NAV_GAP,
+      HOME_SIZE
+    );
+    const measuredWidth = navWidth.value || fallbackWidth;
+
+    if (!measuredWidth) {
+      return { opacity: 0 };
     }
-    const itemW = navWidth.value / TABS.length;
+
+    const itemW = measuredWidth / TABS.length;
     const x = selectorIndex.value * itemW;
     return {
+      opacity: dashProgress.value,
       transform: [
         { translateX: x },
         { scale: selectorScale.value },
@@ -681,14 +690,15 @@ const styles = StyleSheet.create({
   },
   navSelector: {
     position: "absolute",
-    left: 0,
-    top: 8,
-    bottom: 8,
+    left: 4,
+    top: 6,
+    bottom: 6,
     width: "25%",
     borderRadius: 26,
     backgroundColor: "#0E0D32",
     opacity: 0.9,
     borderWidth: 1,
-    borderColor: "#932FF8",
+    borderColor: "#0E0D32",
+    zIndex: 0,
   },
 });
