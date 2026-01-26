@@ -17,8 +17,10 @@ import CountryFlag from "react-native-country-flag";
 import { COUNTRY_LIST } from "../utils/countryList";
 import BannerImage from "../assets/authScreens/signUp.jpg";
 import Icon from "react-native-vector-icons/Ionicons";
-import GoogleIcon from "../assets/Google.png";
+import Svg, { Path } from "react-native-svg";
 import GlassButton from "../components/GlassButton";
+import CircleEffect from "../components/GlassEffects/circleGlassEffect.png";
+import PrimaryButton from "../components/PrimaryButton";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
@@ -112,7 +114,7 @@ export default function SignUpScreen() {
   };
 
   const filteredCountries = COUNTRY_LIST.filter((item) =>
-    item.name.toLowerCase().includes(searchText.toLowerCase())
+    item.name.toLowerCase().includes(searchText.toLowerCase()),
   );
 
   return (
@@ -348,8 +350,8 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </GlassButton>
 
-            {/* Divider */}
-            <Text style={styles.orText}>Or Continue With</Text>
+          {/* Sign Up Button */}
+          <PrimaryButton title="Sign Up" onPress={handleSignUp} />
 
             {/* Google Button */}
             <GlassButton
@@ -366,17 +368,48 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </GlassButton>
 
-            {/* Login Redirect */}
+          {/* Google Button */}
+          <View style={styles.googleWrapper}>
+            <View style={styles.circleBg} pointerEvents="none" />
+            <Image
+              source={CircleEffect}
+              style={styles.circleEffect}
+            />
             <TouchableOpacity
               onPress={() => navigation.navigate("Login")}
               style={styles.loginContainer}
             >
-              <Text style={styles.loginText}>
-                Already have an account?{" "}
-                <Text style={styles.link}>Login here</Text>
-              </Text>
+              <Svg width={28} height={28} viewBox="0 0 22 22" fill="none">
+                <Path
+                  d="M21.6338 8.78383H20.7539V8.7385H10.9231V13.1077H17.0963C16.1957 15.6512 13.7757 17.477 10.9231 17.477C7.30374 17.477 4.36925 14.5425 4.36925 10.9231C4.36925 7.30374 7.30374 4.36925 10.9231 4.36925C12.5938 4.36925 14.1138 4.99951 15.2711 6.02902L18.3607 2.93941C16.4098 1.12126 13.8003 0 10.9231 0C4.89083 0 0 4.89083 0 10.9231C0 16.9554 4.89083 21.8462 10.9231 21.8462C16.9554 21.8462 21.8462 16.9554 21.8462 10.9231C21.8462 10.1907 21.7709 9.47581 21.6338 8.78383Z"
+                  fill="#7F00FF"
+                />
+                <Path
+                  d="M1.25916 5.83895L4.84795 8.47088C5.81901 6.0667 8.17076 4.36925 10.9228 4.36925C12.5935 4.36925 14.1135 4.99951 15.2708 6.02902L18.3604 2.93941C16.4095 1.12126 13.8 0 10.9228 0C6.72727 0 3.08878 2.36868 1.25916 5.83895Z"
+                  fill="#FF3D00"
+                />
+                <Path
+                  d="M10.9233 21.8466C13.7447 21.8466 16.3084 20.7669 18.2467 19.011L14.866 16.1502C13.7325 17.0123 12.3474 17.4785 10.9233 17.4774C8.08218 17.4774 5.66981 15.6658 4.761 13.1376L1.19897 15.8821C3.00675 19.4195 6.67801 21.8466 10.9233 21.8466Z"
+                  fill="#4CAF50"
+                />
+                <Path
+                  d="M21.6343 8.78373H20.7544V8.7384H10.9236V13.1077H17.0968C16.666 14.3182 15.89 15.3759 14.8646 16.1503L14.8663 16.1492L18.247 19.01C18.0078 19.2273 21.8467 16.3846 21.8467 10.923C21.8467 10.1906 21.7713 9.47571 21.6343 8.78373Z"
+                  fill="#1976D2"
+                />
+              </Svg>
             </TouchableOpacity>
           </View>
+
+          {/* Login Redirect */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Login")}
+            style={styles.loginContainer}
+          >
+            <Text style={styles.loginText}>
+              Already have an account?{" "}
+              <Text style={styles.link}>Login here</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -423,8 +456,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: "500",
-    color: "#FFFFFF",
+    fontWeight: "300",
+    color: "#F6F8F9",
     marginBottom: 6,
     fontFamily: "Hero",
   },
@@ -474,10 +507,16 @@ const styles = StyleSheet.create({
   },
   glassButtonWrapper: {
     marginBottom: 12,
+    borderWidth: 0,
+    borderColor: "transparent",
   },
   signUpButton: {
-    padding: 14,
+    padding: 16,
     borderRadius: 25,
+    position: "relative",
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   signUpButtonText: {
     color: "#FFFFFF",
@@ -485,6 +524,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
     fontFamily: "Hero",
+    zIndex: 3,
   },
   orText: {
     textAlign: "center",
@@ -496,19 +536,59 @@ const styles = StyleSheet.create({
   googleGlassWrapper: {
     alignSelf: "center",
   },
+  googleWrapper: {
+    alignSelf: "center",
+    backgroundColor: "transparent",
+    borderWidth: 0,
+    borderColor: "transparent",
+    position: "relative",
+    width: 60,
+    height: 60,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   googleButton: {
     justifyContent: "center",
     alignItems: "center",
     padding: 12,
     borderRadius: 50,
-    backgroundColor: "#8F8E9B",
+    backgroundColor: "transparent",
     width: 56,
     height: 56,
+    zIndex: 3,
   },
-  googleLogo: {
-    width: 28,
-    height: 28,
+  circleEffect: {
+    position: "absolute",
+    width: 60,
+    height: 60,
     resizeMode: "contain",
+    top: 0,
+    left: 0,
+    zIndex: 2,
+  },
+  circleBg: {
+    position: "absolute",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    top: 0,
+    left: 0,
+    overflow: "hidden",
+    zIndex: 0,
+    backgroundColor: "#797787",
+  },
+  gradientOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: undefined,
+    height: undefined,
+    alignSelf: "stretch",
+    resizeMode: "cover",
+    zIndex: 1,
+    opacity: 1,
   },
   loginContainer: {
     marginTop: 12,

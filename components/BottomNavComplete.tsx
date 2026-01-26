@@ -77,7 +77,8 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
           style={styles.navItem}
           onPressIn={() => {
             setActiveTab("Explore");
-            navigation.navigate("ExploreScreen");
+            // Link Explore to new Search screen
+            navigation.navigate("Search");
           }}
         >
           <Image
