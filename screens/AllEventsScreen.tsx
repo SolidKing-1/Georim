@@ -20,7 +20,6 @@ import { BlurView } from "expo-blur";
 import CircleGlassEffect from "../components/GlassEffects/circleGlassEffect.png";
 import { RootStackParamList } from "../App";
 import EventCard from "../components/EventCard";
-import SearchNavBar from "../components/SearchNavBar";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "AllEvents">;
 
@@ -326,17 +325,6 @@ export default function AllEventsScreen() {
           ))}
         </ScrollView>
       </ScrollView>
-
-      {/* Bottom Search Bar */}
-      <View style={styles.bottomBarContainer}>
-        <SearchNavBar
-          onHomePress={() => navigation.navigate("Dashboard")}
-          onSearchPress={() => {
-            setIsFocused(true);
-            inputRef.current?.focus();
-          }}
-        />
-      </View>
 
       {/* Full Screen Search Modal */}
       <Modal

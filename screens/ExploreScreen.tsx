@@ -19,7 +19,6 @@ import SendIcon from "../assets/explore_page/send.png";
 import * as Sharing from "expo-sharing";
 import * as Animatable from "react-native-animatable";
 import { Video, ResizeMode } from "expo-av";
-import BottomNavComplete from "../components/BottomNavComplete";
 import Icon from "react-native-vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
@@ -541,11 +540,6 @@ export default function ExploreScreen() {
           <Icon name="arrow-back" size={32} color="#7F00FF" />
         </TouchableOpacity>
       </Modal>
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
-      />
     </View>
   );
 }

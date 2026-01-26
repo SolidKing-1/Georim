@@ -34,6 +34,10 @@ export default function SearchNavBar({
           {Platform.OS === "android" && (
             <View style={[StyleSheet.absoluteFill, styles.androidGlass]} />
           )}
+          <Image
+            source={require("./GlassEffects/Glass Effect.png")}
+            style={styles.navPillShineOverlay}
+          />
           
           {/* Home (Active) */}
           <TouchableOpacity
@@ -194,6 +198,10 @@ export default function SearchNavBar({
           {Platform.OS === "android" && (
             <View style={[StyleSheet.absoluteFill, styles.searchCircleAndroidGlass]} />
           )}
+          <Image
+            source={require("./GlassEffects/circleGlassEffect.png")}
+            style={styles.searchCircleShine}
+          />
           <TouchableOpacity
             style={styles.searchCircleTouchable}
             onPress={() => {
@@ -226,7 +234,12 @@ export default function SearchNavBar({
           style={styles.homeShine}
         />
         <TouchableOpacity style={styles.homeBtn} onPress={onHomePress}>
-          <Ionicons name="home" size={24} color="#fff" />
+          <Svg width={22} height={19} viewBox="0 0 22 19" fill="none">
+            <Path
+              d="M8.27976 18.0522H13.592V12.2214C13.592 11.8062 13.3172 11.5354 12.8959 11.5354H8.98501C8.56368 11.5354 8.27976 11.8062 8.27976 12.2214V18.0522ZM0.787677 9.6399C1.04413 9.6399 1.25479 9.50451 1.44713 9.35108L10.6153 1.76009C10.7161 1.67886 10.8351 1.63373 10.9359 1.63373C11.0458 1.63373 11.1557 1.67886 11.2565 1.76009L20.4338 9.35108C20.617 9.50451 20.8276 9.6399 21.0841 9.6399C21.5787 9.6399 21.8718 9.2879 21.8718 8.91782C21.8718 8.71023 21.7894 8.49358 21.5787 8.33112L12.035 0.433256C11.6869 0.144418 11.3114 0 10.9359 0C10.5604 0 10.1848 0.144418 9.8368 0.433256L0.293089 8.33112C0.0915904 8.49358 0 8.71023 0 8.91782C0 9.2879 0.293089 9.6399 0.787677 9.6399ZM16.8984 4.84705L19.1973 6.76056V2.68979C19.1973 2.29264 18.9409 2.03991 18.5379 2.03991H17.5579C17.164 2.03991 16.8984 2.29264 16.8984 2.68979V4.84705ZM4.74438 18.982H17.1365C18.4371 18.982 19.1973 18.2508 19.1973 16.9872V6.98623L17.7227 6.00239V16.6261C17.7227 17.2128 17.4022 17.5287 16.8251 17.5287H5.0558C4.46962 17.5287 4.14905 17.2128 4.14905 16.6261V6.01141L2.67444 6.98623V16.9872C2.67444 18.2598 3.43464 18.982 4.74438 18.982Z"
+              fill="#FFFFFF"
+            />
+          </Svg>
         </TouchableOpacity>
       </View>
       <View style={styles.searchBarBlur}>
@@ -338,6 +351,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.15)",
   },
+  navPillShineOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    width: undefined,
+    height: undefined,
+    resizeMode: "stretch",
+    opacity: 1,
+  },
   navItem: {
     flex: 1,
     alignItems: "center",
@@ -348,7 +368,10 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   navItemActive: {
-    backgroundColor: "#211149",
+    backgroundColor: "#0E0D32",
+    paddingVertical: 6,
+    paddingHorizontal: 0,
+    borderRadius: 26, // More pill-shaped for rectangular appearance
   },
   navItemText: {
     fontSize: 10,
@@ -374,6 +397,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 30,
+  },
+  searchCircleShine: {
+    ...StyleSheet.absoluteFillObject,
+    width: undefined,
+    height: undefined,
+    resizeMode: "stretch",
+    opacity: 1,
   },
   searchCircleTouchable: {
     justifyContent: "center",

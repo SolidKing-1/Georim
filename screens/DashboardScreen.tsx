@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { Image } from "expo-image";
 import { FontAwesome } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
-import SearchNavBar from "../components/SearchNavBar";
+import { LinearGradient } from "expo-linear-gradient";
 
 const DashboardScreen = () => {
   const userName = "John Doe"; // Replace with dynamic user data
@@ -54,7 +55,18 @@ const DashboardScreen = () => {
   const { month, day } = getCurrentDate();
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={["#0E0D32", "#060616", "#060616"]}
+      locations={[0, 0.35, 1]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={styles.container}
+    >
+      <Image
+        source={require("../assets/homePage/birthday-decoration.png")}
+        style={styles.topDecoration}
+        contentFit="cover"
+      />
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -272,19 +284,23 @@ const DashboardScreen = () => {
         </View>
       </View>
       </ScrollView>
-      
-      {/* Bottom Navigation Bar */}
-      <View style={styles.bottomNavContainer}>
-        <SearchNavBar variant="dashboard" activeTab="Home" />
-      </View>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#421570",
+  },
+  topDecoration: {
+    position: "absolute",
+    top: 60,
+    alignSelf: "center",
+    width: "80%",
+    height: "80%",
+    resizeMode: "cover",
+    opacity: 0.1,
+    zIndex: 0,
   },
   scrollView: {
     flex: 1,

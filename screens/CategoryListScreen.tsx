@@ -8,7 +8,6 @@ import { RootStackParamList } from "../App";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import EventCard from "../components/EventCard";
 import { LinearGradient } from "expo-linear-gradient";
-import SearchNavBar from "../components/SearchNavBar";
 
 type Nav = NativeStackNavigationProp<RootStackParamList, "CategoryList">;
 
@@ -133,16 +132,6 @@ export default function CategoryListScreen() {
         }
         contentContainerStyle={styles.listContent}
       />
-
-      <View style={styles.bottomBar}>
-        <SearchNavBar
-          onHomePress={() => navigation.navigate("Dashboard")}
-          onSearchPress={() => {
-            setIsFocused(true);
-            inputRef.current?.focus();
-          }}
-        />
-      </View>
 
       {/* Full Screen Search Modal */}
       <Modal
