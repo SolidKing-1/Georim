@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
-import BottomNavComplete from "../components/BottomNavComplete";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { removeToken } from "../utils/auth";
 import { getUserData } from "../utils/user";
@@ -229,12 +228,6 @@ const AccountHome = () => {
         </View>
       )}
 
-      {/* Bottom Navbar */}
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
-      />
     </View>
   );
 };

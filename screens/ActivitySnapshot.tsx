@@ -15,7 +15,6 @@ import {
   Alert,
 } from "react-native";
 import GaugeChart from "../components/GaugeChart";
-import BottomNavComplete from "../components/BottomNavComplete";
 import Icon from "react-native-vector-icons/Ionicons";
 import QRCode from "react-native-qrcode-svg";
 import * as Clipboard from "expo-clipboard";
@@ -388,13 +387,6 @@ const ActivitySnapshot: React.FC = () => {
           </View>
         </SafeAreaView>
       </Modal>
-
-      {/* Use the reusable BottomNavBar component */}
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
-      />
     </SafeAreaView>
   );
 };

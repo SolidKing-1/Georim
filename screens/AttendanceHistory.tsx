@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import BottomNavComplete from "../components/BottomNavComplete";
 
 const events = [
   {
@@ -118,12 +117,6 @@ const AttendanceHistory = () => {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Bottom Navigation */}
-      <BottomNavComplete
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        navSlideAnim={navSlideAnim}
-      />
     </View>
   );
 };
