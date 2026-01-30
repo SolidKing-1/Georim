@@ -410,61 +410,17 @@ export default function SignUpScreen() {
               </TouchableOpacity>
             </GlassButton>
 
-<<<<<<< HEAD
-          {/* Google Button */}
-          <View style={styles.googleWrapper}>
-            <View style={styles.circleBg} pointerEvents="none" />
-            <Image
-              source={CircleEffect}
-              style={styles.circleEffect}
-            />
-=======
             {/* Login Redirect */}
->>>>>>> 47c698dae96ddcdf3ead3844762c259e927ba733
             <TouchableOpacity
               onPress={() => navigation.navigate("Login")}
               style={styles.loginContainer}
             >
-<<<<<<< HEAD
-              <Svg width={28} height={28} viewBox="0 0 22 22" fill="none">
-                <Path
-                  d="M21.6338 8.78383H20.7539V8.7385H10.9231V13.1077H17.0963C16.1957 15.6512 13.7757 17.477 10.9231 17.477C7.30374 17.477 4.36925 14.5425 4.36925 10.9231C4.36925 7.30374 7.30374 4.36925 10.9231 4.36925C12.5938 4.36925 14.1138 4.99951 15.2711 6.02902L18.3607 2.93941C16.4098 1.12126 13.8003 0 10.9231 0C4.89083 0 0 4.89083 0 10.9231C0 16.9554 4.89083 21.8462 10.9231 21.8462C16.9554 21.8462 21.8462 16.9554 21.8462 10.9231C21.8462 10.1907 21.7709 9.47581 21.6338 8.78383Z"
-                  fill="#7F00FF"
-                />
-                <Path
-                  d="M1.25916 5.83895L4.84795 8.47088C5.81901 6.0667 8.17076 4.36925 10.9228 4.36925C12.5935 4.36925 14.1135 4.99951 15.2708 6.02902L18.3604 2.93941C16.4095 1.12126 13.8 0 10.9228 0C6.72727 0 3.08878 2.36868 1.25916 5.83895Z"
-                  fill="#FF3D00"
-                />
-                <Path
-                  d="M10.9233 21.8466C13.7447 21.8466 16.3084 20.7669 18.2467 19.011L14.866 16.1502C13.7325 17.0123 12.3474 17.4785 10.9233 17.4774C8.08218 17.4774 5.66981 15.6658 4.761 13.1376L1.19897 15.8821C3.00675 19.4195 6.67801 21.8466 10.9233 21.8466Z"
-                  fill="#4CAF50"
-                />
-                <Path
-                  d="M21.6343 8.78373H20.7544V8.7384H10.9236V13.1077H17.0968C16.666 14.3182 15.89 15.3759 14.8646 16.1503L14.8663 16.1492L18.247 19.01C18.0078 19.2273 21.8467 16.3846 21.8467 10.923C21.8467 10.1906 21.7713 9.47571 21.6343 8.78373Z"
-                  fill="#1976D2"
-                />
-              </Svg>
-            </TouchableOpacity>
-          </View>
-
-          {/* Login Redirect */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Login")}
-            style={styles.loginContainer}
-          >
-            <Text style={styles.loginText}>
-              Already have an account?{" "}
-              <Text style={styles.link}>Login here</Text>
-            </Text>
-          </TouchableOpacity>
-=======
               <Text style={styles.loginText}>
                 Already have an account?{" "}
                 <Text style={styles.link}>Login here</Text>
               </Text>
             </TouchableOpacity>
           </View>
->>>>>>> 47c698dae96ddcdf3ead3844762c259e927ba733
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

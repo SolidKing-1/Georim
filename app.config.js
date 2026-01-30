@@ -25,6 +25,6 @@ export default {
       },
     },
 
-    scheme: "georim",
+    // scheme: "georim",
   },
 };
