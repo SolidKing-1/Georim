@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { FontAwesome } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
+import EventCard from "../components/EventCard";
 
 const DashboardScreen = () => {
   const userName = "John Doe"; // Replace with dynamic user data
@@ -144,71 +145,25 @@ const DashboardScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.horizontalScrollContainer}>
-        <View style={styles.cardsContainer}>
-          {events.map((event) => (
-            <View key={event.id} style={styles.card}>
-              {/* Top Section: Event Image */}
-              <View style={styles.cardImageContainer}>
-                <Image source={event.image} style={styles.cardImage} />
-
-                {/* Date at Top Left */}
-                <View style={styles.dateContainer}>
-                  <Text style={styles.dateMonth}>{month}</Text>
-                  <Text style={styles.dateDay}>{day}</Text>
-                </View>
-
-                {/* Save Icon at Top Right */}
-                <TouchableOpacity style={styles.saveIconContainer}>
-                  <FontAwesome name="bookmark" size={20} color="#fff" />
-                </TouchableOpacity>
-
-                {/* Rounded Containers at Bottom Edge */}
-                <View style={styles.bottomLabels}>
-                  <View style={styles.labelLeft}>
-                    <FontAwesome name="star" size={12} color="#fff" />
-                    <Text style={styles.labelText}>New</Text>
-                  </View>
-                  <View style={styles.labelRight}>
-                    <FontAwesome name="gift" size={12} color="#fff" />
-                    <Text style={styles.labelText}>Free</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Bottom Section: Event Details */}
-              <View style={styles.cardDetails}>
-                <Text style={styles.eventName}>{event.name}</Text>
-                <View style={styles.eventLocation}>
-                  <FontAwesome name="map-marker" size={14} color="#888" />
-                  <Text style={styles.locationText}>{event.location}</Text>
-                </View>
-                <View style={styles.attendeesContainer}>
-                  <View style={styles.attendeeImages}>
-                    {[...Array(4)].map((_, index) => (
-                      <Image
-                        key={index}
-                        source={require("../assets/Home/headshot.png")}
-                        style={[
-                          styles.attendeeImage,
-                          index !== 0 && { marginLeft: -10 },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                  <Text style={styles.attendeesText}>
-                    {event.attendees} + Attending
-                  </Text>
-                </View>
-                <View style={styles.cardRating}>
-                  <Text style={styles.ratingText}>{event.rating}</Text>
-                  <FontAwesome name="star" size={14} color="gold" />
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: 20, paddingRight: 0 }}
+        style={{ marginRight: -16 }}
+      >
+        {events.map((event) => (
+          <EventCard
+            key={event.id}
+            image={event.image}
+            title={event.name}
+            location={event.location}
+            attendees={event.attendees}
+            rating={event.rating.toFixed(1)}
+            month={month}
+            day={String(day)}
+          />
+        ))}
+      </ScrollView>
 
       {/* Events Near Me Section */}
       <View style={styles.trendingHeader}>
@@ -218,71 +173,25 @@ const DashboardScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.horizontalScrollContainer}>
-        <View style={styles.cardsContainer}>
-          {events.map((event) => (
-            <View key={event.id} style={styles.card}>
-              {/* Top Section: Event Image */}
-              <View style={styles.cardImageContainer}>
-                <Image source={event.image} style={styles.cardImage} />
-
-                {/* Date at Top Left */}
-                <View style={styles.dateContainer}>
-                  <Text style={styles.dateMonth}>{month}</Text>
-                  <Text style={styles.dateDay}>{day}</Text>
-                </View>
-
-                {/* Save Icon at Top Right */}
-                <TouchableOpacity style={styles.saveIconContainer}>
-                  <FontAwesome name="bookmark" size={20} color="#fff" />
-                </TouchableOpacity>
-
-                {/* Rounded Containers at Bottom Edge */}
-                <View style={styles.bottomLabels}>
-                  <View style={styles.labelLeft}>
-                    <FontAwesome name="star" size={12} color="#fff" />
-                    <Text style={styles.labelText}>New</Text>
-                  </View>
-                  <View style={styles.labelRight}>
-                    <FontAwesome name="gift" size={12} color="#fff" />
-                    <Text style={styles.labelText}>Free</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Bottom Section: Event Details */}
-              <View style={styles.cardDetails}>
-                <Text style={styles.eventName}>{event.name}</Text>
-                <View style={styles.eventLocation}>
-                  <FontAwesome name="map-marker" size={14} color="#888" />
-                  <Text style={styles.locationText}>{event.location}</Text>
-                </View>
-                <View style={styles.attendeesContainer}>
-                  <View style={styles.attendeeImages}>
-                    {[...Array(4)].map((_, index) => (
-                      <Image
-                        key={index}
-                        source={require("../assets/Home/headshot.png")}
-                        style={[
-                          styles.attendeeImage,
-                          index !== 0 && { marginLeft: -10 },
-                        ]}
-                      />
-                    ))}
-                  </View>
-                  <Text style={styles.attendeesText}>
-                    {event.attendees} + Attending
-                  </Text>
-                </View>
-                <View style={styles.cardRating}>
-                  <Text style={styles.ratingText}>{event.rating}</Text>
-                  <FontAwesome name="star" size={14} color="gold" />
-                </View>
-              </View>
-            </View>
-          ))}
-        </View>
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: 20, paddingRight: 0 }}
+        style={{ marginRight: -16 }}
+      >
+        {events.map((event) => (
+          <EventCard
+            key={event.id}
+            image={event.image}
+            title={event.name}
+            location={event.location}
+            attendees={event.attendees}
+            rating={event.rating.toFixed(1)}
+            month={month}
+            day={String(day)}
+          />
+        ))}
+      </ScrollView>
       </ScrollView>
     </LinearGradient>
   );
