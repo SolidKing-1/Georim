@@ -1,4 +1,14 @@
-import React, { useState, useEffect } from "react";
+/**
+ * EventDetailsScreen - Displays full event details and handles registration.
+ *
+ * API INTEGRATION OVERVIEW:
+ * - GET /events/:eventId - Fetches event details (see fetchEventDetails)
+ * - POST /events/:eventId/register - Registers user for event (see handleRegister)
+ * - Uses getToken() from utils/auth for Bearer token in API calls
+ * - Mock mode: Pass optional `event` in route params for offline/design phase
+ * - When API is ready: Pass only eventId; remove mockEventToDetails and optional event param
+ */
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -16,13 +26,30 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
 import RegistrationSuccessModal from "../components/RegistrationSuccessModal";
+import TicketSelectionModal, {
+  type TicketSelectionModalRef,
+  type TicketTier,
+} from "../components/TicketSelectionModal";
 import { getToken } from "../utils/auth";
 import Constants from "expo-constants";
+import type { RootStackParamList } from "../App";
+
 const { width } = Dimensions.get("window");
 
+// Space reserved at bottom for navbar overlay (MainLayout bottom: 16 + Navbar height ~68)
+const BOTTOM_NAVBAR_OFFSET = 90;
+
+// -----------------------------------------------------------------------------
+// API INTEGRATION: BACKEND_URL is set in app.config.js via process.env.BACKEND_URL
+// Ensure .env has BACKEND_URL=https://your-api.example.com
+// -----------------------------------------------------------------------------
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
-// Updated interface to match API response from getone handler
+// -----------------------------------------------------------------------------
+// API INTEGRATION: EventDetails interface matches the backend API response shape.
+// GET /events/:id returns { success: true, data: EventDetails }
+// Update this interface if your API response structure differs.
+// -----------------------------------------------------------------------------
 interface EventDetails {
   _id: string;
   title: string;
@@ -67,42 +94,112 @@ interface EventDetails {
   attendees?: number;
 }
 
-type RootStackParamList = {
-  EventDetailsScreen: { eventId: string }; // Changed to pass eventId instead of full event
-  PaymentScreen: { event: EventDetails };
-};
+/**
+ * Transforms mock/list event shape (from EventCard) into full EventDetails shape.
+ * API INTEGRATION: Remove this when all event data comes from the API.
+ */
+function mockEventToDetails(mock: any): EventDetails & { image?: any } {
+  const id = mock._id ?? mock.id ?? "mock";
+  const result: EventDetails & { image?: any } = {
+    _id: id,
+    title: mock.title ?? mock.name ?? "Event",
+    description: mock.description ?? "",
+    category: mock.category ?? "entertainment",
+    visibility: "public",
+    dateTime: {
+      start: mock.dateTime?.start ?? mock.date ?? new Date().toISOString(),
+      end: mock.dateTime?.end ?? new Date().toISOString(),
+    },
+    location: {
+      venue: mock.location ?? mock.venue ?? "",
+      address: {
+        street: mock.address?.street,
+        city:
+          mock.address?.city ??
+          (typeof mock.location === "string" ? mock.location : ""),
+        state: mock.address?.state,
+        zipCode: mock.address?.zipCode,
+      },
+      geometry: {
+        type: "Point" as const,
+        coordinates: mock.location?.geometry?.coordinates ?? [-93.76, 32.51],
+      },
+    },
+    radius: mock.radius ?? 100,
+    images: mock.images,
+    imageUrl:
+      typeof mock.image === "object" && mock.image?.uri
+        ? mock.image.uri
+        : undefined,
+    video: mock.video,
+    creator: mock.creator ?? "",
+    registerations:
+      mock.registerations ?? mock.attendees
+        ? Array(mock.attendees).fill("")
+        : [],
+    checkins: mock.checkins ?? [],
+    hexcode: mock.hexcode ?? "XXXX",
+    price:
+      typeof mock.price === "string"
+        ? parseFloat(mock.price.replace(/[^0-9.]/g, "")) || undefined
+        : mock.price,
+    createdAt: mock.createdAt ?? new Date().toISOString(),
+    updatedAt: mock.updatedAt ?? new Date().toISOString(),
+    status: mock.status ?? "Available",
+    attendees: mock.attendees ?? mock.registerations?.length ?? 0,
+  };
+  if (mock.image != null) result.image = mock.image; // Preserve require() for local images
+  return result;
+}
 
 export default function EventDetailsScreen() {
   const navigation =
     useNavigation<
       import("@react-navigation/native").NavigationProp<RootStackParamList>
     >();
-  const route = useRoute<RouteProp<RootStackParamList, "EventDetailsScreen">>();
-  const { eventId } = route.params;
+  const route = useRoute<RouteProp<RootStackParamList, "EventDetails">>();
+  const { eventId, event: passedEvent } = route.params;
 
   const [event, setEvent] = useState<EventDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const ticketModalRef = useRef<TicketSelectionModalRef>(null);
 
-  // Fetch event details from API
+  // API INTEGRATION: When optional `event` is passed (e.g. from mock data), use it directly.
+  // When connected to API, screens should pass only eventId and this block can be removed.
   useEffect(() => {
+    if (passedEvent) {
+      setEvent(mockEventToDetails(passedEvent));
+      setLoading(false);
+      setError(null);
+      return;
+    }
     fetchEventDetails();
-  }, [eventId]);
+  }, [eventId, passedEvent]);
 
+  // -----------------------------------------------------------------------------
+  // API INTEGRATION: GET /events/:eventId
+  // Fetches full event details. Response: { success: boolean, data?: EventDetails, message?: string }
+  // Add query params if needed (e.g. ?include=attendees). Handle 401/403 for auth.
+  // -----------------------------------------------------------------------------
   const fetchEventDetails = async () => {
+    if (!BACKEND_URL) {
+      setError("Backend URL not configured. Set BACKEND_URL in .env");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
 
-      // Get token from your auth storage (AsyncStorage, SecureStore, etc.)
-      const token = await getToken(); // Implement this based on your auth system
+      const token = await getToken();
 
       const response = await fetch(`${BACKEND_URL}/events/${eventId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -111,11 +208,11 @@ export default function EventDetailsScreen() {
       if (response.ok && data.success) {
         setEvent(data.data);
       } else {
-        setError(data.message || 'Failed to fetch event details');
+        setError(data.message ?? "Failed to fetch event details");
       }
     } catch (err) {
-      setError('Network error. Please check your connection.');
-      console.error('Fetch event error:', err);
+      setError("Network error. Please check your connection.");
+      console.error("Fetch event error:", err);
     } finally {
       setLoading(false);
     }
@@ -123,11 +220,11 @@ export default function EventDetailsScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -135,56 +232,71 @@ export default function EventDetailsScreen() {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const timeOptions: Intl.DateTimeFormatOptions = {
-      hour: 'numeric',
-      minute: '2-digit',
+      hour: "numeric",
+      minute: "2-digit",
       hour12: true,
     };
-    return `${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
+    return `${start.toLocaleTimeString(
+      "en-US",
+      timeOptions
+    )} - ${end.toLocaleTimeString("en-US", timeOptions)}`;
   };
 
-  const formatAddress = (address: EventDetails['location']['address']) => {
+  const formatAddress = (address: EventDetails["location"]["address"]) => {
     const parts = [
       address.street,
       address.city,
       address.state,
       address.zipCode,
     ].filter(Boolean);
-    return parts.join(', ');
+    return parts.join(", ");
   };
 
-  const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
-
+  // -----------------------------------------------------------------------------
+  // API INTEGRATION: POST /events/:eventId/register
+  // Registers the current user for the event. Response: { success, data?, message? }
+  // Handle paid events (redirect to PaymentScreen if payment required).
+  // -----------------------------------------------------------------------------
   const handleRegister = async () => {
     if (!event) return;
 
     try {
       const token = await getToken();
-      
+
       if (!token) {
-        Alert.alert('Authentication Required', 'Please sign in to register for events');
+        Alert.alert(
+          "Authentication Required",
+          "Please sign in to register for events"
+        );
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/events/${event._id}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+      const response = await fetch(
+        `${BACKEND_URL}/events/${event._id}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         setShowModal(true);
         // Update event status locally
-        setEvent(prev => prev ? { ...prev, status: 'Registered' } : prev);
+        setEvent((prev) => (prev ? { ...prev, status: "Registered" } : prev));
       } else {
-        Alert.alert('Registration Failed', data.message || 'Unable to register for event');
+        Alert.alert(
+          "Registration Failed",
+          data.message || "Unable to register for event"
+        );
       }
     } catch (err) {
-      Alert.alert('Error', 'Network error. Please try again.');
-      console.error('Registration error:', err);
+      Alert.alert("Error", "Network error. Please try again.");
+      console.error("Registration error:", err);
     }
   };
 
@@ -201,8 +313,11 @@ export default function EventDetailsScreen() {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={48} color="#FF3B30" />
-        <Text style={styles.errorText}>{error || 'Event not found'}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchEventDetails}>
+        <Text style={styles.errorText}>{error || "Event not found"}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchEventDetails}
+        >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -230,16 +345,22 @@ export default function EventDetailsScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{
+          paddingBottom: 140 + BOTTOM_NAVBAR_OFFSET, // Button area + navbar clearance
+        }}
       >
-        {/* Event Image */}
-        <Image 
+        {/* Event Image - API returns imageUrl or images[0]; mock may pass image as require() */}
+        <Image
           source={
-            event.imageUrl || event.images?.[0] 
+            event.imageUrl
               ? { uri: event.imageUrl }
-              : require('../assets/coding_bootcamp.jpg') // Add a default image
-          } 
-          style={styles.eventImage} 
+              : event.images?.[0]
+              ? { uri: event.images[0] }
+              : typeof (event as any).image === "number"
+              ? (event as any).image
+              : require("../assets/coding_bootcamp.jpg")
+          }
+          style={styles.eventImage}
         />
 
         {/* Event Title Section */}
@@ -247,7 +368,7 @@ export default function EventDetailsScreen() {
           <Text style={styles.title}>{event.title}</Text>
           <View style={styles.tagContainer}>
             <Text style={styles.tag}>
-              {event.price ? `$${event.price}` : 'Free'}
+              {event.price ? `$${event.price}` : "Free"}
             </Text>
             <Text style={styles.categoryTag}>{event.category}</Text>
           </View>
@@ -268,9 +389,13 @@ export default function EventDetailsScreen() {
         {/* Date & Time */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Date & Time</Text>
-          <Text style={styles.dateTime}>{formatDate(event.dateTime.start)}</Text>
-          <Text style={styles.dateTime}>{formatTime(event.dateTime.start, event.dateTime.end)}</Text>
-          
+          <Text style={styles.dateTime}>
+            {formatDate(event.dateTime.start)}
+          </Text>
+          <Text style={styles.dateTime}>
+            {formatTime(event.dateTime.start, event.dateTime.end)}
+          </Text>
+
           {event.recurring?.isRecurring && (
             <Text style={styles.recurringText}>
               Recurring: {event.recurring.pattern}
@@ -283,12 +408,14 @@ export default function EventDetailsScreen() {
           <Text style={styles.sectionTitle}>Location</Text>
           <Text style={styles.venue}>{event.location.venue}</Text>
           {event.location.address && (
-            <Text style={styles.address}>{formatAddress(event.location.address)}</Text>
+            <Text style={styles.address}>
+              {formatAddress(event.location.address)}
+            </Text>
           )}
-          
+
           <MapView style={styles.map} initialRegion={coordinates}>
-            <Marker 
-              coordinate={coordinates} 
+            <Marker
+              coordinate={coordinates}
               title={event.location.venue}
               description={formatAddress(event.location.address)}
             />
@@ -315,8 +442,8 @@ export default function EventDetailsScreen() {
               {/* You can implement avatar fetching based on registerations */}
               <View style={[styles.avatar, styles.attendeesCountAvatar]}>
                 <Text style={styles.attendeesCountText}>
-                  {event.registerations.length > 999 
-                    ? "1k+" 
+                  {event.registerations.length > 999
+                    ? "1k+"
                     : event.registerations.length}
                 </Text>
               </View>
@@ -341,12 +468,27 @@ export default function EventDetailsScreen() {
         ) : (
           <TouchableOpacity
             style={styles.registerButton}
-            onPress={handleRegister}
+            onPress={() => ticketModalRef.current?.present()}
           >
             <Text style={styles.registerText}>Register</Text>
           </TouchableOpacity>
         )}
       </View>
+
+      <TicketSelectionModal
+        ref={ticketModalRef}
+        eventTitle={event.title}
+        eventDescription={event.description}
+        onClose={() => {}}
+        onSelectTicket={(tier: TicketTier) => {
+          ticketModalRef.current?.dismiss();
+          navigation.navigate("RegisterEvent", {
+            eventId: event._id,
+            event: event as any,
+            selectedTier: { id: tier.id, title: tier.title, price: tier.price },
+          });
+        }}
+      />
 
       <RegistrationSuccessModal
         visible={showModal}
@@ -356,46 +498,45 @@ export default function EventDetailsScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#FF3B30',
-    textAlign: 'center',
+    color: "#FF3B30",
+    textAlign: "center",
     marginVertical: 16,
   },
   retryButton: {
-    backgroundColor: '#7F00FF',
+    backgroundColor: "#7F00FF",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   categoryTag: {
-    backgroundColor: '#E3F2FD',
-    color: '#1976D2',
+    backgroundColor: "#E3F2FD",
+    color: "#1976D2",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -404,35 +545,35 @@ const styles = StyleSheet.create({
   },
   hexcode: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#7F00FF',
+    fontWeight: "700",
+    color: "#7F00FF",
     letterSpacing: 2,
   },
   venue: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 4,
   },
   address: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 12,
   },
   recurringText: {
     fontSize: 14,
-    color: '#7F00FF',
-    fontStyle: 'italic',
+    color: "#7F00FF",
+    fontStyle: "italic",
     marginTop: 4,
   },
   radiusText: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginBottom: 4,
   },
   accuracyText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
   container: {
     flex: 1,
@@ -556,7 +697,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 0,
+    bottom: BOTTOM_NAVBAR_OFFSET,
     backgroundColor: "#fff",
     paddingVertical: 16,
     paddingHorizontal: 24,

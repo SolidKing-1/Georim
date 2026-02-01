@@ -4,7 +4,8 @@ export type RootStackParamList = {
   Dashboard: undefined;
   CreateEvent: undefined;
   EventSuccess: undefined;
-  EventDetails: { event: any };
+  EventDetails: { eventId: string; event?: any };
+  RegisterEvent: { eventId: string; event?: any; selectedTier?: { id: string; title: string; price: string } };
   VerifyLocation: undefined;
   CheckinScreen: undefined;
   Cancelpage: undefined;
@@ -30,6 +31,7 @@ export type RootStackParamList = {
 
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import MainLayout from "./layouts/MainLayout";
 
 export default function App() {
@@ -71,5 +73,9 @@ export default function App() {
     );
   }
 
-  return <MainLayout initialRoute={initialRoute} />;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <MainLayout initialRoute={initialRoute} />
+    </GestureHandlerRootView>
+  );
 }

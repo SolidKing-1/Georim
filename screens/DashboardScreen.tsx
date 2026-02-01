@@ -1,12 +1,25 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { Image } from "expo-image";
 import { FontAwesome } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import EventCard from "../components/EventCard";
+import type { RootStackParamList } from "../App";
+
+type Nav = NativeStackNavigationProp<RootStackParamList, "Dashboard">;
 
 const DashboardScreen = () => {
+  const navigation = useNavigation<Nav>();
+
   const userName = "John Doe"; // Replace with dynamic user data
   const firstName = userName.split(" ")[0];
   const ticketCount = 2;
@@ -18,7 +31,11 @@ const DashboardScreen = () => {
       location: "Grambling, LA · Digital Library",
       attendees: 120,
       rating: 4.8,
-      image: require("../assets/Home/event-1.jpg"),
+      images: [
+        require("../assets/Home/event-1.jpg"),
+        require("../assets/ruston-fest.png"),
+      ],
+      video: require("../assets/Home/play.mp4"),
     },
     {
       id: 2,
@@ -26,7 +43,11 @@ const DashboardScreen = () => {
       location: "New Orleans, LA · Music Hall",
       attendees: 95,
       rating: 4.6,
-      image: require("../assets/Home/event-2.png"),
+      images: [
+        require("../assets/Home/event-2.png"),
+        require("../assets/Home/event-3.jpg"),
+      ],
+      video: require("../assets/Home/play.mp4"),
     },
     {
       id: 3,
@@ -68,130 +89,160 @@ const DashboardScreen = () => {
         style={styles.topDecoration}
         contentFit="cover"
       />
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Top Section */}
         <View style={styles.topSection}>
-        {/* Profile */}
-        <View style={styles.profileContainer}>
-          <View style={styles.profileCircle}>
+          {/* Profile */}
+          <View style={styles.profileContainer}>
+            <View style={styles.profileCircle}>
+              <Image
+                source={require("../assets/Home/profile.jpg")}
+                style={styles.profileImage}
+              />
+            </View>
+            <Text style={styles.profileName}>{userName}</Text>
+          </View>
+
+          {/* Greeting */}
+          <View style={styles.greetingContainer}>
+            <Text style={styles.greetingText}>
+              Hello, <Text>{firstName}</Text>
+            </Text>
             <Image
-              source={require("../assets/Home/profile.jpg")}
-              style={styles.profileImage}
+              source={require("../assets/Home/arrow.jpg")}
+              style={styles.arrowImage}
+              resizeMode="contain"
             />
           </View>
-          <Text style={styles.profileName}>{userName}</Text>
+
+          {/* Ticket Icon */}
+          <View style={styles.ticketContainer}>
+            <FontAwesome name="ticket" size={32} color="black" />
+            {ticketCount > 0 && (
+              <View style={styles.ticketBadge}>
+                <Text style={styles.ticketBadgeText}>{ticketCount}</Text>
+              </View>
+            )}
+          </View>
         </View>
 
-        {/* Greeting */}
-        <View style={styles.greetingContainer}>
-          <Text style={styles.greetingText}>
-            Hello, <Text>{firstName}</Text>
-          </Text>
-          <Image
-            source={require("../assets/Home/arrow.jpg")}
-            style={styles.arrowImage}
-            resizeMode="contain"
+        {/* Featured Header Row */}
+        <View style={styles.featuredRow}>
+          <Text style={styles.featuredText}>Featured</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllLink}>See all</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Video Section */}
+        <View style={styles.videoSection}>
+          <Video
+            source={require("../assets/Home/play.mp4")} // Updated to use play.mp4 from assets/Home
+            style={styles.video}
+            isLooping
+            shouldPlay
+            resizeMode={ResizeMode.COVER}
           />
+
+          <TouchableOpacity style={styles.bookNowButton}>
+            <Text style={styles.bookNowText}>Book Now</Text>
+          </TouchableOpacity>
+
+          <View style={styles.ratingContainer}>
+            <Text style={styles.ratingTextVideo}>4.5</Text>
+            <FontAwesome name="star" size={16} color="gold" />
+          </View>
         </View>
 
-        {/* Ticket Icon */}
-        <View style={styles.ticketContainer}>
-          <FontAwesome name="ticket" size={32} color="black" />
-          {ticketCount > 0 && (
-            <View style={styles.ticketBadge}>
-              <Text style={styles.ticketBadgeText}>{ticketCount}</Text>
-            </View>
-          )}
+        {/* Trending Events Section */}
+        <View style={styles.trendingHeader}>
+          <Text style={styles.trendingText}>Trending Events</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllLink}>See all</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Featured Header Row */}
-      <View style={styles.featuredRow}>
-        <Text style={styles.featuredText}>Featured</Text>
-        <TouchableOpacity>
-          <Text style={styles.seeAllLink}>See all</Text>
-        </TouchableOpacity>
-      </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingLeft: 20, paddingRight: 0 }}
+          style={{ marginRight: -16 }}
+        >
+          {events.map((event) => (
+            <EventCard
+              key={event.id}
+              image={(event as any).images?.[0] ?? event.image}
+              title={event.name}
+              location={event.location}
+              attendees={event.attendees}
+              rating={event.rating.toFixed(1)}
+              month={month}
+              day={String(day)}
+              onPress={() =>
+                navigation.navigate("EventDetails", {
+                  eventId: String(event.id),
+                  event: {
+                    ...event,
+                    id: event.id,
+                    title: event.name,
+                    location: event.location,
+                    attendees: event.attendees,
+                    image: (event as any).images?.[0] ?? event.image,
+                    images: (event as any).images,
+                    video: (event as any).video,
+                  },
+                })
+              }
+            />
+          ))}
+        </ScrollView>
 
-      {/* Video Section */}
-      <View style={styles.videoSection}>
-        <Video
-          source={require("../assets/Home/play.mp4")} // Updated to use play.mp4 from assets/Home
-          style={styles.video}
-          isLooping
-          shouldPlay
-          resizeMode={ResizeMode.COVER}
-        />
-
-        <TouchableOpacity style={styles.bookNowButton}>
-          <Text style={styles.bookNowText}>Book Now</Text>
-        </TouchableOpacity>
-
-        <View style={styles.ratingContainer}>
-          <Text style={styles.ratingTextVideo}>4.5</Text>
-          <FontAwesome name="star" size={16} color="gold" />
+        {/* Events Near Me Section */}
+        <View style={styles.trendingHeader}>
+          <Text style={styles.trendingText}>Events Near Me</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAllLink}>See all</Text>
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* Trending Events Section */}
-      <View style={styles.trendingHeader}>
-        <Text style={styles.trendingText}>Trending Events</Text>
-        <TouchableOpacity>
-          <Text style={styles.seeAllLink}>See all</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 20, paddingRight: 0 }}
-        style={{ marginRight: -16 }}
-      >
-        {events.map((event) => (
-          <EventCard
-            key={event.id}
-            image={event.image}
-            title={event.name}
-            location={event.location}
-            attendees={event.attendees}
-            rating={event.rating.toFixed(1)}
-            month={month}
-            day={String(day)}
-          />
-        ))}
-      </ScrollView>
-
-      {/* Events Near Me Section */}
-      <View style={styles.trendingHeader}>
-        <Text style={styles.trendingText}>Events Near Me</Text>
-        <TouchableOpacity>
-          <Text style={styles.seeAllLink}>See all</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingLeft: 20, paddingRight: 0 }}
-        style={{ marginRight: -16 }}
-      >
-        {events.map((event) => (
-          <EventCard
-            key={event.id}
-            image={event.image}
-            title={event.name}
-            location={event.location}
-            attendees={event.attendees}
-            rating={event.rating.toFixed(1)}
-            month={month}
-            day={String(day)}
-          />
-        ))}
-      </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingLeft: 20, paddingRight: 0 }}
+          style={{ marginRight: -16 }}
+        >
+          {events.map((event) => (
+            <EventCard
+              key={event.id}
+              image={(event as any).images?.[0] ?? event.image}
+              title={event.name}
+              location={event.location}
+              attendees={event.attendees}
+              rating={event.rating.toFixed(1)}
+              month={month}
+              day={String(day)}
+              onPress={() =>
+                navigation.navigate("EventDetails", {
+                  eventId: String(event.id),
+                  event: {
+                    ...event,
+                    id: event.id,
+                    title: event.name,
+                    location: event.location,
+                    attendees: event.attendees,
+                    image: (event as any).images?.[0] ?? event.image,
+                    images: (event as any).images,
+                    video: (event as any).video,
+                  },
+                })
+              }
+            />
+          ))}
+        </ScrollView>
       </ScrollView>
     </LinearGradient>
   );

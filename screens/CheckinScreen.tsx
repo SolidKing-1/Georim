@@ -62,7 +62,12 @@ export default function CheckinScreen() {
       <View style={styles.eventInfo}>
         <View style={styles.eventMainInfo}>
           <TouchableOpacity
-            onPress={() => navigation.navigate("EventDetails", { event: item })}
+            onPress={() =>
+              navigation.navigate("EventDetails", {
+                eventId: item._id ?? item.id ?? "unknown",
+                event: item,
+              })
+            }
           >
             <Text style={styles.eventTitle}>{item.title}</Text>
           </TouchableOpacity>

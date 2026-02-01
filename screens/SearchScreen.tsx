@@ -77,7 +77,11 @@ export default function SearchScreen() {
   };
 
   const openEvent = (event: any) => {
-    navigation.navigate("EventDetails", { event });
+    // API INTEGRATION: When using real API, pass only eventId from your list response
+    navigation.navigate("EventDetails", {
+      eventId: event._id ?? event.id ?? "unknown",
+      event,
+    });
   };
 
   const handleSuggestionPress = (searchTerm: string) => {

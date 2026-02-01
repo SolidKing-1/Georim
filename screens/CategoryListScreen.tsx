@@ -41,7 +41,10 @@ export default function CategoryListScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const openEvent = (event: any) =>
-    navigation.navigate("EventDetails", { event });
+    navigation.navigate("EventDetails", {
+      eventId: event._id ?? event.id ?? "unknown",
+      event,
+    });
 
   const handleSuggestionPress = (searchTerm: string) => {
     setQuery(searchTerm);
