@@ -1,589 +1,522 @@
-/**
- * EventDetailsScreen - Displays full event details and handles registration.
- *
- * API INTEGRATION OVERVIEW:
- * - GET /events/:eventId - Fetches event details (see fetchEventDetails)
- * - POST /events/:eventId/register - Registers user for event (see handleRegister)
- * - Uses getToken() from utils/auth for Bearer token in API calls
- * - Mock mode: Pass optional `event` in route params for offline/design phase
- * - When API is ready: Pass only eventId; remove mockEventToDetails and optional event param
- */
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ImageBackground,
+  Image,
   TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Pressable,
   Dimensions,
+  ImageSourcePropType,
   FlatList,
-  Animated,
-  ActivityIndicator,
-  Alert,
+  ViewToken,
+  Platform,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 import { Video, ResizeMode } from "expo-av";
-import RegistrationSuccessModal from "../components/RegistrationSuccessModal";
-import TicketSelectionModal, {
-  type TicketSelectionModalRef,
-  type TicketTier,
-} from "../components/TicketSelectionModal";
-import MapView, { Marker } from "react-native-maps";
-import { getToken } from "../utils/auth";
-import Constants from "expo-constants";
+import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../App";
 
-const { width, height } = Dimensions.get("window");
+const CircleGlassEffect = require("../components/GlassEffects/circleGlassEffect.png");
 
-// Space reserved at bottom for navbar overlay (MainLayout bottom: 16 + Navbar height ~68)
-const BOTTOM_NAVBAR_OFFSET = 90;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+// Hero: a little bit more than half the screen height
+const HERO_HEIGHT = Math.round(SCREEN_HEIGHT * 0.45);
+const HERO_MARGIN = 20;
+const HERO_CONTENT_WIDTH = SCREEN_WIDTH - HERO_MARGIN * 2;
+const FORM_BG = "#05031B";
+const HERO_DARK = "#1a1a2e";
+// Blurred hero overlaps form by this much; gradient fade height (no visible line)
+const OVERLAP = 120;
+const FORM_NEGATIVE_MARGIN = 300;
 
-// -----------------------------------------------------------------------------
-// API INTEGRATION: BACKEND_URL is set in app.config.js via process.env.BACKEND_URL
-// Ensure .env has BACKEND_URL=https://your-api.example.com
-// -----------------------------------------------------------------------------
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
+type CarouselItem =
+  | { type: "image"; source: ImageSourcePropType | { uri: string } }
+  | { type: "video"; source: ReturnType<typeof require> };
 
-// -----------------------------------------------------------------------------
-// API INTEGRATION: EventDetails interface matches the backend API response shape.
-// GET /events/:id returns { success: true, data: EventDetails }
-// Update this interface if your API response structure differs.
-// -----------------------------------------------------------------------------
-interface EventDetails {
-  _id: string;
-  title: string;
-  description: string;
-  category: "religious" | "corporate" | "entertainment" | "educational";
-  visibility: "public" | "private" | "unlisted";
-  dateTime: {
-    start: string;
-    end: string;
-  };
-  location: {
-    venue: string;
-    address: {
-      street?: string;
-      city?: string;
-      state?: string;
-      zipCode?: string;
-    };
-    geometry: {
-      type: "Point";
-      coordinates: [number, number]; // [longitude, latitude]
-    };
-    accuracy?: number;
-  };
-  radius: number;
-  images?: string[];
-  imageUrl?: string;
-  recurring?: {
-    isRecurring: boolean;
-    pattern?: string;
-    until?: string;
-  };
-  creator: string;
-  registerations: string[];
-  checkins: string[];
-  hexcode: string;
-  price?: number;
-  createdAt: string;
-  updatedAt: string;
-  // Additional computed fields
-  status?: "Registered" | "Checked-In" | "Available";
-  attendees?: number;
-}
+const COHORT_OPTIONS = [
+  { id: "cohort2", label: "Cohort 2 (Senior)" },
+  { id: "cohort3", label: "Cohort 3 (Junior)" },
+  { id: "cohort4", label: "Cohort 4 (Sophomore)" },
+  { id: "cohort5", label: "Cohort 5 (HBCC Scholars)" },
+  { id: "alumni", label: "Strada Scholar Alumni" },
+] as const;
 
-/**
- * Transforms mock/list event shape (from EventCard) into full EventDetails shape.
- * API INTEGRATION: Remove this when all event data comes from the API.
- */
-function mockEventToDetails(mock: any): EventDetails & { image?: any } {
-  const id = mock._id ?? mock.id ?? "mock";
-  const result: EventDetails & { image?: any } = {
-    _id: id,
-    title: mock.title ?? mock.name ?? "Event",
-    description: mock.description ?? "",
-    category: mock.category ?? "entertainment",
-    visibility: "public",
-    dateTime: {
-      start: mock.dateTime?.start ?? mock.date ?? new Date().toISOString(),
-      end: mock.dateTime?.end ?? new Date().toISOString(),
-    },
-    location: {
-      venue: mock.location ?? mock.venue ?? "",
-      address: {
-        street: mock.address?.street,
-        city:
-          mock.address?.city ??
-          (typeof mock.location === "string" ? mock.location : ""),
-        state: mock.address?.state,
-        zipCode: mock.address?.zipCode,
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: mock.location?.geometry?.coordinates ?? [-93.76, 32.51],
-      },
-    },
-    radius: mock.radius ?? 100,
-    images: mock.images,
-    imageUrl:
-      typeof mock.image === "object" && mock.image?.uri
-        ? mock.image.uri
-        : undefined,
-    video: mock.video,
-    creator: mock.creator ?? "",
-    registerations:
-      mock.registerations ?? mock.attendees
-        ? Array(mock.attendees).fill("")
-        : [],
-    checkins: mock.checkins ?? [],
-    hexcode: mock.hexcode ?? "XXXX",
-    price:
-      typeof mock.price === "string"
-        ? parseFloat(mock.price.replace(/[^0-9.]/g, "")) || undefined
-        : mock.price,
-    createdAt: mock.createdAt ?? new Date().toISOString(),
-    updatedAt: mock.updatedAt ?? new Date().toISOString(),
-    status: mock.status ?? "Available",
-    attendees: mock.attendees ?? mock.registerations?.length ?? 0,
-  };
-  if (mock.image != null) result.image = mock.image; // Preserve require() for local images
-  return result;
-}
+const DIETARY_OPTIONS = [
+  { id: "vegetarian", label: "Vegetarian" },
+  { id: "vegan", label: "Vegan" },
+  { id: "glutenFree", label: "Gluten Free" },
+  { id: "dairyFree", label: "Dairy Free" },
+  { id: "shellfish", label: "Shellfish Allergy" },
+  { id: "nut", label: "Nut Allergy" },
+  { id: "other", label: "Other" },
+] as const;
 
-export default function EventDetailsScreen() {
-  const navigation =
-    useNavigation<
-      import("@react-navigation/native").NavigationProp<RootStackParamList>
-    >();
-  const route = useRoute<RouteProp<RootStackParamList, "EventDetails">>();
-  const { eventId, event: passedEvent } = route.params;
+const SHIRT_SIZE_OPTIONS = [
+  { id: "mens_s", label: "Men's - Small" },
+  { id: "mens_m", label: "Men's - Medium" },
+  { id: "mens_l", label: "Men's - Large" },
+  { id: "mens_xl", label: "Men's - X-Large" },
+  { id: "womens_s", label: "Women's - Small" },
+  { id: "womens_m", label: "Women's - Medium" },
+  { id: "womens_l", label: "Women's - Large" },
+  { id: "womens_xl", label: "Women's - X-Large" },
+] as const;
 
-  const [event, setEvent] = useState<EventDetails | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const scrollX = new Animated.Value(0);
+/** Default placeholder carousel (up to 3): images + video from assets */
+const DEFAULT_CAROUSEL: CarouselItem[] = [
+  { type: "image", source: require("../assets/ruston-fest.png") },
+  { type: "image", source: require("../assets/Home/event-1.jpg") },
+  { type: "video", source: require("../assets/Home/play.mp4") },
+];
 
-  const mediaItems = [
-    { type: "image", source: require("../assets/event-details/first.jpg") },
-    { type: "video", source: require("../assets/event-details/eve-video.mp4") },
-    { type: "image", source: require("../assets/event-details/second.jpg") },
-  ];
+type RegisterEventRoute = RouteProp<RootStackParamList, "RegisterEvent">;
 
-  // Fetch event details from API
-  useEffect(() => {
-    if (passedEvent) {
-      setEvent(mockEventToDetails(passedEvent));
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    fetchEventDetails();
-  }, [eventId, passedEvent]);
+function RegisterEventScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<RegisterEventRoute>();
+  const insets = useSafeAreaInsets();
+  const { eventId, event, selectedTier } = route.params ?? {};
 
-  // -----------------------------------------------------------------------------
-  // API INTEGRATION: GET /events/:eventId
-  // Fetches full event details. Response: { success: boolean, data?: EventDetails, message?: string }
-  // Add query params if needed (e.g. ?include=attendees). Handle 401/403 for auth.
-  // -----------------------------------------------------------------------------
-  const fetchEventDetails = async () => {
-    if (!BACKEND_URL) {
-      setError("Backend URL not configured. Set BACKEND_URL in .env");
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      setError(null);
+  const [registrationType, setRegistrationType] = useState("Strada Scholar");
+  const [selectedCohort, setSelectedCohort] = useState<string | null>(
+    "cohort5"
+  );
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [areaOfStudy, setAreaOfStudy] = useState("Computer Science");
+  const [institution, setInstitution] = useState("Grambling State Univ...");
+  const [dietary, setDietary] = useState<Set<string>>(
+    () => new Set(DIETARY_OPTIONS.map((o) => o.id))
+  );
+  const [dietaryOther, setDietaryOther] = useState("");
+  const [accessibility, setAccessibility] = useState("");
+  const [shirtSize, setShirtSize] = useState<string | null>("mens_s");
 
-      const token = await getToken();
-
-      const response = await fetch(`${BACKEND_URL}/events/${eventId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setEvent(data.data);
-      } else {
-        setError(data.message || "Failed to fetch event details");
-      }
-    } catch (err) {
-      setError("Network error. Please check your connection.");
-      console.error("Fetch event error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+  const toggleDietary = (id: string) => {
+    setDietary((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   };
 
-  const formatTime = (startDate: string, endDate: string) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const timeOptions: Intl.DateTimeFormatOptions = {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    };
-    return `${start.toLocaleTimeString(
-      "en-US",
-      timeOptions
-    )} - ${end.toLocaleTimeString("en-US", timeOptions)}`;
-    return `${start.toLocaleTimeString(
-      "en-US",
-      timeOptions
-    )} - ${end.toLocaleTimeString("en-US", timeOptions)}`;
-  };
+  // Carousel sits below nav buttons; extends to where blur ends (bottom of hero); dots overlay carousel
+  const BUTTON_ROW_HEIGHT = 60 + insets.top;
+  const CAROUSEL_HEIGHT = HERO_HEIGHT + OVERLAP - BUTTON_ROW_HEIGHT;
 
-  const formatAddress = (address: EventDetails["location"]["address"]) => {
-    const parts = [
-      address.street,
-      address.city,
-      address.state,
-      address.zipCode,
-    ].filter(Boolean);
-    return parts.join(", ");
-  };
+  const carouselItems = useMemo((): CarouselItem[] => {
+    const fromEvent: CarouselItem[] = [];
+    if (event?.imageUrl)
+      fromEvent.push({ type: "image", source: { uri: event.imageUrl } });
+    if ((event as any)?.images?.length)
+      (event as any).images.slice(0, 3).forEach((img: string | number) => {
+        if (typeof img === "string")
+          fromEvent.push({ type: "image", source: { uri: img } });
+        else
+          fromEvent.push({ type: "image", source: img as ImageSourcePropType });
+      });
+    // Only add single image when event has no images array (e.g. events 3 & 4)
+    if (!(event as any)?.images?.length && (event as any)?.image)
+      fromEvent.push({ type: "image", source: (event as any).image });
+    if ((event as any)?.video)
+      fromEvent.push({ type: "video", source: (event as any).video });
+    if (fromEvent.length > 0) return fromEvent.slice(0, 3);
+    return DEFAULT_CAROUSEL;
+  }, [event]);
 
-  // -----------------------------------------------------------------------------
-  // API INTEGRATION: POST /events/:eventId/register
-  // Registers the current user for the event. Response: { success, data?, message? }
-  // Handle paid events (redirect to PaymentScreen if payment required).
-  // -----------------------------------------------------------------------------
-  const handleRegister = async () => {
-    if (!event) return;
-
-    try {
-      const token = await getToken();
-
-      if (!token) {
-        Alert.alert(
-          "Authentication Required",
-          "Please sign in to register for events"
-        );
-        Alert.alert(
-          "Authentication Required",
-          "Please sign in to register for events"
-        );
-        return;
-      }
-
-      const response = await fetch(
-        `${BACKEND_URL}/events/${event._id}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const response = await fetch(
-        `${BACKEND_URL}/events/${event._id}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setShowModal(true);
-        // Update event status locally
-        setEvent((prev) => (prev ? { ...prev, status: "Registered" } : prev));
-      } else {
-        Alert.alert(
-          "Registration Failed",
-          data.message || "Unable to register for event"
-        );
-        Alert.alert(
-          "Registration Failed",
-          data.message || "Unable to register for event"
-        );
-      }
-    } catch (err) {
-      Alert.alert("Error", "Network error. Please try again.");
-      console.error("Registration error:", err);
-    }
-  };
-
-  const renderMediaItem = ({
-    item,
-  }: {
-    item: { type: string; source: any };
-  }) => {
-    if (item.type === "image") {
-      return <ImageBackground source={item.source} style={styles.mediaItem} />;
-    } else if (item.type === "video") {
-      return (
-        <Video
-          source={item.source}
-          style={styles.mediaItem}
-          useNativeControls
-          resizeMode={ResizeMode.COVER}
-        />
-      );
-    }
+  /** For video carousel items: use one of the event's images for blurred background */
+  const eventFallbackImage = useMemo(():
+    | ImageSourcePropType
+    | { uri: string }
+    | null => {
+    if (!event) return null;
+    if ((event as any)?.image != null) return (event as any).image;
+    const imgs = (event as any)?.images;
+    if (imgs?.length && imgs[0] != null)
+      return typeof imgs[0] === "string"
+        ? { uri: imgs[0] }
+        : (imgs[0] as ImageSourcePropType);
+    if (event?.imageUrl) return { uri: event.imageUrl };
     return null;
+  }, [event]);
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const idx = viewableItems[0]?.index;
+      if (typeof idx === "number") setHeroIndex(idx);
+    },
+    []
+  );
+  const viewabilityConfig = useMemo(
+    () => ({ viewAreaCoveragePercentThreshold: 50 }),
+    []
+  );
+
+  const handleNext = () => {
+    navigation.navigate("EventDetails", { eventId: eventId ?? "", event });
   };
 
-  interface ScrollEvent {
-    nativeEvent: {
-      contentOffset: {
-        x: number;
-      };
-    };
-  }
-
-  const handleScroll = (event: ScrollEvent) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / width);
-    setActiveIndex(index);
+  const handleCancel = () => {
+    navigation.goBack();
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7F00FF" />
-        <Text style={styles.loadingText}>Loading event details...</Text>
+  const currentItem = carouselItems[heroIndex] ?? carouselItems[0];
+
+  const renderCarouselItem = useCallback(
+    ({ item, index }: { item: CarouselItem; index: number }) => (
+      <View style={[styles.carouselPage, { height: CAROUSEL_HEIGHT }]}>
+        {item.type === "image" ? (
+          <Image
+            source={item.source}
+            style={[styles.carouselContent, { height: CAROUSEL_HEIGHT }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <Video
+            source={item.source}
+            style={[styles.carouselContent, { height: CAROUSEL_HEIGHT }]}
+            resizeMode={ResizeMode.COVER}
+            isLooping
+            isMuted
+            shouldPlay={index === heroIndex}
+          />
+        )}
       </View>
-    );
-  }
-
-  if (error || !event) {
-    return (
-      <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle-outline" size={48} color="#FF3B30" />
-        <Text style={styles.errorText}>{error || "Event not found"}</Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={fetchEventDetails}
-        >
-          <Text style={styles.retryText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // Extract coordinates (remember API returns [longitude, latitude])
-  const [longitude, latitude] = event.location.geometry.coordinates;
-  const coordinates = {
-    latitude,
-    longitude,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
+    ),
+    [heroIndex, CAROUSEL_HEIGHT]
+  );
 
   return (
     <View style={styles.container}>
-      {/* Background */}
-      <ImageBackground
-        source={require("../assets/event-details/first.jpg")}
-        style={styles.backgroundImage}
-        blurRadius={10}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.colorOverlay} />
-
-        {/* Top Navigation Buttons */}
-        <View style={styles.topButtons}>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={() => navigation.goBack()}
+        {/* Hero: blurred full-bleed sits on top of form in overlap zone */}
+        <View
+          style={[
+            styles.heroWrap,
+            { height: HERO_HEIGHT + OVERLAP, zIndex: 2 },
+          ]}
+        >
+          <View
+            style={[StyleSheet.absoluteFill, { height: HERO_HEIGHT + OVERLAP }]}
           >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.rightButtons}>
-            <TouchableOpacity style={styles.navButton}>
-              <Ionicons name="heart-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navButton}>
-              <Ionicons name="share-outline" size={24} color="#fff" />
-            </TouchableOpacity>
+            {currentItem.type === "image" ? (
+              <Image
+                source={currentItem.source}
+                style={[styles.heroImage, { height: HERO_HEIGHT + OVERLAP }]}
+                resizeMode="cover"
+              />
+            ) : (
+              <Image
+                source={
+                  eventFallbackImage ?? require("../assets/Home/event-1.jpg")
+                }
+                style={[styles.heroImage, { height: HERO_HEIGHT + OVERLAP }]}
+                resizeMode="cover"
+              />
+            )}
+            <BlurView
+              intensity={Platform.OS === "ios" ? 60 : 45}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
+            {/* Translucent gradient overlay: blur fades in overlap zone so form gradient merges */}
+            <LinearGradient
+              colors={["transparent", FORM_BG] as const}
+              locations={[HERO_HEIGHT / (HERO_HEIGHT + OVERLAP), 1]}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
           </View>
-        </View>
 
-        {/* Swipable Media Container */}
-        <View style={styles.mediaContainer}>
+          {/* Carousel: sharp image/video below buttons, reduced height */}
           <FlatList
-            data={mediaItems}
+            data={carouselItems}
+            renderItem={renderCarouselItem}
+            keyExtractor={(_, i) => String(i)}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(_, index) => index.toString()}
-            renderItem={renderMediaItem}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-              { useNativeDriver: false, listener: handleScroll }
-            )}
+            onViewableItemsChanged={onViewableItemsChanged}
+            viewabilityConfig={viewabilityConfig}
+            snapToInterval={SCREEN_WIDTH}
+            snapToAlignment="center"
+            decelerationRate="fast"
+            style={[
+              styles.carouselList,
+              { top: BUTTON_ROW_HEIGHT, height: CAROUSEL_HEIGHT },
+            ]}
+            contentContainerStyle={styles.carouselContentContainer}
           />
-          {/* Dots Indicator */}
-          <View style={styles.dotsContainer}>
-            {mediaItems.map((_, index) => {
-              const isActive = index === activeIndex;
-              return (
-                <Animated.View
-                  key={index}
-                  style={[styles.dot, isActive && styles.activeDot]}
-                />
-              );
-            })}
-          </View>
-        </View>
-      </ImageBackground>
 
-      {/* Event Details Overlay */}
-      <View style={styles.detailsContainer}>
-        {/* Event Title Section */}
-        <View style={styles.titleSection}>
-          <Text style={styles.title}>{event.title}</Text>
-          <View style={styles.tagContainer}>
-            <Text style={styles.tag}>
-              {event.price ? `$${event.price}` : "Free"}
-            </Text>
-            <Text style={styles.categoryTag}>{event.category}</Text>
+          {/* Pagination dots at bottom of carousel (bottom of hero/blur) */}
+          <View style={styles.pagination}>
+            {carouselItems.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === heroIndex && styles.dotActive]}
+              />
+            ))}
           </View>
         </View>
 
-        {/* Event Code */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Event Code</Text>
-          <Text style={styles.hexcode}>{event.hexcode}</Text>
-        </View>
-
-        {/* Description */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>{event.description}</Text>
-        </View>
-
-        {/* Date & Time */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Date & Time</Text>
-          <Text style={styles.dateTime}>
-            {formatDate(event.dateTime.start)}
-          </Text>
-          <Text style={styles.dateTime}>
-            {formatTime(event.dateTime.start, event.dateTime.end)}
-          </Text>
-
-          {event.recurring?.isRecurring && (
-            <Text style={styles.recurringText}>
-              Recurring: {event.recurring.pattern}
-            </Text>
-          )}
-        </View>
-
-        {/* Location & Map */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Location</Text>
-          <Text style={styles.venue}>{event.location.venue}</Text>
-          {event.location.address && (
-            <Text style={styles.address}>
-              {formatAddress(event.location.address)}
-            </Text>
-          )}
-
-          <MapView style={styles.map} initialRegion={coordinates}>
-            <Marker
-              coordinate={coordinates}
-              title={event.location.venue}
-              description={formatAddress(event.location.address)}
-            />
-          </MapView>
-        </View>
-
-        {/* Check-in Radius */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Check-in Details</Text>
-          <Text style={styles.radiusText}>
-            Check-in radius: {event.radius} meters
-          </Text>
-          {event.location.accuracy && (
-            <Text style={styles.accuracyText}>
-              Location accuracy: ±{event.location.accuracy}m
-            </Text>
-          )}
-        </View>
-
-        {/* Attendees */}
-        <View style={styles.section}>
-          <View style={styles.attendeesContainer}>
-            <View style={styles.avatarStack}>
-              {/* You can implement avatar fetching based on registerations */}
-              <View style={[styles.avatar, styles.attendeesCountAvatar]}>
-                <Text style={styles.attendeesCountText}>
-                  {event.registerations.length > 999
-                    ? "1k+"
-                    : event.registerations.length}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.attendeesText}>
-              {event.registerations.length} people registered
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Fixed Register/Status Button */}
-      <View style={styles.fixedButtonContainer}>
-        {event.status === "Registered" ? (
-          <View style={[styles.registerButton, { backgroundColor: "#7F00FF" }]}>
-            <Text style={styles.registerText}>Registered</Text>
-          </View>
-        ) : event.status === "Checked-In" ? (
-          <View style={[styles.registerButton, { backgroundColor: "#18C964" }]}>
-            <Text style={styles.registerText}>Checked-In</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={() => ticketModalRef.current?.present()}
+        {/* Form section: sits under hero; hero blur overlaps on top */}
+        <View
+          style={[
+            styles.formSectionWrap,
+            { marginTop: -FORM_NEGATIVE_MARGIN, zIndex: 1 },
+          ]}
+        >
+          <LinearGradient
+            colors={["rgba(5, 3, 27, 0)", FORM_BG] as const}
+            locations={[0, 0.4]}
+            style={styles.formSectionGradientFull}
           >
-            <Text style={styles.registerText}>Register</Text>
+            <View
+              style={[
+                styles.formSection,
+                { paddingTop: FORM_NEGATIVE_MARGIN + 24 },
+              ]}
+            >
+              <Text style={styles.title}>More Information</Text>
+              <Text style={styles.instructions}>
+                Fill out the information below, then click Next to continue.
+              </Text>
+
+              {/* Registration Type */}
+              <Text style={styles.label}>
+                <Text style={styles.asterisk}>* </Text>
+                Registration Type
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={registrationType}
+                onChangeText={setRegistrationType}
+                placeholder="Strada Scholar"
+                placeholderTextColor="#9CA3AF"
+                editable
+              />
+
+              {/* Cohort */}
+              <Text style={styles.label}>
+                <Text style={styles.asterisk}>* </Text>
+                Which Cohort are you a part of?
+              </Text>
+              <View style={styles.radioGroup}>
+                {COHORT_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.id}
+                    style={styles.radioRow}
+                    onPress={() => setSelectedCohort(opt.id)}
+                  >
+                    <View
+                      style={[
+                        styles.radioCircle,
+                        selectedCohort === opt.id && styles.radioCircleActive,
+                      ]}
+                    >
+                      {selectedCohort === opt.id && (
+                        <View style={styles.radioInner} />
+                      )}
+                    </View>
+                    <Text style={styles.radioLabel}>{opt.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Area of study */}
+              <Text style={styles.label}>
+                <Text style={styles.asterisk}>* </Text>
+                What is your area of study?
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={areaOfStudy}
+                onChangeText={setAreaOfStudy}
+                placeholder="e.g. Computer Science"
+                placeholderTextColor="#9CA3AF"
+                editable
+              />
+
+              {/* Institution */}
+              <Text style={styles.label}>
+                <Text style={styles.asterisk}>* </Text>
+                Institution
+              </Text>
+              <TextInput
+                style={styles.input}
+                value={institution}
+                onChangeText={setInstitution}
+                placeholder="e.g. Grambling State University"
+                placeholderTextColor="#9CA3AF"
+                editable
+              />
+
+              {/* Dietary restrictions */}
+              <Text style={styles.label}>
+                Please select what dietary restrictions that apply, if any.
+              </Text>
+              <View style={styles.checkboxGroup}>
+                {DIETARY_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.id}
+                    style={styles.checkboxRow}
+                    onPress={() => toggleDietary(opt.id)}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        dietary.has(opt.id) && styles.checkboxActive,
+                      ]}
+                    >
+                      {dietary.has(opt.id) && (
+                        <View style={styles.checkboxInner} />
+                      )}
+                    </View>
+                    <Text style={styles.radioLabel}>{opt.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {dietary.has("other") && (
+                <TextInput
+                  style={[styles.input, { marginTop: 0 }]}
+                  value={dietaryOther}
+                  onChangeText={setDietaryOther}
+                  placeholder="Specify other"
+                  placeholderTextColor="#9CA3AF"
+                  editable
+                />
+              )}
+
+              {/* Accessibility */}
+              <Text style={styles.label}>
+                Do you have any accessibility requirements ?
+              </Text>
+              <TextInput
+                style={[styles.input, styles.inputMultiline]}
+                value={accessibility}
+                onChangeText={setAccessibility}
+                placeholder="Optional"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                editable
+              />
+
+              {/* Shirt size */}
+              <Text style={styles.label}>
+                <Text style={styles.asterisk}>* </Text>
+                Please select your shirt size.
+              </Text>
+              <View style={styles.checkboxGroup}>
+                {SHIRT_SIZE_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.id}
+                    style={styles.checkboxRow}
+                    onPress={() => setShirtSize(opt.id)}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        shirtSize === opt.id && styles.checkboxActive,
+                      ]}
+                    >
+                      {shirtSize === opt.id && (
+                        <View style={styles.checkboxInner} />
+                      )}
+                    </View>
+                    <Text style={styles.radioLabel}>{opt.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              {/* Cancel and Next buttons */}
+              <View style={styles.buttonRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.cancelButton,
+                    pressed && styles.cancelButtonPressed,
+                  ]}
+                  onPress={handleCancel}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.nextButton,
+                    pressed && styles.nextButtonPressed,
+                  ]}
+                  onPress={handleNext}
+                >
+                  <Text style={styles.nextButtonText}>Next</Text>
+                </Pressable>
+              </View>
+
+              <View style={{ height: 40 }} />
+            </View>
+          </LinearGradient>
+        </View>
+      </ScrollView>
+
+      {/* Fixed hero buttons: stay on screen when scrolling */}
+      <View
+        style={[
+          styles.heroButtons,
+          styles.heroButtonsFixed,
+          { paddingTop: 8 + insets.top },
+        ]}
+        pointerEvents="box-none"
+      >
+        <View style={styles.heroButtonGlass}>
+          <BlurView
+            intensity={24}
+            tint="dark"
+            style={StyleSheet.absoluteFill}
+          />
+          <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
+          <TouchableOpacity
+            style={styles.heroButtonInner}
+            onPress={() => navigation.goBack()}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          >
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
-        )}
+        </View>
+        <View style={styles.heroButtonsRight}>
+          <View style={styles.heroButtonGlass}>
+            <BlurView
+              intensity={24}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
+            <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
+            <TouchableOpacity style={styles.heroButtonInner}>
+              <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.heroButtonGlass}>
+            <BlurView
+              intensity={24}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
+            <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
+            <TouchableOpacity style={styles.heroButtonInner}>
+              <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
-
-      <TicketSelectionModal
-        ref={ticketModalRef}
-        eventTitle={event.title}
-        eventDescription={event.description}
-        onClose={() => {}}
-        onSelectTicket={(tier: TicketTier) => {
-          ticketModalRef.current?.dismiss();
-          navigation.navigate("RegisterEvent", {
-            eventId: event._id,
-            event: event as any,
-            selectedTier: { id: tier.id, title: tier.title, price: tier.price },
-          });
-        }}
-      />
-
-      <RegistrationSuccessModal
-        visible={showModal}
-        onClose={() => setShowModal(false)}
-      />
     </View>
   );
 }
@@ -591,333 +524,247 @@ export default function EventDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: FORM_BG,
   },
-  backgroundImage: {
-    width: "100%",
-    height: "50%",
-  },
-  colorOverlay: {
-    position: "absolute",
-    bottom: 0,
-    height: "50%",
-    width: "100%",
-    backgroundColor: "#331057",
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-  },
-  topButtons: {
-    position: "absolute",
-    top: 50,
-    left: 16,
-    right: 16,
+  heroButtons: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  navButton: {
+  heroButtonsFixed: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  heroButtonGlass: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    overflow: "hidden",
+    position: "relative",
+  },
+  heroButtonShine: {
+    ...StyleSheet.absoluteFillObject,
+    width: undefined,
+    height: undefined,
+    resizeMode: "stretch",
+  },
+  heroButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.001)",
+  },
+  heroButtonsRight: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  heroWrap: {
+    width: SCREEN_WIDTH,
+    backgroundColor: HERO_DARK,
+    overflow: "hidden",
+    position: "relative",
+  },
+  heroImage: {
+    width: SCREEN_WIDTH,
+  },
+  carouselList: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+  },
+  carouselContentContainer: {},
+  carouselPage: {
+    width: SCREEN_WIDTH,
     justifyContent: "center",
     alignItems: "center",
   },
-  rightButtons: {
-    flexDirection: "row",
-    gap: 16,
-  },
-  mediaContainer: {
-    position: "absolute",
-    top: "25%",
-    left: 16,
-    right: 16,
-    height: height * 0.3,
-    borderRadius: 20,
+  carouselContent: {
+    width: HERO_CONTENT_WIDTH,
+    borderRadius: 10,
     overflow: "hidden",
-    backgroundColor: "#fff",
-    elevation: 5,
   },
-  mediaItem: {
-    width: width - 32,
-    height: "100%",
-    borderRadius: 20,
+  formSectionWrap: {
+    width: SCREEN_WIDTH,
   },
-  dotsContainer: {
+  formSectionGradientFull: {
+    width: SCREEN_WIDTH,
+  },
+  formSection: {
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 24,
+  },
+  pagination: {
     position: "absolute",
-    bottom: 16,
+    bottom: 0,
     left: 0,
     right: 0,
+    paddingBottom: 16,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#ccc",
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#F6F8F9",
+    opacity: 0.3,
   },
-  activeDot: {
-    width: 24,
-    height: 12,
-    borderRadius: 6,
+  dotActive: {
     backgroundColor: "#7F00FF",
+    width: 60,
+    borderRadius: 4,
+    opacity: 0.3,
   },
-  loadingContainer: {
+  scroll: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: "#666",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#FF3B30",
-    textAlign: "center",
-    marginVertical: 16,
-  },
-  retryButton: {
-    backgroundColor: "#7F00FF",
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  categoryTag: {
-    backgroundColor: "#E3F2FD",
-    color: "#1976D2",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    fontSize: 12,
-    marginLeft: 8,
-  },
-  hexcode: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#7F00FF",
-    letterSpacing: 2,
-  },
-  venue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
-  },
-  address: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 12,
-  },
-  recurringText: {
-    fontSize: 14,
-    color: "#7F00FF",
-    fontStyle: "italic",
-    marginTop: 4,
-  },
-  radiusText: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 4,
-  },
-  accuracyText: {
-    fontSize: 12,
-    color: "#666",
-  },
-  detailsContainer: {
-    flex: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    borderTopLeftRadius: 50,
-    borderTopRightRadius: 50,
-    paddingTop: 16,
-    paddingBottom: 32,
-    paddingHorizontal: 16,
-    marginTop: -50,
-    elevation: 5,
-  },
-  backButton: {
-    position: "absolute",
-    top: 50,
-    left: 16,
-    zIndex: 20, // increased to ensure it's above ScrollView content
-    backgroundColor: "rgba(255,255,255,0.8)",
-    borderRadius: 20,
-    padding: 8,
-  },
-  eventImage: {
-    width: width,
-    height: 200,
-    resizeMode: "cover",
-  },
-  titleSection: {
-    padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  scrollContent: {
+    paddingBottom: 24,
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    flex: 1,
-  },
-  tagContainer: {
-    backgroundColor: "#7F00FF",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  tag: {
-    color: "#fff",
     fontWeight: "600",
-  },
-  section: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    color: "#F6F8F9",
     marginBottom: 8,
   },
-  description: {
-    fontSize: 16,
-    color: "#666",
-    lineHeight: 24,
-  },
-  dateTime: {
-    fontSize: 16,
-    color: "#333",
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 16,
-    color: "#333",
-    marginBottom: 8,
-  },
-  map: {
-    height: 200,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  attendeesContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  avatarStack: {
-    flexDirection: "row",
-    marginRight: 12,
-    position: "relative",
-    height: 36,
-    width: 90,
-    alignItems: "center",
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: "#fff",
-    position: "absolute",
-    backgroundColor: "#eee",
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  attendeesCountAvatar: {
-    backgroundColor: "#7F00FF",
-  },
-  attendeesCountText: {
-    color: "#fff",
-    fontWeight: "bold",
+  instructions: {
     fontSize: 14,
+    color: "#FFFFFF",
+    marginBottom: 24,
+    lineHeight: 20,
+    fontWeight: "400",
   },
-  attendeesText: {
+  label: {
     fontSize: 16,
-    color: "#666",
+    fontWeight: "400",
+    color: "#FFFFFF",
+    marginBottom: 8,
   },
-  registerButton: {
-    backgroundColor: "#7F00FF",
-    margin: 16,
-    padding: 16,
-    borderRadius: 8,
+  asterisk: {
+    color: "#EF4444",
+  },
+  input: {
+    backgroundColor: "#1E1E3F",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#6B7280",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#FFFFFF",
+    marginBottom: 20,
+  },
+  radioGroup: {
+    marginBottom: 28,
+  },
+  radioRow: {
+    flexDirection: "row",
     alignItems: "center",
-    minWidth: 180,
+    marginBottom: 14,
   },
-  registerText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  fixedButtonContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: BOTTOM_NAVBAR_OFFSET,
-    backgroundColor: "#fff",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    alignItems: "center",
-    zIndex: 10,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+  radioCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+    marginRight: 12,
   },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 28,
-    alignItems: "center",
-    width: "80%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 8,
+  radioCircleActive: {
+    borderColor: "#7F00FF",
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#7F00FF",
-    marginBottom: 18,
-    textAlign: "center",
-  },
-  modalImage: {
-    width: 180,
-    height: 180,
-    marginBottom: 18,
-  },
-  modalButton: {
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: "#7F00FF",
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 32,
+  },
+  radioLabel: {
+    fontSize: 16,
+    color: "#FFFFFF",
+  },
+  checkboxGroup: {
+    marginBottom: 20,
+  },
+  checkboxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  checkboxActive: {
+    borderColor: "#7F00FF",
+  },
+  checkboxInner: {
+    width: 14,
+    height: 14,
+    borderRadius: 2,
+    backgroundColor: "#7F00FF",
+  },
+  inputMultiline: {
+    minHeight: 88,
+    paddingTop: 14,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
     marginTop: 8,
   },
-  modalButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
+  cancelButton: {
+    flex: 1,
+    backgroundColor: "rgba(30, 30, 63, 0.85)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#9CA3AF",
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButtonPressed: {
+    opacity: 0.9,
+  },
+  cancelButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  nextButton: {
+    flex: 1,
+    backgroundColor: "#7F00FF",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  nextButtonPressed: {
+    opacity: 0.9,
+  },
+  nextButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
+
+export default RegisterEventScreen;
