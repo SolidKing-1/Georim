@@ -470,11 +470,7 @@ function RegisterEventScreen() {
 
       {/* Fixed hero buttons: stay on screen when scrolling */}
       <View
-        style={[
-          styles.heroButtons,
-          styles.heroButtonsFixed,
-          { paddingTop: 8 + insets.top },
-        ]}
+        style={[styles.heroButtons, styles.heroButtonsFixed, { paddingTop: 8 + insets.top }]}
         pointerEvents="box-none"
       >
         <View style={styles.heroButtonGlass}>
@@ -483,7 +479,10 @@ function RegisterEventScreen() {
             tint="dark"
             style={StyleSheet.absoluteFill}
           />
-          <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
+          <Image
+            source={CircleGlassEffect}
+            style={styles.heroButtonShine}
+          />
           <TouchableOpacity
             style={styles.heroButtonInner}
             onPress={() => navigation.goBack()}
@@ -499,7 +498,10 @@ function RegisterEventScreen() {
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
-            <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
+            <Image
+              source={CircleGlassEffect}
+              style={styles.heroButtonShine}
+            />
             <TouchableOpacity style={styles.heroButtonInner}>
               <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
             </TouchableOpacity>
@@ -510,7 +512,10 @@ function RegisterEventScreen() {
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
-            <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
+            <Image
+              source={CircleGlassEffect}
+              style={styles.heroButtonShine}
+            />
             <TouchableOpacity style={styles.heroButtonInner}>
               <Ionicons name="share-outline" size={22} color="#FFFFFF" />
             </TouchableOpacity>

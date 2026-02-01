@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { View, StyleSheet } from "react-native";
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import {
   NavigationContainer,
   NavigationContainerRef,
@@ -20,6 +21,7 @@ import VerifyLocation from "../screens/VerifyLocation";
 import CheckinScreen from "../screens/CheckinScreen";
 import CancelScreen from "../screens/CancelScreen";
 import EventDetailsScreen from "../screens/EventDetailsScreen";
+import RegisterEventScreen from "../screens/RegisterEventScreen";
 import PaymentScreen from "../screens/PaymentScreen";
 import ExploreScreen from "../screens/ExploreScreen";
 import SearchScreen from "../screens/SearchScreen";
@@ -73,6 +75,7 @@ function routeToNavbarMeta(routeName: string | undefined): {
     "WelcomeNew",
     "WelcomeExisting",
     "Onboarding",
+    "RegisterEvent",
   ]);
 
   const searchVariantRoutes = new Set<string>([
@@ -133,6 +136,7 @@ export default function MainLayout({ initialRoute }: Props) {
   }, []);
 
   return (
+    <BottomSheetModalProvider>
     <NavigationContainer
       ref={(r) => {
         navRef.current = r as unknown as NavigationContainerRef<RootStackParamList>;
@@ -160,6 +164,7 @@ export default function MainLayout({ initialRoute }: Props) {
           <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
           <Stack.Screen name="Cancelpage" component={CancelScreen} options={{ headerShown: false }} />
           <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+          <Stack.Screen name="RegisterEvent" component={RegisterEventScreen} />
           <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
           <Stack.Screen name="ExploreScreen" component={ExploreScreen} options={{ headerShown: false }} />
           <Stack.Screen name="Search" component={SearchScreen} />
@@ -198,6 +203,7 @@ export default function MainLayout({ initialRoute }: Props) {
         </View>
       </View>
     </NavigationContainer>
+    </BottomSheetModalProvider>
   );
 }
 
