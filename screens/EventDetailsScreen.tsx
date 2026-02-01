@@ -3,22 +3,22 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
+  ImageBackground,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
-  Modal,
-  Pressable,
+  FlatList,
+  Animated,
   ActivityIndicator,
   Alert,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { Video, ResizeMode } from "expo-av";
 import RegistrationSuccessModal from "../components/RegistrationSuccessModal";
+import MapView, { Marker } from "react-native-maps";
 import { getToken } from "../utils/auth";
 import Constants from "expo-constants";
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 
@@ -84,6 +84,14 @@ export default function EventDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollX = new Animated.Value(0);
+
+  const mediaItems = [
+    { type: "image", source: require("../assets/event-details/first.jpg") },
+    { type: "video", source: require("../assets/event-details/eve-video.mp4") },
+    { type: "image", source: require("../assets/event-details/second.jpg") },
+  ];
 
   // Fetch event details from API
   useEffect(() => {
@@ -99,10 +107,10 @@ export default function EventDetailsScreen() {
       const token = await getToken(); // Implement this based on your auth system
 
       const response = await fetch(`${BACKEND_URL}/events/${eventId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -111,11 +119,11 @@ export default function EventDetailsScreen() {
       if (response.ok && data.success) {
         setEvent(data.data);
       } else {
-        setError(data.message || 'Failed to fetch event details');
+        setError(data.message || "Failed to fetch event details");
       }
     } catch (err) {
-      setError('Network error. Please check your connection.');
-      console.error('Fetch event error:', err);
+      setError("Network error. Please check your connection.");
+      console.error("Fetch event error:", err);
     } finally {
       setLoading(false);
     }
@@ -123,11 +131,11 @@ export default function EventDetailsScreen() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -135,21 +143,21 @@ export default function EventDetailsScreen() {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const timeOptions: Intl.DateTimeFormatOptions = {
-      hour: 'numeric',
-      minute: '2-digit',
+      hour: "numeric",
+      minute: "2-digit",
       hour12: true,
     };
-    return `${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
+    return `${start.toLocaleTimeString("en-US", timeOptions)} - ${end.toLocaleTimeString("en-US", timeOptions)}`;
   };
 
-  const formatAddress = (address: EventDetails['location']['address']) => {
+  const formatAddress = (address: EventDetails["location"]["address"]) => {
     const parts = [
       address.street,
       address.city,
       address.state,
       address.zipCode,
     ].filter(Boolean);
-    return parts.join(', ');
+    return parts.join(", ");
   };
 
   const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
@@ -159,33 +167,75 @@ export default function EventDetailsScreen() {
 
     try {
       const token = await getToken();
-      
+
       if (!token) {
-        Alert.alert('Authentication Required', 'Please sign in to register for events');
+        Alert.alert(
+          "Authentication Required",
+          "Please sign in to register for events",
+        );
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}/events/${event._id}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+      const response = await fetch(
+        `${BACKEND_URL}/events/${event._id}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       const data = await response.json();
 
       if (response.ok && data.success) {
         setShowModal(true);
         // Update event status locally
-        setEvent(prev => prev ? { ...prev, status: 'Registered' } : prev);
+        setEvent((prev) => (prev ? { ...prev, status: "Registered" } : prev));
       } else {
-        Alert.alert('Registration Failed', data.message || 'Unable to register for event');
+        Alert.alert(
+          "Registration Failed",
+          data.message || "Unable to register for event",
+        );
       }
     } catch (err) {
-      Alert.alert('Error', 'Network error. Please try again.');
-      console.error('Registration error:', err);
+      Alert.alert("Error", "Network error. Please try again.");
+      console.error("Registration error:", err);
     }
+  };
+
+  const renderMediaItem = ({
+    item,
+  }: {
+    item: { type: string; source: any };
+  }) => {
+    if (item.type === "image") {
+      return <ImageBackground source={item.source} style={styles.mediaItem} />;
+    } else if (item.type === "video") {
+      return (
+        <Video
+          source={item.source}
+          style={styles.mediaItem}
+          useNativeControls
+          resizeMode={ResizeMode.COVER}
+        />
+      );
+    }
+    return null;
+  };
+
+  interface ScrollEvent {
+    nativeEvent: {
+      contentOffset: {
+        x: number;
+      };
+    };
+  }
+
+  const handleScroll = (event: ScrollEvent) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    setActiveIndex(index);
   };
 
   if (loading) {
@@ -201,8 +251,11 @@ export default function EventDetailsScreen() {
     return (
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={48} color="#FF3B30" />
-        <Text style={styles.errorText}>{error || 'Event not found'}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchEventDetails}>
+        <Text style={styles.errorText}>{error || "Event not found"}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={fetchEventDetails}
+        >
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -219,35 +272,70 @@ export default function EventDetailsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* Fixed Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
+    <View style={styles.container}>
+      {/* Background */}
+      <ImageBackground
+        source={require("../assets/event-details/first.jpg")}
+        style={styles.backgroundImage}
+        blurRadius={10}
       >
-        <Ionicons name="chevron-back" size={24} color="#000" />
-      </TouchableOpacity>
+        <View style={styles.colorOverlay} />
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      >
-        {/* Event Image */}
-        <Image 
-          source={
-            event.imageUrl || event.images?.[0] 
-              ? { uri: event.imageUrl }
-              : require('../assets/coding_bootcamp.jpg') // Add a default image
-          } 
-          style={styles.eventImage} 
-        />
+        {/* Top Navigation Buttons */}
+        <View style={styles.topButtons}>
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.rightButtons}>
+            <TouchableOpacity style={styles.navButton}>
+              <Ionicons name="heart-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navButton}>
+              <Ionicons name="share-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
+        {/* Swipable Media Container */}
+        <View style={styles.mediaContainer}>
+          <FlatList
+            data={mediaItems}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={renderMediaItem}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: false, listener: handleScroll },
+            )}
+          />
+          {/* Dots Indicator */}
+          <View style={styles.dotsContainer}>
+            {mediaItems.map((_, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <Animated.View
+                  key={index}
+                  style={[styles.dot, isActive && styles.activeDot]}
+                />
+              );
+            })}
+          </View>
+        </View>
+      </ImageBackground>
+
+      {/* Event Details Overlay */}
+      <View style={styles.detailsContainer}>
         {/* Event Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>{event.title}</Text>
           <View style={styles.tagContainer}>
             <Text style={styles.tag}>
-              {event.price ? `$${event.price}` : 'Free'}
+              {event.price ? `$${event.price}` : "Free"}
             </Text>
             <Text style={styles.categoryTag}>{event.category}</Text>
           </View>
@@ -268,9 +356,13 @@ export default function EventDetailsScreen() {
         {/* Date & Time */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Date & Time</Text>
-          <Text style={styles.dateTime}>{formatDate(event.dateTime.start)}</Text>
-          <Text style={styles.dateTime}>{formatTime(event.dateTime.start, event.dateTime.end)}</Text>
-          
+          <Text style={styles.dateTime}>
+            {formatDate(event.dateTime.start)}
+          </Text>
+          <Text style={styles.dateTime}>
+            {formatTime(event.dateTime.start, event.dateTime.end)}
+          </Text>
+
           {event.recurring?.isRecurring && (
             <Text style={styles.recurringText}>
               Recurring: {event.recurring.pattern}
@@ -283,12 +375,14 @@ export default function EventDetailsScreen() {
           <Text style={styles.sectionTitle}>Location</Text>
           <Text style={styles.venue}>{event.location.venue}</Text>
           {event.location.address && (
-            <Text style={styles.address}>{formatAddress(event.location.address)}</Text>
+            <Text style={styles.address}>
+              {formatAddress(event.location.address)}
+            </Text>
           )}
-          
+
           <MapView style={styles.map} initialRegion={coordinates}>
-            <Marker 
-              coordinate={coordinates} 
+            <Marker
+              coordinate={coordinates}
               title={event.location.venue}
               description={formatAddress(event.location.address)}
             />
@@ -315,8 +409,8 @@ export default function EventDetailsScreen() {
               {/* You can implement avatar fetching based on registerations */}
               <View style={[styles.avatar, styles.attendeesCountAvatar]}>
                 <Text style={styles.attendeesCountText}>
-                  {event.registerations.length > 999 
-                    ? "1k+" 
+                  {event.registerations.length > 999
+                    ? "1k+"
                     : event.registerations.length}
                 </Text>
               </View>
@@ -326,7 +420,7 @@ export default function EventDetailsScreen() {
             </Text>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {/* Fixed Register/Status Button */}
       <View style={styles.fixedButtonContainer}>
@@ -356,46 +450,120 @@ export default function EventDetailsScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  backgroundImage: {
+    width: "100%",
+    height: "50%",
+  },
+  colorOverlay: {
+    position: "absolute",
+    bottom: 0,
+    height: "50%",
+    width: "100%",
+    backgroundColor: "#331057",
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+  },
+  topButtons: {
+    position: "absolute",
+    top: 50,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  navButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  rightButtons: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  mediaContainer: {
+    position: "absolute",
+    top: "25%",
+    left: 16,
+    right: 16,
+    height: height * 0.3,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    elevation: 5,
+  },
+  mediaItem: {
+    width: width - 32,
+    height: "100%",
+    borderRadius: 20,
+  },
+  dotsContainer: {
+    position: "absolute",
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#ccc",
+  },
+  activeDot: {
+    width: 24,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#7F00FF",
+  },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#FF3B30',
-    textAlign: 'center',
+    color: "#FF3B30",
+    textAlign: "center",
     marginVertical: 16,
   },
   retryButton: {
-    backgroundColor: '#7F00FF',
+    backgroundColor: "#7F00FF",
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   categoryTag: {
-    backgroundColor: '#E3F2FD',
-    color: '#1976D2',
+    backgroundColor: "#E3F2FD",
+    color: "#1976D2",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -404,39 +572,46 @@ const styles = StyleSheet.create({
   },
   hexcode: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#7F00FF',
+    fontWeight: "700",
+    color: "#7F00FF",
     letterSpacing: 2,
   },
   venue: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 4,
   },
   address: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 12,
   },
   recurringText: {
     fontSize: 14,
-    color: '#7F00FF',
-    fontStyle: 'italic',
+    color: "#7F00FF",
+    fontStyle: "italic",
     marginTop: 4,
   },
   radiusText: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
     marginBottom: 4,
   },
   accuracyText: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
   },
-  container: {
+  detailsContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+    paddingTop: 16,
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+    marginTop: -50,
+    elevation: 5,
   },
   backButton: {
     position: "absolute",
