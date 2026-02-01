@@ -13,28 +13,28 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
+  ImageBackground,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
-  Modal,
-  Pressable,
+  FlatList,
+  Animated,
   ActivityIndicator,
   Alert,
 } from "react-native";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import MapView, { Marker } from "react-native-maps";
 import { Ionicons } from "@expo/vector-icons";
+import { Video, ResizeMode } from "expo-av";
 import RegistrationSuccessModal from "../components/RegistrationSuccessModal";
 import TicketSelectionModal, {
   type TicketSelectionModalRef,
   type TicketTier,
 } from "../components/TicketSelectionModal";
+import MapView, { Marker } from "react-native-maps";
 import { getToken } from "../utils/auth";
 import Constants from "expo-constants";
 import type { RootStackParamList } from "../App";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 // Space reserved at bottom for navbar overlay (MainLayout bottom: 16 + Navbar height ~68)
 const BOTTOM_NAVBAR_OFFSET = 90;
@@ -164,10 +164,16 @@ export default function EventDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const ticketModalRef = useRef<TicketSelectionModalRef>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollX = new Animated.Value(0);
 
-  // API INTEGRATION: When optional `event` is passed (e.g. from mock data), use it directly.
-  // When connected to API, screens should pass only eventId and this block can be removed.
+  const mediaItems = [
+    { type: "image", source: require("../assets/event-details/first.jpg") },
+    { type: "video", source: require("../assets/event-details/eve-video.mp4") },
+    { type: "image", source: require("../assets/event-details/second.jpg") },
+  ];
+
+  // Fetch event details from API
   useEffect(() => {
     if (passedEvent) {
       setEvent(mockEventToDetails(passedEvent));
@@ -208,7 +214,7 @@ export default function EventDetailsScreen() {
       if (response.ok && data.success) {
         setEvent(data.data);
       } else {
-        setError(data.message ?? "Failed to fetch event details");
+        setError(data.message || "Failed to fetch event details");
       }
     } catch (err) {
       setError("Network error. Please check your connection.");
@@ -236,6 +242,10 @@ export default function EventDetailsScreen() {
       minute: "2-digit",
       hour12: true,
     };
+    return `${start.toLocaleTimeString(
+      "en-US",
+      timeOptions
+    )} - ${end.toLocaleTimeString("en-US", timeOptions)}`;
     return `${start.toLocaleTimeString(
       "en-US",
       timeOptions
@@ -268,9 +278,23 @@ export default function EventDetailsScreen() {
           "Authentication Required",
           "Please sign in to register for events"
         );
+        Alert.alert(
+          "Authentication Required",
+          "Please sign in to register for events"
+        );
         return;
       }
 
+      const response = await fetch(
+        `${BACKEND_URL}/events/${event._id}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       const response = await fetch(
         `${BACKEND_URL}/events/${event._id}/register`,
         {
@@ -293,11 +317,48 @@ export default function EventDetailsScreen() {
           "Registration Failed",
           data.message || "Unable to register for event"
         );
+        Alert.alert(
+          "Registration Failed",
+          data.message || "Unable to register for event"
+        );
       }
     } catch (err) {
       Alert.alert("Error", "Network error. Please try again.");
       console.error("Registration error:", err);
     }
+  };
+
+  const renderMediaItem = ({
+    item,
+  }: {
+    item: { type: string; source: any };
+  }) => {
+    if (item.type === "image") {
+      return <ImageBackground source={item.source} style={styles.mediaItem} />;
+    } else if (item.type === "video") {
+      return (
+        <Video
+          source={item.source}
+          style={styles.mediaItem}
+          useNativeControls
+          resizeMode={ResizeMode.COVER}
+        />
+      );
+    }
+    return null;
+  };
+
+  interface ScrollEvent {
+    nativeEvent: {
+      contentOffset: {
+        x: number;
+      };
+    };
+  }
+
+  const handleScroll = (event: ScrollEvent) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    setActiveIndex(index);
   };
 
   if (loading) {
@@ -334,35 +395,64 @@ export default function EventDetailsScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      {/* Fixed Back Button */}
-      <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
+    <View style={styles.container}>
+      {/* Background */}
+      <ImageBackground
+        source={require("../assets/event-details/first.jpg")}
+        style={styles.backgroundImage}
+        blurRadius={10}
       >
-        <Ionicons name="chevron-back" size={24} color="#000" />
-      </TouchableOpacity>
+        <View style={styles.colorOverlay} />
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={{
-          paddingBottom: 140 + BOTTOM_NAVBAR_OFFSET, // Button area + navbar clearance
-        }}
-      >
-        {/* Event Image - API returns imageUrl or images[0]; mock may pass image as require() */}
-        <Image
-          source={
-            event.imageUrl
-              ? { uri: event.imageUrl }
-              : event.images?.[0]
-              ? { uri: event.images[0] }
-              : typeof (event as any).image === "number"
-              ? (event as any).image
-              : require("../assets/coding_bootcamp.jpg")
-          }
-          style={styles.eventImage}
-        />
+        {/* Top Navigation Buttons */}
+        <View style={styles.topButtons}>
+          <TouchableOpacity
+            style={styles.navButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+          <View style={styles.rightButtons}>
+            <TouchableOpacity style={styles.navButton}>
+              <Ionicons name="heart-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.navButton}>
+              <Ionicons name="share-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
+        {/* Swipable Media Container */}
+        <View style={styles.mediaContainer}>
+          <FlatList
+            data={mediaItems}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, index) => index.toString()}
+            renderItem={renderMediaItem}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+              { useNativeDriver: false, listener: handleScroll }
+            )}
+          />
+          {/* Dots Indicator */}
+          <View style={styles.dotsContainer}>
+            {mediaItems.map((_, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <Animated.View
+                  key={index}
+                  style={[styles.dot, isActive && styles.activeDot]}
+                />
+              );
+            })}
+          </View>
+        </View>
+      </ImageBackground>
+
+      {/* Event Details Overlay */}
+      <View style={styles.detailsContainer}>
         {/* Event Title Section */}
         <View style={styles.titleSection}>
           <Text style={styles.title}>{event.title}</Text>
@@ -453,7 +543,7 @@ export default function EventDetailsScreen() {
             </Text>
           </View>
         </View>
-      </ScrollView>
+      </View>
 
       {/* Fixed Register/Status Button */}
       <View style={styles.fixedButtonContainer}>
@@ -499,6 +589,81 @@ export default function EventDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  backgroundImage: {
+    width: "100%",
+    height: "50%",
+  },
+  colorOverlay: {
+    position: "absolute",
+    bottom: 0,
+    height: "50%",
+    width: "100%",
+    backgroundColor: "#331057",
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+  },
+  topButtons: {
+    position: "absolute",
+    top: 50,
+    left: 16,
+    right: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  navButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  rightButtons: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  mediaContainer: {
+    position: "absolute",
+    top: "25%",
+    left: 16,
+    right: 16,
+    height: height * 0.3,
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#fff",
+    elevation: 5,
+  },
+  mediaItem: {
+    width: width - 32,
+    height: "100%",
+    borderRadius: 20,
+  },
+  dotsContainer: {
+    position: "absolute",
+    bottom: 16,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#ccc",
+  },
+  activeDot: {
+    width: 24,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#7F00FF",
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -575,9 +740,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  container: {
+  detailsContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    borderTopLeftRadius: 50,
+    borderTopRightRadius: 50,
+    paddingTop: 16,
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+    marginTop: -50,
+    elevation: 5,
   },
   backButton: {
     position: "absolute",
