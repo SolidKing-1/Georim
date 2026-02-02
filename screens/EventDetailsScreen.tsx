@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,9 @@ import { BlurView } from "expo-blur";
 import { Video, ResizeMode } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../App";
+import TicketSelectionModal, {
+  type TicketSelectionModalRef,
+} from "../components/TicketSelectionModal";
 
 const CircleGlassEffect = require("../components/GlassEffects/circleGlassEffect.png");
 
@@ -96,6 +99,7 @@ function RegisterEventScreen() {
   const [dietaryOther, setDietaryOther] = useState("");
   const [accessibility, setAccessibility] = useState("");
   const [shirtSize, setShirtSize] = useState<string | null>("mens_s");
+  const ticketModalRef = useRef<TicketSelectionModalRef>(null);
 
   const toggleDietary = (id: string) => {
     setDietary((prev) => {
@@ -159,7 +163,7 @@ function RegisterEventScreen() {
   );
 
   const handleNext = () => {
-    navigation.navigate("EventDetails", { eventId: eventId ?? "", event });
+    ticketModalRef.current?.present();
   };
 
   const handleCancel = () => {
@@ -517,6 +521,20 @@ function RegisterEventScreen() {
           </View>
         </View>
       </View>
+
+      <TicketSelectionModal
+        ref={ticketModalRef}
+        eventTitle={(event as any)?.title ?? (event as any)?.name ?? "Event"}
+        eventDescription={(event as any)?.description}
+        onSelectTicket={(tier) => {
+          ticketModalRef.current?.dismiss();
+          navigation.navigate("RegisterEvent", {
+            eventId: eventId ?? "",
+            event,
+            selectedTier: tier,
+          });
+        }}
+      />
     </View>
   );
 }

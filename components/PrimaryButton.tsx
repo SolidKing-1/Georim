@@ -54,7 +54,10 @@ export default function PrimaryButton({
         >
           <Image
             source={GradientEffect}
-            style={[styles.gradientOverlay, { borderRadius: resolvedBorderRadius }]}
+            style={[
+              styles.gradientOverlay,
+              { borderRadius: resolvedBorderRadius },
+            ]}
           />
           <Text style={styles.text}>{title}</Text>
         </View>
