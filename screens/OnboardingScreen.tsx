@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      navigation.replace("SignUp");
+      navigation.replace("Login");
     }
   };
 
