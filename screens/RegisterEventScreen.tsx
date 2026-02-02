@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   View,
   Text,
@@ -21,9 +21,12 @@ import { BlurView } from "expo-blur";
 import { Video, ResizeMode } from "expo-av";
 import { LinearGradient } from "expo-linear-gradient";
 import type { RootStackParamList } from "../App";
+import OrderSummaryModal, {
+  type OrderSummaryModalRef,
+} from "../components/OrderSummaryModal";
 
 const CircleGlassEffect = require("../components/GlassEffects/circleGlassEffect.png");
-
+const GlassEffect = require("../components/GlassEffects/Glass Effect.png");
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 // Hero: a little bit more than half the screen height
 const HERO_HEIGHT = Math.round(SCREEN_HEIGHT * 0.45);
@@ -83,19 +86,17 @@ function RegisterEventScreen() {
   const insets = useSafeAreaInsets();
   const { eventId, event, selectedTier } = route.params ?? {};
 
-  const [registrationType, setRegistrationType] = useState("Strada Scholar");
-  const [selectedCohort, setSelectedCohort] = useState<string | null>(
-    "cohort5"
-  );
+  const [registrationType, setRegistrationType] = useState("");
+  const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [areaOfStudy, setAreaOfStudy] = useState("Computer Science");
-  const [institution, setInstitution] = useState("Grambling State Univ...");
-  const [dietary, setDietary] = useState<Set<string>>(
-    () => new Set(DIETARY_OPTIONS.map((o) => o.id))
-  );
+  const [areaOfStudy, setAreaOfStudy] = useState("");
+  const [institution, setInstitution] = useState("");
+  const [dietary, setDietary] = useState<Set<string>>(() => new Set());
   const [dietaryOther, setDietaryOther] = useState("");
   const [accessibility, setAccessibility] = useState("");
-  const [shirtSize, setShirtSize] = useState<string | null>("mens_s");
+  const [shirtSize, setShirtSize] = useState<string | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
+  const orderSummaryModalRef = useRef<OrderSummaryModalRef>(null);
 
   const toggleDietary = (id: string) => {
     setDietary((prev) => {
@@ -159,12 +160,28 @@ function RegisterEventScreen() {
   );
 
   const handleNext = () => {
-    navigation.navigate("EventDetails", { eventId: eventId ?? "", event });
+    setShowSummary(true);
+  };
+
+  const handleBack = () => {
+    setShowSummary(false);
+  };
+
+  const handleSubmit = () => {
+    orderSummaryModalRef.current?.present();
   };
 
   const handleCancel = () => {
     navigation.goBack();
   };
+
+  const cohortLabel =
+    COHORT_OPTIONS.find((o) => o.id === selectedCohort)?.label ?? "";
+  const dietaryLabels = Array.from(dietary)
+    .map((id) => DIETARY_OPTIONS.find((o) => o.id === id)?.label ?? id)
+    .filter(Boolean);
+  const shirtSizeLabel =
+    SHIRT_SIZE_OPTIONS.find((o) => o.id === shirtSize)?.label ?? "";
 
   const currentItem = carouselItems[heroIndex] ?? carouselItems[0];
 
@@ -287,180 +304,301 @@ function RegisterEventScreen() {
                 { paddingTop: FORM_NEGATIVE_MARGIN + 24 },
               ]}
             >
-              <Text style={styles.title}>More Information</Text>
-              <Text style={styles.instructions}>
-                Fill out the information below, then click Next to continue.
-              </Text>
+              {showSummary ? (
+                <>
+                  <Text style={styles.title}>Summary</Text>
+                  <Text style={styles.instructions}>
+                    Review your registration information below.
+                  </Text>
 
-              {/* Registration Type */}
-              <Text style={styles.label}>
-                <Text style={styles.asterisk}>* </Text>
-                Registration Type
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={registrationType}
-                onChangeText={setRegistrationType}
-                placeholder="Strada Scholar"
-                placeholderTextColor="#9CA3AF"
-                editable
-              />
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>Registration Type</Text>
+                    <Text style={styles.summaryValue}>{registrationType}</Text>
+                  </View>
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>
+                      Which Cohort are you a part of?
+                    </Text>
+                    <Text style={styles.summaryValue}>{cohortLabel}</Text>
+                  </View>
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>
+                      What is your area of study?
+                    </Text>
+                    <Text style={styles.summaryValue}>{areaOfStudy}</Text>
+                  </View>
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>Institution</Text>
+                    <Text style={styles.summaryValue}>{institution}</Text>
+                  </View>
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>
+                      Please select what dietary restrictions that apply, if
+                      any.
+                    </Text>
+                    <Text style={styles.summaryValue}>
+                      {dietaryLabels.length > 0
+                        ? dietaryLabels.join(", ")
+                        : "None"}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>
+                      Do you have any accessibility requirements?
+                    </Text>
+                    <Text style={styles.summaryValue}>
+                      {accessibility.trim() || "N/A"}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryBlock}>
+                    <Text style={styles.summaryLabel}>
+                      Please select your shirt size.
+                    </Text>
+                    <Text style={styles.summaryValue}>{shirtSizeLabel}</Text>
+                  </View>
 
-              {/* Cohort */}
-              <Text style={styles.label}>
-                <Text style={styles.asterisk}>* </Text>
-                Which Cohort are you a part of?
-              </Text>
-              <View style={styles.radioGroup}>
-                {COHORT_OPTIONS.map((opt) => (
-                  <Pressable
-                    key={opt.id}
-                    style={styles.radioRow}
-                    onPress={() => setSelectedCohort(opt.id)}
-                  >
-                    <View
-                      style={[
-                        styles.radioCircle,
-                        selectedCohort === opt.id && styles.radioCircleActive,
+                  <View style={styles.buttonRow}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.cancelButton,
+                        pressed && styles.cancelButtonPressed,
                       ]}
+                      onPress={handleBack}
                     >
-                      {selectedCohort === opt.id && (
-                        <View style={styles.radioInner} />
-                      )}
-                    </View>
-                    <Text style={styles.radioLabel}>{opt.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {/* Area of study */}
-              <Text style={styles.label}>
-                <Text style={styles.asterisk}>* </Text>
-                What is your area of study?
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={areaOfStudy}
-                onChangeText={setAreaOfStudy}
-                placeholder="e.g. Computer Science"
-                placeholderTextColor="#9CA3AF"
-                editable
-              />
-
-              {/* Institution */}
-              <Text style={styles.label}>
-                <Text style={styles.asterisk}>* </Text>
-                Institution
-              </Text>
-              <TextInput
-                style={styles.input}
-                value={institution}
-                onChangeText={setInstitution}
-                placeholder="e.g. Grambling State University"
-                placeholderTextColor="#9CA3AF"
-                editable
-              />
-
-              {/* Dietary restrictions */}
-              <Text style={styles.label}>
-                Please select what dietary restrictions that apply, if any.
-              </Text>
-              <View style={styles.checkboxGroup}>
-                {DIETARY_OPTIONS.map((opt) => (
-                  <Pressable
-                    key={opt.id}
-                    style={styles.checkboxRow}
-                    onPress={() => toggleDietary(opt.id)}
-                  >
-                    <View
-                      style={[
-                        styles.checkbox,
-                        dietary.has(opt.id) && styles.checkboxActive,
+                      <View style={styles.cancelButtonOverlay}>
+                        <BlurView
+                          intensity={Platform.OS === "ios" ? 40 : 30}
+                          tint="dark"
+                          style={StyleSheet.absoluteFill}
+                        />
+                        <Image
+                          source={GlassEffect}
+                          style={StyleSheet.absoluteFillObject}
+                          resizeMode="stretch"
+                        />
+                      </View>
+                      <Text style={styles.cancelButtonText}>Back</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.nextButton,
+                        pressed && styles.nextButtonPressed,
                       ]}
+                      onPress={handleSubmit}
                     >
-                      {dietary.has(opt.id) && (
-                        <View style={styles.checkboxInner} />
-                      )}
-                    </View>
-                    <Text style={styles.radioLabel}>{opt.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              {dietary.has("other") && (
-                <TextInput
-                  style={[styles.input, { marginTop: 0 }]}
-                  value={dietaryOther}
-                  onChangeText={setDietaryOther}
-                  placeholder="Specify other"
-                  placeholderTextColor="#9CA3AF"
-                  editable
-                />
+                      <LinearGradient
+                        colors={[
+                          "rgba(110, 35, 186, 1)",
+                          "rgba(40, 38, 145, 1)",
+                        ]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <Text style={styles.nextButtonText}>Submit</Text>
+                    </Pressable>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.title}>More Information</Text>
+                  <Text style={styles.instructions}>
+                    Fill out the information below, then click Next to continue.
+                  </Text>
+
+                  {/* Registration Type */}
+                  <Text style={styles.label}>
+                    <Text style={styles.asterisk}>* </Text>
+                    Registration Type
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={registrationType}
+                    onChangeText={setRegistrationType}
+                    placeholder="e.g. Strada Scholar"
+                    placeholderTextColor="#9CA3AF"
+                    editable
+                  />
+
+                  {/* Cohort */}
+                  <Text style={styles.label}>
+                    <Text style={styles.asterisk}>* </Text>
+                    Which Cohort are you a part of?
+                  </Text>
+                  <View style={styles.radioGroup}>
+                    {COHORT_OPTIONS.map((opt) => (
+                      <Pressable
+                        key={opt.id}
+                        style={styles.radioRow}
+                        onPress={() => setSelectedCohort(opt.id)}
+                      >
+                        <View
+                          style={[
+                            styles.radioCircle,
+                            selectedCohort === opt.id &&
+                              styles.radioCircleActive,
+                          ]}
+                        >
+                          {selectedCohort === opt.id && (
+                            <View style={styles.radioInner} />
+                          )}
+                        </View>
+                        <Text style={styles.radioLabel}>{opt.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {/* Area of study */}
+                  <Text style={styles.label}>
+                    <Text style={styles.asterisk}>* </Text>
+                    What is your area of study?
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={areaOfStudy}
+                    onChangeText={setAreaOfStudy}
+                    placeholder="e.g. Computer Science"
+                    placeholderTextColor="#9CA3AF"
+                    editable
+                  />
+
+                  {/* Institution */}
+                  <Text style={styles.label}>
+                    <Text style={styles.asterisk}>* </Text>
+                    Institution
+                  </Text>
+                  <TextInput
+                    style={styles.input}
+                    value={institution}
+                    onChangeText={setInstitution}
+                    placeholder="e.g. Grambling State University"
+                    placeholderTextColor="#9CA3AF"
+                    editable
+                  />
+
+                  {/* Dietary restrictions */}
+                  <Text style={styles.label}>
+                    Please select what dietary restrictions that apply, if any.
+                  </Text>
+                  <View style={styles.checkboxGroup}>
+                    {DIETARY_OPTIONS.map((opt) => (
+                      <Pressable
+                        key={opt.id}
+                        style={styles.checkboxRow}
+                        onPress={() => toggleDietary(opt.id)}
+                      >
+                        <View
+                          style={[
+                            styles.checkbox,
+                            dietary.has(opt.id) && styles.checkboxActive,
+                          ]}
+                        >
+                          {dietary.has(opt.id) && (
+                            <View style={styles.checkboxInner} />
+                          )}
+                        </View>
+                        <Text style={styles.radioLabel}>{opt.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  {dietary.has("other") && (
+                    <TextInput
+                      style={[styles.input, { marginTop: 0 }]}
+                      value={dietaryOther}
+                      onChangeText={setDietaryOther}
+                      placeholder="Specify other"
+                      placeholderTextColor="#9CA3AF"
+                      editable
+                    />
+                  )}
+
+                  {/* Accessibility */}
+                  <Text style={styles.label}>
+                    Do you have any accessibility requirements ?
+                  </Text>
+                  <TextInput
+                    style={[styles.input, styles.inputMultiline]}
+                    value={accessibility}
+                    onChangeText={setAccessibility}
+                    placeholder="Optional"
+                    placeholderTextColor="#9CA3AF"
+                    multiline
+                    numberOfLines={3}
+                    textAlignVertical="top"
+                    editable
+                  />
+
+                  {/* Shirt size */}
+                  <Text style={styles.label}>
+                    <Text style={styles.asterisk}>* </Text>
+                    Please select your shirt size.
+                  </Text>
+                  <View style={styles.checkboxGroup}>
+                    {SHIRT_SIZE_OPTIONS.map((opt) => (
+                      <Pressable
+                        key={opt.id}
+                        style={styles.checkboxRow}
+                        onPress={() => setShirtSize(opt.id)}
+                      >
+                        <View
+                          style={[
+                            styles.checkbox,
+                            shirtSize === opt.id && styles.checkboxActive,
+                          ]}
+                        >
+                          {shirtSize === opt.id && (
+                            <View style={styles.checkboxInner} />
+                          )}
+                        </View>
+                        <Text style={styles.radioLabel}>{opt.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+
+                  {/* Cancel and Next buttons */}
+                  <View style={styles.buttonRow}>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.cancelButton,
+                        pressed && styles.cancelButtonPressed,
+                      ]}
+                      onPress={handleCancel}
+                    >
+                      <View style={styles.cancelButtonOverlay}>
+                        <BlurView
+                          intensity={Platform.OS === "ios" ? 40 : 30}
+                          tint="dark"
+                          style={StyleSheet.absoluteFill}
+                        />
+                        <Image
+                          source={GlassEffect}
+                          style={StyleSheet.absoluteFillObject}
+                          resizeMode="stretch"
+                        />
+                      </View>
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.nextButton,
+                        pressed && styles.nextButtonPressed,
+                      ]}
+                      onPress={handleNext}
+                    >
+                      <LinearGradient
+                        colors={[
+                          "rgba(110, 35, 186, 1)",
+                          "rgba(40, 38, 145, 1)",
+                        ]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      <Text style={styles.nextButtonText}>Next</Text>
+                    </Pressable>
+                  </View>
+                </>
               )}
-
-              {/* Accessibility */}
-              <Text style={styles.label}>
-                Do you have any accessibility requirements ?
-              </Text>
-              <TextInput
-                style={[styles.input, styles.inputMultiline]}
-                value={accessibility}
-                onChangeText={setAccessibility}
-                placeholder="Optional"
-                placeholderTextColor="#9CA3AF"
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                editable
-              />
-
-              {/* Shirt size */}
-              <Text style={styles.label}>
-                <Text style={styles.asterisk}>* </Text>
-                Please select your shirt size.
-              </Text>
-              <View style={styles.checkboxGroup}>
-                {SHIRT_SIZE_OPTIONS.map((opt) => (
-                  <Pressable
-                    key={opt.id}
-                    style={styles.checkboxRow}
-                    onPress={() => setShirtSize(opt.id)}
-                  >
-                    <View
-                      style={[
-                        styles.checkbox,
-                        shirtSize === opt.id && styles.checkboxActive,
-                      ]}
-                    >
-                      {shirtSize === opt.id && (
-                        <View style={styles.checkboxInner} />
-                      )}
-                    </View>
-                    <Text style={styles.radioLabel}>{opt.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-
-              {/* Cancel and Next buttons */}
-              <View style={styles.buttonRow}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.cancelButton,
-                    pressed && styles.cancelButtonPressed,
-                  ]}
-                  onPress={handleCancel}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.nextButton,
-                    pressed && styles.nextButtonPressed,
-                  ]}
-                  onPress={handleNext}
-                >
-                  <Text style={styles.nextButtonText}>Next</Text>
-                </Pressable>
-              </View>
 
               <View style={{ height: 40 }} />
             </View>
@@ -470,7 +608,11 @@ function RegisterEventScreen() {
 
       {/* Fixed hero buttons: stay on screen when scrolling */}
       <View
-        style={[styles.heroButtons, styles.heroButtonsFixed, { paddingTop: 8 + insets.top }]}
+        style={[
+          styles.heroButtons,
+          styles.heroButtonsFixed,
+          { paddingTop: 8 + insets.top },
+        ]}
         pointerEvents="box-none"
       >
         <View style={styles.heroButtonGlass}>
@@ -479,10 +621,7 @@ function RegisterEventScreen() {
             tint="dark"
             style={StyleSheet.absoluteFill}
           />
-          <Image
-            source={CircleGlassEffect}
-            style={styles.heroButtonShine}
-          />
+          <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
           <TouchableOpacity
             style={styles.heroButtonInner}
             onPress={() => navigation.goBack()}
@@ -498,10 +637,7 @@ function RegisterEventScreen() {
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
-            <Image
-              source={CircleGlassEffect}
-              style={styles.heroButtonShine}
-            />
+            <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
             <TouchableOpacity style={styles.heroButtonInner}>
               <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
             </TouchableOpacity>
@@ -512,16 +648,25 @@ function RegisterEventScreen() {
               tint="dark"
               style={StyleSheet.absoluteFill}
             />
-            <Image
-              source={CircleGlassEffect}
-              style={styles.heroButtonShine}
-            />
+            <Image source={CircleGlassEffect} style={styles.heroButtonShine} />
             <TouchableOpacity style={styles.heroButtonInner}>
               <Ionicons name="share-outline" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
       </View>
+
+      <OrderSummaryModal
+        ref={orderSummaryModalRef}
+        ticketTierName={(selectedTier as any)?.title}
+        ticketPrice={(selectedTier as any)?.price}
+        onContinue={() =>
+          navigation.navigate("EventDetails", {
+            eventId: eventId ?? "",
+            event,
+          })
+        }
+      />
     </View>
   );
 }
@@ -659,13 +804,14 @@ const styles = StyleSheet.create({
     color: "#EF4444",
   },
   input: {
-    backgroundColor: "#1E1E3F",
-    borderRadius: 12,
+    backgroundColor: "#0E0D32",
+    borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#6B7280",
+    borderColor: "#8F8E9B",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: "400",
     color: "#FFFFFF",
     marginBottom: 20,
   },
@@ -681,8 +827,9 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#767676",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -691,14 +838,15 @@ const styles = StyleSheet.create({
     borderColor: "#7F00FF",
   },
   radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#7F00FF",
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#932FF8",
   },
   radioLabel: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#FFFFFF",
+    fontWeight: "400",
   },
   checkboxGroup: {
     marginBottom: 20,
@@ -712,8 +860,9 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 4,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#767676",
+    backgroundColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -722,8 +871,8 @@ const styles = StyleSheet.create({
     borderColor: "#7F00FF",
   },
   checkboxInner: {
-    width: 14,
-    height: 14,
+    width: 16,
+    height: 16,
     borderRadius: 2,
     backgroundColor: "#7F00FF",
   },
@@ -733,18 +882,22 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: "row",
-    gap: 12,
+    justifyContent: "center",
+    gap: 60,
     marginTop: 8,
   },
   cancelButton: {
-    flex: 1,
-    backgroundColor: "rgba(30, 30, 63, 0.85)",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#9CA3AF",
+    width: "40%",
+    borderRadius: 26,
     paddingVertical: 16,
+    overflow: "hidden",
+    position: "relative",
     alignItems: "center",
     justifyContent: "center",
+  },
+  cancelButtonOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 26,
   },
   cancelButtonPressed: {
     opacity: 0.9,
@@ -753,12 +906,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
+    zIndex: 1,
   },
   nextButton: {
-    flex: 1,
-    backgroundColor: "#7F00FF",
-    borderRadius: 12,
+    width: "40%",
+    borderRadius: 26,
     paddingVertical: 16,
+    overflow: "hidden",
+    position: "relative",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -769,6 +924,22 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: "#FFFFFF",
+    zIndex: 2,
+  },
+  summaryBlock: {
+    marginBottom: 20,
+  },
+  summaryLabel: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#FFFFFF",
+    marginBottom: 6,
+  },
+  summaryValue: {
+    fontSize: 16,
+    color: "rgba(255, 255, 255, 0.85)",
+    marginLeft: 4,
+    lineHeight: 22,
   },
 });
 
