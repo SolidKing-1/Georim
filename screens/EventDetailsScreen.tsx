@@ -25,6 +25,7 @@ import type { RootStackParamList } from "../App";
 import TicketSelectionModal, {
   type TicketSelectionModalRef,
 } from "../components/TicketSelectionModal";
+import BuzzCard from "../components/BuzzCard";
 
 const CircleGlassEffect = require("../components/GlassEffects/circleGlassEffect.png");
 
@@ -54,6 +55,7 @@ export default function EventDetailsScreen() {
 
   const [heroIndex, setHeroIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [isMapFullScreen, setIsMapFullScreen] = useState(false); // State for full-screen map
   const ticketModalRef = useRef<TicketSelectionModalRef>(null);
 
   const BUTTON_ROW_HEIGHT = 60 + insets.top;
@@ -98,11 +100,11 @@ export default function EventDetailsScreen() {
       const idx = viewableItems[0]?.index;
       if (typeof idx === "number") setHeroIndex(idx);
     },
-    []
+    [],
   );
   const viewabilityConfig = useMemo(
     () => ({ viewAreaCoveragePercentThreshold: 50 }),
-    []
+    [],
   );
 
   const currentItem = carouselItems[heroIndex] ?? carouselItems[0];
@@ -128,227 +130,271 @@ export default function EventDetailsScreen() {
         )}
       </View>
     ),
-    [heroIndex, CAROUSEL_HEIGHT]
+    [heroIndex, CAROUSEL_HEIGHT],
   );
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hero */}
-        <View
-          style={[
-            styles.heroWrap,
-            { height: HERO_HEIGHT + OVERLAP, zIndex: 2 },
-          ]}
-        >
-          <View
-            style={[StyleSheet.absoluteFill, { height: HERO_HEIGHT + OVERLAP }]}
+      {/* Full-screen map */}
+      {isMapFullScreen && (
+        <View style={styles.fullScreenMap}>
+          <MapView
+            style={StyleSheet.absoluteFill}
+            initialRegion={{
+              latitude: 32.5252,
+              longitude: -92.714,
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            }}
           >
-            {currentItem.type === "image" ? (
-              <Image
-                source={currentItem.source}
-                style={[styles.heroImage, { height: HERO_HEIGHT + OVERLAP }]}
-                resizeMode="cover"
-              />
-            ) : (
-              <Image
-                source={
-                  eventFallbackImage ?? require("../assets/Home/event-1.jpg")
-                }
-                style={[styles.heroImage, { height: HERO_HEIGHT + OVERLAP }]}
-                resizeMode="cover"
-              />
-            )}
-            <BlurView
-              intensity={Platform.OS === "ios" ? 60 : 45}
-              tint="dark"
-              style={StyleSheet.absoluteFill}
-            />
-            <LinearGradient
-              colors={["transparent", FORM_BG] as const}
-              locations={[HERO_HEIGHT / (HERO_HEIGHT + OVERLAP), 1]}
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
-          </View>
-
-          <FlatList
-            data={carouselItems}
-            renderItem={renderCarouselItem}
-            keyExtractor={(_, i) => String(i)}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onViewableItemsChanged={onViewableItemsChanged}
-            viewabilityConfig={viewabilityConfig}
-            snapToInterval={SCREEN_WIDTH}
-            snapToAlignment="center"
-            decelerationRate="fast"
-            style={[
-              styles.carouselList,
-              { top: BUTTON_ROW_HEIGHT, height: CAROUSEL_HEIGHT },
-            ]}
-            contentContainerStyle={styles.carouselContentContainer}
-          />
-
-          <View style={styles.pagination}>
-            {carouselItems.map((_, i) => (
-              <View
-                key={i}
-                style={[styles.dot, i === heroIndex && styles.dotActive]}
-              />
-            ))}
-          </View>
+            <Marker coordinate={{ latitude: 32.5252, longitude: -92.714 }} />
+          </MapView>
+          <TouchableOpacity
+            style={styles.fullScreenBackButton}
+            onPress={() => setIsMapFullScreen(false)}
+          >
+            <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
+      )}
 
-        {/* Content section: event details */}
-        <View
-          style={[
-            styles.formSectionWrap,
-            { marginTop: -FORM_NEGATIVE_MARGIN, zIndex: 1 },
-          ]}
+      {/* Main content */}
+      {!isMapFullScreen && (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <LinearGradient
-            colors={["rgba(5, 3, 27, 0)", FORM_BG] as const}
-            locations={[0, 0.4]}
-            style={styles.formSectionGradientFull}
+          {/* Hero */}
+          <View
+            style={[
+              styles.heroWrap,
+              { height: HERO_HEIGHT + OVERLAP, zIndex: 2 },
+            ]}
           >
             <View
               style={[
-                styles.formSection,
-                { paddingTop: FORM_NEGATIVE_MARGIN + 24 },
+                StyleSheet.absoluteFill,
+                { height: HERO_HEIGHT + OVERLAP },
               ]}
             >
-              {/* Event details content */}
-              <View style={styles.contentSection}>
-                <View style={styles.headerRow}>
-                  <Text style={styles.contentTitle}>
-                    {(event as any)?.title ??
-                      (event as any)?.name ??
-                      "Apostolic Invitation"}
-                  </Text>
-                  <View style={styles.tag}>
-                    <Text style={styles.tagText}>Outdoor</Text>
-                  </View>
-                </View>
+              {currentItem.type === "image" ? (
+                <Image
+                  source={currentItem.source}
+                  style={[styles.heroImage, { height: HERO_HEIGHT + OVERLAP }]}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Image
+                  source={
+                    eventFallbackImage ?? require("../assets/Home/event-1.jpg")
+                  }
+                  style={[styles.heroImage, { height: HERO_HEIGHT + OVERLAP }]}
+                  resizeMode="cover"
+                />
+              )}
+              <BlurView
+                intensity={Platform.OS === "ios" ? 60 : 45}
+                tint="dark"
+                style={StyleSheet.absoluteFill}
+              />
+              <LinearGradient
+                colors={["transparent", FORM_BG] as const}
+                locations={[HERO_HEIGHT / (HERO_HEIGHT + OVERLAP), 1]}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+            </View>
 
-                <View style={styles.dateRow}>
-                  <View style={styles.calendar}>
-                    <Text style={styles.month}>SEP</Text>
-                    <Text style={styles.day}>21</Text>
-                  </View>
-                  <View>
-                    <Text style={styles.fullDate}>Sunday September 2026</Text>
-                    <View style={styles.timeRow}>
-                      <Ionicons name="time-outline" size={16} color="#9CA3AF" />
-                      <Text style={styles.time}>7:30 AM – 9:00 AM</Text>
+            <FlatList
+              data={carouselItems}
+              renderItem={renderCarouselItem}
+              keyExtractor={(_, i) => String(i)}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onViewableItemsChanged={onViewableItemsChanged}
+              viewabilityConfig={viewabilityConfig}
+              snapToInterval={SCREEN_WIDTH}
+              snapToAlignment="center"
+              decelerationRate="fast"
+              style={[
+                styles.carouselList,
+                { top: BUTTON_ROW_HEIGHT, height: CAROUSEL_HEIGHT },
+              ]}
+              contentContainerStyle={styles.carouselContentContainer}
+            />
+
+            <View style={styles.pagination}>
+              {carouselItems.map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, i === heroIndex && styles.dotActive]}
+                />
+              ))}
+            </View>
+          </View>
+
+          {/* Content section: event details */}
+          <View
+            style={[
+              styles.formSectionWrap,
+              { marginTop: -FORM_NEGATIVE_MARGIN, zIndex: 1 },
+            ]}
+          >
+            <LinearGradient
+              colors={["rgba(5, 3, 27, 0)", FORM_BG] as const}
+              locations={[0, 0.4]}
+              style={styles.formSectionGradientFull}
+            >
+              <View
+                style={[
+                  styles.formSection,
+                  { paddingTop: FORM_NEGATIVE_MARGIN + 24 },
+                ]}
+              >
+                {/* Event details content */}
+                <View style={styles.contentSection}>
+                  <View style={styles.headerRow}>
+                    <Text style={styles.contentTitle}>
+                      {(event as any)?.title ??
+                        (event as any)?.name ??
+                        "Apostolic Invitation"}
+                    </Text>
+                    <View style={styles.tag}>
+                      <Text style={styles.tagText}>Outdoor</Text>
                     </View>
                   </View>
-                </View>
 
-                <View style={styles.attendingRow}>
-                  <Text style={styles.attending}>11k people are attending</Text>
-                  <View style={styles.avatarStack}>
-                    {[1, 2, 3, 4].map((_, i) => (
-                      <Image
-                        key={i}
-                        source={require("../assets/Home/profile.jpg")}
-                        style={[
-                          styles.avatar,
-                          { marginLeft: i === 0 ? 0 : -12 },
-                        ]}
+                  <View style={styles.dateRow}>
+                    <View style={styles.calendar}>
+                      <Text style={styles.month}>SEP</Text>
+                      <Text style={styles.day}>21</Text>
+                    </View>
+                    <View>
+                      <Text style={styles.fullDate}>Sunday September 2026</Text>
+                      <View style={styles.timeRow}>
+                        <Ionicons
+                          name="time-outline"
+                          size={16}
+                          color="#9CA3AF"
+                        />
+                        <Text style={styles.time}>7:30 AM – 9:00 AM</Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.attendingRow}>
+                    <Text style={styles.attending}>
+                      11k people are attending
+                    </Text>
+                    <View style={styles.avatarStack}>
+                      {[1, 2, 3, 4].map((_, i) => (
+                        <Image
+                          key={i}
+                          source={require("../assets/Home/profile.jpg")}
+                          style={[
+                            styles.avatar,
+                            { marginLeft: i === 0 ? 0 : -12 },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </View>
+
+                  <Text style={styles.section}>About Event</Text>
+                  <Text style={styles.about} numberOfLines={5}>
+                    {(event as any)?.description ??
+                      "Apostolic Invitation is a powerful gathering designed to ignite faith, deepen spiritual understanding, and foster community among believers across generations."}
+                  </Text>
+
+                  <Pressable onPress={() => setShowModal(true)}>
+                    <Text style={styles.readMore}>Read more</Text>
+                  </Pressable>
+
+                  <View style={styles.metaRow}>
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>Recurring Event</Text>
+                    </View>
+                    <Pressable
+                      style={styles.reviewLink}
+                      onPress={() => navigation.navigate("ReviewsScreen")}
+                    >
+                      <Text style={styles.review}>Reviews</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={16}
+                        color="#7F00FF"
                       />
-                    ))}
+                    </Pressable>
                   </View>
-                </View>
 
-                <Text style={styles.section}>About Event</Text>
-                <Text style={styles.about} numberOfLines={5}>
-                  {(event as any)?.description ??
-                    "Apostolic Invitation is a powerful gathering designed to ignite faith, deepen spiritual understanding, and foster community among believers across generations."}
-                </Text>
-
-                <Pressable onPress={() => setShowModal(true)}>
-                  <Text style={styles.readMore}>Read more</Text>
-                </Pressable>
-
-                <View style={styles.metaRow}>
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>Recurring Event</Text>
+                  <View style={styles.locationCard}>
+                    <Pressable onPress={() => setIsMapFullScreen(true)}>
+                      <MapView
+                        style={styles.map}
+                        initialRegion={{
+                          latitude: 32.5252,
+                          longitude: -92.714,
+                          latitudeDelta: 0.01,
+                          longitudeDelta: 0.01,
+                        }}
+                      >
+                        <Marker
+                          coordinate={{ latitude: 32.5252, longitude: -92.714 }}
+                        />
+                      </MapView>
+                    </Pressable>
+                    <View style={styles.locationInfo}>
+                      <Text style={styles.address}>
+                        123 Revival Street, Grambling, Louisiana
+                      </Text>
+                      <Pressable style={styles.directions}>
+                        <Ionicons
+                          name="arrow-up-outline"
+                          size={18}
+                          color="#FFF"
+                        />
+                        <Text style={styles.directionsText}>
+                          Get Directions
+                        </Text>
+                      </Pressable>
+                    </View>
                   </View>
-                  <Pressable style={styles.reviewLink}>
-                    <Text style={styles.review}>Reviews</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#7F00FF"
-                    />
+
+                  <Pressable style={styles.viewMore}>
+                    <Text style={styles.viewMoreText}>
+                      View more event details
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color="#FFF" />
                   </Pressable>
                 </View>
 
-                <View style={styles.locationCard}>
-                  <MapView
-                    style={styles.map}
-                    initialRegion={{
-                      latitude: 32.5252,
-                      longitude: -92.714,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                  >
-                    <Marker
-                      coordinate={{ latitude: 32.5252, longitude: -92.714 }}
-                    />
-                  </MapView>
-                  <View style={styles.locationInfo}>
-                    <Text style={styles.address}>
-                      123 Revival Street, Grambling, Louisiana
-                    </Text>
-                    <Pressable style={styles.directions}>
-                      <Ionicons
-                        name="arrow-up-outline"
-                        size={18}
-                        color="#FFF"
-                      />
-                      <Text style={styles.directionsText}>Get Directions</Text>
-                    </Pressable>
-                  </View>
-                </View>
+                <BuzzCard />
 
-                <Pressable style={styles.viewMore}>
-                  <Text style={styles.viewMoreText}>
-                    View more event details
-                  </Text>
-                  <Ionicons name="chevron-forward" size={16} color="#FFF" />
+                {/* Register button */}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.registerButton,
+                    pressed && styles.registerButtonPressed,
+                  ]}
+                  onPress={() => ticketModalRef.current?.present()}
+                >
+                  <LinearGradient
+                    colors={["rgba(110, 35, 186, 1)", "rgba(40, 38, 145, 1)"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <Text style={styles.registerButtonText}>Register</Text>
                 </Pressable>
+
+                <View style={{ height: 40 }} />
               </View>
-
-              {/* Register button */}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.registerButton,
-                  pressed && styles.registerButtonPressed,
-                ]}
-                onPress={() => ticketModalRef.current?.present()}
-              >
-                <LinearGradient
-                  colors={["rgba(110, 35, 186, 1)", "rgba(40, 38, 145, 1)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={StyleSheet.absoluteFill}
-                />
-                <Text style={styles.registerButtonText}>Register</Text>
-              </Pressable>
-
-              <View style={{ height: 40 }} />
-            </View>
-          </LinearGradient>
-        </View>
-      </ScrollView>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      )}
 
       {/* Fixed hero buttons */}
       <View
@@ -552,10 +598,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 3,
   },
   contentTitle: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "700",
     color: "#FFF",
   },
@@ -570,23 +616,23 @@ const styles = StyleSheet.create({
   },
   dateRow: {
     flexDirection: "row",
-    marginVertical: 20,
+    marginVertical: 14,
   },
   calendar: {
-    width: 72,
-    height: 72,
+    width: 50,
+    height: 50,
     backgroundColor: "#1E1E3F",
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 16,
+    marginRight: 12,
   },
   month: {
     color: "#9CA3AF",
   },
   day: {
     color: "#FFF",
-    fontSize: 32,
+    fontSize: 22,
     fontWeight: "800",
   },
   fullDate: {
@@ -603,7 +649,7 @@ const styles = StyleSheet.create({
   },
   attendingRow: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 10,
   },
   attending: {
     color: "#7F00FF",
@@ -740,5 +786,22 @@ const styles = StyleSheet.create({
     color: "#7F00FF",
     marginTop: 20,
     textAlign: "center",
+  },
+  fullScreenMap: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#000",
+    zIndex: 100,
+  },
+  fullScreenBackButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 101,
   },
 });

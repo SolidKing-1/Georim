@@ -9,7 +9,7 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Linking from "expo-linking";
 
-import type { RootStackParamList } from "../App";
+import { RootStackParamList } from "../types/navigation";
 
 // Screens
 import LoginScreen from "../screens/LoginScreen";
@@ -39,6 +39,7 @@ import ResetPasswordScreen from "../screens/ResetPasswordScreen";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import SplashScreen from "../screens/SplashScreen";
 import Welcome from "../screens/Welcome";
+import ReviewsScreen from "../screens/ReviewsScreen";
 
 import Navbar from "../components/Navbar";
 
@@ -47,25 +48,22 @@ type Props = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
-
 const prefix = Linking.createURL("/");
 
-function getActiveRouteName(state: NavigationState | undefined): string | undefined {
+function getActiveRouteName(
+  state: NavigationState | undefined,
+): string | undefined {
   if (!state) return undefined;
   const route = state.routes[state.index] as any;
-  if (route?.state) return getActiveRouteName(route.state as any);
-  return route?.name as string | undefined;
+  if (route?.state) return getActiveRouteName(route.state);
+  return route?.name;
 }
 
 type NavbarVariant = "dashboard" | "search";
 type NavbarTab = "Home" | "Explore" | "Community" | "Profile";
 
-function routeToNavbarMeta(routeName: string | undefined): {
-  visible: boolean;
-  variant: NavbarVariant;
-  activeTab: NavbarTab;
-} {
-  const hiddenRoutes = new Set<string>([
+function routeToNavbarMeta(routeName?: string) {
+  const hiddenRoutes = new Set([
     "Login",
     "SignUp",
     "ForgotPassword",
@@ -76,9 +74,11 @@ function routeToNavbarMeta(routeName: string | undefined): {
     "WelcomeExisting",
     "Onboarding",
     "RegisterEvent",
+    "ReviewsScreen",
+    "EventDetails",
   ]);
 
-  const searchVariantRoutes = new Set<string>([
+  const searchVariantRoutes = new Set([
     "Search",
     "AllEvents",
     "CategoryList",
@@ -86,13 +86,12 @@ function routeToNavbarMeta(routeName: string | undefined): {
   ]);
 
   const visible = routeName ? !hiddenRoutes.has(routeName) : false;
-  const variant: NavbarVariant = routeName && searchVariantRoutes.has(routeName) ? "search" : "dashboard";
+  const variant: NavbarVariant =
+    routeName && searchVariantRoutes.has(routeName) ? "search" : "dashboard";
 
   let activeTab: NavbarTab = "Home";
+
   switch (routeName) {
-    case "Dashboard":
-      activeTab = "Home";
-      break;
     case "ExploreScreen":
       activeTab = "Explore";
       break;
@@ -103,119 +102,135 @@ function routeToNavbarMeta(routeName: string | undefined): {
     case "AccountScreen":
       activeTab = "Profile";
       break;
-    default:
-      activeTab = "Home";
   }
 
   return { visible, variant, activeTab };
 }
 
 export default function MainLayout({ initialRoute }: Props) {
-  const navRef = useRef<NavigationContainerRef<RootStackParamList> | null>(null);
-  const [routeName, setRouteName] = useState<string | undefined>(undefined);
+  const navRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+
+  const [routeName, setRouteName] = useState<string>();
 
   const meta = useMemo(() => routeToNavbarMeta(routeName), [routeName]);
 
   const handleReady = useCallback(() => {
-    const current = navRef.current?.getCurrentRoute()?.name;
-    setRouteName(current);
+    setRouteName(navRef.current?.getCurrentRoute()?.name);
   }, []);
 
   const handleStateChange = useCallback((state?: NavigationState) => {
     setRouteName(getActiveRouteName(state));
   }, []);
 
-  const handleHomePress = useCallback(() => {
-    navRef.current?.navigate("Dashboard");
-  }, []);
-
-  const handleSearchPress = useCallback(() => {
-    // Dashboard search button should take user to Search screen (search variant),
-    // not auto-open the full-screen modal.
-    navRef.current?.navigate("Search");
-  }, []);
-
   return (
     <BottomSheetModalProvider>
-    <NavigationContainer
-      ref={(r) => {
-        navRef.current = r as unknown as NavigationContainerRef<RootStackParamList>;
-      }}
-      onReady={handleReady}
-      onStateChange={handleStateChange}
-      linking={{
-        prefixes: [prefix, "georim://"],
-        config: {
-          screens: {
-            Login: "login",
-            // ...other screens
+      <NavigationContainer
+        ref={navRef}
+        onReady={handleReady}
+        onStateChange={handleStateChange}
+        linking={{
+          prefixes: [prefix, "georim://"],
+          config: {
+            screens: {
+              Login: "login",
+            },
           },
-        },
-      }}
-    >
-      <View style={styles.root}>
-        <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="Dashboard" component={DashboardScreen} />
-          <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
-          <Stack.Screen name="EventSuccess" component={EventSuccessScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
-          <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
-          <Stack.Screen name="Cancelpage" component={CancelScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
-          <Stack.Screen name="RegisterEvent" component={RegisterEventScreen} />
-          <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
-          <Stack.Screen name="ExploreScreen" component={ExploreScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={SearchScreen} />
-          <Stack.Screen name="CategoryList" component={CategoryListScreen} />
-          <Stack.Screen name="AllEvents" component={AllEventsScreen} />
-          <Stack.Screen name="BrowseAll" component={BrowseAllScreen} />
-          <Stack.Screen name="AccountScreen" component={AccountScreen} />
-          <Stack.Screen name="EventCreatedPage" component={EventCreatedPage} options={{ headerShown: false }} />
-          <Stack.Screen name="ActivitySnapshot" component={ActivitySnapshot} options={{ headerShown: false }} />
-          <Stack.Screen name="HelpAndSupportScreen" component={HelpAndSupportScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Profile" component={Profile} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="VerifyPasscode" component={VerifyPasscodeScreen} />
-          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-          <Stack.Screen name="Splash" component={SplashScreen} />
+        }}
+      >
+        <View style={styles.root}>
+          <Stack.Navigator
+            initialRouteName={initialRoute}
+            screenOptions={{ headerShown: false }}
+          >
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
+            <Stack.Screen name="Dashboard" component={DashboardScreen} />
+            <Stack.Screen name="CreateEvent" component={CreateEventScreen} />
+            <Stack.Screen name="EventSuccess" component={EventSuccessScreen} />
+            <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
+            <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
+            <Stack.Screen name="Cancelpage" component={CancelScreen} />
+            <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+            <Stack.Screen
+              name="RegisterEvent"
+              component={RegisterEventScreen}
+            />
+            <Stack.Screen name="PaymentScreen" component={PaymentScreen} />
+            <Stack.Screen name="ExploreScreen" component={ExploreScreen} />
+            <Stack.Screen name="Search" component={SearchScreen} />
+            <Stack.Screen name="CategoryList" component={CategoryListScreen} />
+            <Stack.Screen name="AllEvents" component={AllEventsScreen} />
+            <Stack.Screen name="BrowseAll" component={BrowseAllScreen} />
+            <Stack.Screen name="AccountScreen" component={AccountScreen} />
+            <Stack.Screen
+              name="EventCreatedPage"
+              component={EventCreatedPage}
+            />
+            <Stack.Screen
+              name="ActivitySnapshot"
+              component={ActivitySnapshot}
+            />
+            <Stack.Screen
+              name="HelpAndSupportScreen"
+              component={HelpAndSupportScreen}
+            />
+            <Stack.Screen name="Profile" component={Profile} />
+            <Stack.Screen
+              name="ForgotPassword"
+              component={ForgotPasswordScreen}
+            />
+            <Stack.Screen
+              name="VerifyPasscode"
+              component={VerifyPasscodeScreen}
+            />
+            <Stack.Screen
+              name="ResetPassword"
+              component={ResetPasswordScreen}
+            />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="ReviewsScreen" component={ReviewsScreen} />
 
-          <Stack.Screen name="WelcomeNew" options={{ headerShown: false }}>
-            {() => <Welcome title={["Find Your", "First Event"]} nextRoute="Dashboard" />}
-          </Stack.Screen>
+            <Stack.Screen name="WelcomeNew">
+              {() => (
+                <Welcome
+                  title={["Find Your", "First Event"]}
+                  nextRoute="Dashboard"
+                />
+              )}
+            </Stack.Screen>
 
-          <Stack.Screen name="WelcomeExisting" options={{ headerShown: false }}>
-            {() => <Welcome title={["Hey", "Ready for Tonight?"]} nextRoute="Dashboard" />}
-          </Stack.Screen>
+            <Stack.Screen name="WelcomeExisting">
+              {() => (
+                <Welcome
+                  title={["Hey", "Ready for Tonight?"]}
+                  nextRoute="Dashboard"
+                />
+              )}
+            </Stack.Screen>
+          </Stack.Navigator>
 
-          <Stack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
-        </Stack.Navigator>
-
-        <View pointerEvents="box-none" style={styles.navbarOverlay}>
-          <Navbar
-            variant={meta.variant}
-            activeTab={meta.activeTab}
-            onHomePress={handleHomePress}
-            onSearchPress={handleSearchPress}
-            visible={meta.visible}
-          />
+          <View pointerEvents="box-none" style={styles.navbarOverlay}>
+            <Navbar
+              variant={meta.variant}
+              activeTab={meta.activeTab}
+              visible={meta.visible}
+              onHomePress={() => navRef.current?.navigate("Dashboard")}
+              onSearchPress={() => navRef.current?.navigate("Search")}
+            />
+          </View>
         </View>
-      </View>
-    </NavigationContainer>
+      </NavigationContainer>
     </BottomSheetModalProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
+  root: { flex: 1 },
   navbarOverlay: {
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 16, // match current Dashboard positioning
+    bottom: 16,
   },
 });
-

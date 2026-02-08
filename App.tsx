@@ -5,7 +5,11 @@ export type RootStackParamList = {
   CreateEvent: undefined;
   EventSuccess: undefined;
   EventDetails: { eventId: string; event?: any };
-  RegisterEvent: { eventId: string; event?: any; selectedTier?: { id: string; title: string; price: string } };
+  RegisterEvent: {
+    eventId: string;
+    event?: any;
+    selectedTier?: { id: string; title: string; price: string };
+  };
   VerifyLocation: undefined;
   CheckinScreen: undefined;
   Cancelpage: undefined;
@@ -27,6 +31,7 @@ export type RootStackParamList = {
   WelcomeNew: undefined;
   WelcomeExisting: undefined;
   Splash: undefined;
+  ReviewsScreen: undefined;
 };
 
 import React, { useEffect, useState } from "react";
