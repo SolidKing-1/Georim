@@ -19,6 +19,7 @@ export default {
 
     extra: {
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+      STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
       BACKEND_URL: process.env.BACKEND_URL,
       eas: {
         projectId: "2bd07bef-b542-48da-aaef-ea9dec3f92bb",

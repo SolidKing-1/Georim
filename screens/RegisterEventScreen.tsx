@@ -660,10 +660,19 @@ function RegisterEventScreen() {
         ref={orderSummaryModalRef}
         ticketTierName={(selectedTier as any)?.title}
         ticketPrice={(selectedTier as any)?.price}
-        onContinue={() =>
-          navigation.navigate("EventDetails", {
-            eventId: eventId ?? "",
-            event,
+        ticketTierId={(selectedTier as any)?.id}
+        eventId={eventId}
+        onContinue={(orderData) =>
+          navigation.navigate("PaymentScreen", {
+            eventId,
+            ticketTierId: (selectedTier as any)?.id,
+            ticketTierName: (selectedTier as any)?.title,
+            ticketPrice: (selectedTier as any)?.price,
+            quantity: orderData.quantity,
+            subtotal: orderData.subtotal,
+            fees: orderData.fees,
+            total: orderData.total,
+            promoCode: orderData.promoCode,
           })
         }
       />

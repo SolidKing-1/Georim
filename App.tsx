@@ -14,7 +14,17 @@ export type RootStackParamList = {
   CategoryList: { category: string };
   AllEvents: undefined;
   BrowseAll: undefined;
-  PaymentScreen: undefined;
+  PaymentScreen: {
+    eventId?: string;
+    ticketTierId?: string;
+    ticketTierName?: string;
+    ticketPrice?: string;
+    quantity?: number;
+    subtotal?: string;
+    fees?: string;
+    total?: string;
+    promoCode?: string;
+  };
   EventCreatedPage: undefined;
   AccountScreen: undefined;
   ActivitySnapshot: undefined;
