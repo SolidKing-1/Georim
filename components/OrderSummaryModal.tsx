@@ -10,7 +10,7 @@ import {
   BottomSheetScrollView,
   BottomSheetBackdrop,
 } from "@gorhom/bottom-sheet";
-import { LinearGradient } from "expo-linear-gradient";
+import PrimaryButton from "./PrimaryButton";
 
 export type OrderSummaryModalRef = {
   present: () => void;
@@ -20,8 +20,16 @@ export type OrderSummaryModalRef = {
 type OrderSummaryModalProps = {
   ticketTierName?: string;
   ticketPrice?: string;
+  ticketTierId?: string;
+  eventId?: string;
   onClose?: () => void;
-  onContinue?: () => void;
+  onContinue?: (orderData: {
+    quantity: number;
+    subtotal: string;
+    fees: string;
+    total: string;
+    promoCode: string;
+  }) => void;
 };
 
 const OrderSummaryModal = forwardRef<
@@ -31,6 +39,8 @@ const OrderSummaryModal = forwardRef<
   {
     ticketTierName = "Premium Guest",
     ticketPrice = "$10",
+    ticketTierId,
+    eventId,
     onClose,
     onContinue,
   },
@@ -54,10 +64,16 @@ const OrderSummaryModal = forwardRef<
 
   const handleContinue = () => {
     bottomSheetRef.current?.dismiss();
-    onContinue?.();
+    onContinue?.({
+      quantity,
+      subtotal,
+      fees,
+      total,
+      promoCode,
+    });
   };
 
-  const snapPoints = React.useMemo(() => ["55%"], []);
+  const snapPoints = React.useMemo(() => ["60%"], []);
   const renderBackdrop = React.useCallback(
     (props: any) => (
       <BottomSheetBackdrop
@@ -96,41 +112,36 @@ const OrderSummaryModal = forwardRef<
         </Text>
 
         {/* Number of ticket */}
-        <Text style={styles.fieldLabel}>Number of ticket</Text>
         <View style={styles.quantityRow}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.quantityButton,
-              pressed && styles.quantityButtonPressed,
-            ]}
-            onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-          >
-            <Text style={styles.quantityButtonText}>−</Text>
-          </Pressable>
-          <View style={styles.quantityValueWrap}>
-            <Text style={styles.quantityValue}>{quantity}</Text>
+          <Text style={styles.fieldLabelInRow}>Number of ticket</Text>
+          <View style={styles.quantityControl}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.quantityButton,
+                pressed && styles.quantityButtonPressed,
+              ]}
+              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+            >
+              <Text style={styles.quantityButtonText}>−</Text>
+            </Pressable>
+            <View style={styles.quantityValueWrap}>
+              <Text style={styles.quantityValue}>{quantity}</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [
+                styles.quantityButton,
+                pressed && styles.quantityButtonPressed,
+              ]}
+              onPress={() => setQuantity((q) => q + 1)}
+            >
+              <Text style={styles.quantityButtonText}>+</Text>
+            </Pressable>
           </View>
-          <Pressable
-            style={({ pressed }) => [
-              styles.quantityButton,
-              pressed && styles.quantityButtonPressed,
-            ]}
-            onPress={() => setQuantity((q) => q + 1)}
-          >
-            <Text style={styles.quantityButtonText}>+</Text>
-          </Pressable>
         </View>
 
         {/* Promotional Code */}
-        <Text style={styles.fieldLabel}>Promotional Code</Text>
         <View style={styles.promoRow}>
-          <TextInput
-            style={styles.promoInput}
-            value={promoCode}
-            onChangeText={setPromoCode}
-            placeholder="Enter code"
-            placeholderTextColor="#9CA3AF"
-          />
+          <Text style={styles.fieldLabelInRow}>Promotional Code</Text>
           <Pressable
             style={({ pressed }) => [
               styles.promoRemoveButton,
@@ -159,27 +170,7 @@ const OrderSummaryModal = forwardRef<
         </View>
 
         {/* Continue button */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.continueButton,
-            pressed && styles.continueButtonPressed,
-          ]}
-          onPress={handleContinue}
-        >
-          <LinearGradient
-            colors={
-              [
-                "rgba(110, 35, 186, 1)",
-                "rgba(127, 0, 255, 1)",
-                "rgba(168, 85, 247, 1)",
-              ] as const
-            }
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </Pressable>
+        <PrimaryButton title="Continue" onPress={handleContinue} />
 
         <View style={{ height: 32 }} />
       </BottomSheetScrollView>
@@ -205,45 +196,60 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
+    fontSize: 20,
+    fontWeight: "500",
     color: "#FFFFFF",
     marginBottom: 12,
   },
   ticketDescription: {
     fontSize: 15,
-    color: "#FFFFFF",
+    color: "#8F8E9B",
     marginBottom: 6,
   },
   ticketTierName: {
-    color: "#A855F7",
+    color: "#932FF8",
     fontWeight: "600",
   },
   disclaimer: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: "#8F8E9B",
     marginBottom: 20,
     lineHeight: 18,
   },
   fieldLabel: {
-    fontSize: 15,
-    fontWeight: "500",
-    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "400",
+    color: "#8F8E9B",
     marginBottom: 8,
+  },
+  fieldLabelInRow: {
+    fontSize: 16,
+    fontWeight: "400",
+    color: "#8F8E9B",
   },
   quantityRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E3F",
-    borderRadius: 12,
+    justifyContent: "space-between",
+    backgroundColor: "#05031B",
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#6B7280",
+    borderColor: "#131245",
+    paddingHorizontal: 16,
     marginBottom: 16,
+    height: 52,
+  },
+  quantityControl: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#37375B",
+    borderRadius: 999,
     overflow: "hidden",
+    height: 33,
   },
   quantityButton: {
-    width: 48,
-    height: 48,
+    width: 20,
+    height: 27,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -251,30 +257,29 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   quantityButtonText: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "600",
     color: "#FFFFFF",
   },
   quantityValueWrap: {
-    flex: 1,
+    paddingHorizontal: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   quantityValue: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "500",
     color: "#FFFFFF",
   },
   promoRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1E1E3F",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#6B7280",
-    paddingHorizontal: 4,
-    marginBottom: 20,
-    height: 48,
+    justifyContent: "space-between",
+    backgroundColor: "#0E0D32",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    height: 58,
   },
   promoInput: {
     flex: 1,
@@ -291,10 +296,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   priceBox: {
-    backgroundColor: "rgba(30, 30, 63, 0.6)",
-    borderRadius: 12,
+    backgroundColor: "#05031B",
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(107, 114, 128, 0.5)",
+    borderColor: "#131245",
     padding: 16,
     marginBottom: 24,
   },
@@ -306,43 +311,26 @@ const styles = StyleSheet.create({
   },
   priceLabel: {
     fontSize: 15,
-    color: "rgba(255,255,255,0.9)",
+    color: "#8F8E9B",
   },
   priceValue: {
     fontSize: 15,
-    color: "rgba(255,255,255,0.9)",
+    color: "#FFFFFF",
     fontWeight: "500",
   },
   priceDivider: {
     height: 1,
-    backgroundColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "#131245",
     marginVertical: 10,
   },
   priceTotalLabel: {
     fontSize: 17,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontWeight: "500",
+    color: "#8F8E9B",
   },
   priceTotalValue: {
-    fontSize: 18,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "500",
     color: "#FFFFFF",
-  },
-  continueButton: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    overflow: "hidden",
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  continueButtonPressed: {
-    opacity: 0.9,
-  },
-  continueButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    zIndex: 1,
   },
 });

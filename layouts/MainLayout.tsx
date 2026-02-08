@@ -1,6 +1,8 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
+import { StripeProvider } from "@stripe/stripe-react-native";
+import Constants from "expo-constants";
 import {
   NavigationContainer,
   NavigationContainerRef,
@@ -49,6 +51,8 @@ type Props = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const prefix = Linking.createURL("/");
+const STRIPE_PUBLISHABLE_KEY =
+  Constants.expoConfig?.extra?.STRIPE_PUBLISHABLE_KEY ?? "";
 
 function getActiveRouteName(
   state: NavigationState | undefined,
