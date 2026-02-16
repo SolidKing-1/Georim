@@ -9,6 +9,7 @@ export type RootStackParamList = {
     eventId: string;
     event?: any;
     selectedTier?: { id: string; title: string; price: string };
+    openOrderSummary?: boolean;
   };
   VerifyLocation: undefined;
   CheckinScreen: undefined;
@@ -20,6 +21,7 @@ export type RootStackParamList = {
   BrowseAll: undefined;
   PaymentScreen: {
     eventId?: string;
+    event?: any;
     ticketTierId?: string;
     ticketTierName?: string;
     ticketPrice?: string;

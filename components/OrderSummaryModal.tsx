@@ -44,10 +44,10 @@ const OrderSummaryModal = forwardRef<
     onClose,
     onContinue,
   },
-  ref
+  ref,
 ) {
   const bottomSheetRef = useRef<BottomSheetModal>(null);
-  const [quantity, setQuantity] = useState(3);
+  const [quantity, setQuantity] = useState(1);
   const [promoCode, setPromoCode] = useState("");
 
   useImperativeHandle(ref, () => ({
@@ -82,7 +82,7 @@ const OrderSummaryModal = forwardRef<
         appearsOnIndex={0}
       />
     ),
-    []
+    [],
   );
 
   return (
