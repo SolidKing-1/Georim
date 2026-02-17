@@ -1,12 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  Pressable,
-} from "react-native";
+import { View, Text, StyleSheet, Alert, Pressable } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useStripe } from "@stripe/stripe-react-native";
 import Constants from "expo-constants";
@@ -14,6 +7,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "../App";
 import PrimaryButton from "../components/PrimaryButton";
+import PurpleGradientSpinner from "../components/PurpleGradientSpinner";
 import { getToken } from "../utils/auth";
 
 type NavigationProp = NativeStackNavigationProp<
@@ -25,14 +19,21 @@ type PaymentScreenRoute = RouteProp<RootStackParamList, "PaymentScreen">;
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL;
 const CREATE_PAYMENT_SHEET_ENDPOINT = "/checkout";
 
-const PaymentScreen = () => {
+/**
+ * Dummy UUIDs for testing PaymentSheet (dev only). Must match real events/ticket types in the backend.
+ */
+const DUMMY_EVENT_ID = "9bc99614-c742-4a12-8885-595fcc326885";
+const DUMMY_TICKET_TYPE_ID = "7c2178d4-4a89-4645-9c2e-b43b8e397dcc";
+
+const PaymentScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<PaymentScreenRoute>();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [loading, setLoading] = useState(false);
 
   const {
-    eventId,
+    eventId: eventIdParam,
+    event,
     ticketTierId,
     ticketTierName,
     ticketPrice,
@@ -42,11 +43,12 @@ const PaymentScreen = () => {
     total,
     promoCode = "",
   } = route.params ?? {};
+  const eventId = eventIdParam ?? (event as any)?.uuid ?? (event as any)?.id;
 
   const fetchPaymentSheetParams = async () => {
     if (!BACKEND_URL) {
       throw new Error(
-        "BACKEND_URL is not set. Add BACKEND_URL to your .env file and restart Expo."
+        "BACKEND_URL is not set. Add BACKEND_URL to your .env file and restart Expo.",
       );
     }
 
@@ -55,12 +57,37 @@ const PaymentScreen = () => {
       throw new Error("You must be logged in to complete payment.");
     }
 
-    // Calculate amount in cents (Stripe requires integer cents)
-    const amountInCents = total
-      ? Math.round(parseFloat(total) * 100)
-      : ticketPrice
-        ? Math.round(parseFloat(ticketPrice.replace(/[^0-9.]/g, "")) * quantity * 100)
-        : 0;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    let resolvedEventId =
+      eventId && uuidRegex.test(String(eventId)) ? eventId : null;
+    let resolvedTicketTypeId =
+      ticketTierId && uuidRegex.test(String(ticketTierId))
+        ? ticketTierId
+        : null;
+
+    if (__DEV__ && (!resolvedEventId || !resolvedTicketTypeId)) {
+      resolvedEventId = resolvedEventId ?? DUMMY_EVENT_ID;
+      resolvedTicketTypeId = resolvedTicketTypeId ?? DUMMY_TICKET_TYPE_ID;
+    }
+
+    if (!resolvedEventId || !uuidRegex.test(String(resolvedEventId))) {
+      throw new Error(
+        "Checkout requires a valid event UUID. Ensure your API returns event.uuid (or event.id as a UUID) and that you navigated from an event loaded from the API.",
+      );
+    }
+    if (
+      !resolvedTicketTypeId ||
+      !uuidRegex.test(String(resolvedTicketTypeId))
+    ) {
+      throw new Error("A valid ticket type ID (UUID) is required to checkout.");
+    }
+    const items = [
+      {
+        ticketTypeId: resolvedTicketTypeId,
+        quantity: quantity ?? 1,
+      },
+    ];
 
     const response = await fetch(
       `${BACKEND_URL}${CREATE_PAYMENT_SHEET_ENDPOINT}`,
@@ -71,18 +98,12 @@ const PaymentScreen = () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          eventId,
-          ticketTierId,
-          ticketTierName,
-          quantity,
-          amount: amountInCents,
+          eventId: resolvedEventId,
+          items,
           currency: "usd",
-          subtotal: subtotal ? parseFloat(subtotal) : undefined,
-          fees: fees ? parseFloat(fees) : undefined,
-          total: total ? parseFloat(total) : undefined,
-          promoCode: promoCode || undefined,
+          ...(promoCode ? { promoCode } : {}),
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -90,13 +111,12 @@ const PaymentScreen = () => {
       throw new Error(`Stripe setup failed: ${response.status} - ${text}`);
     }
 
-    const { paymentIntentClientSecret, ephemeralKey, customer } =
-      await response.json();
-
+    const data = await response.json();
     return {
-      paymentIntentClientSecret,
-      ephemeralKey,
-      customer,
+      paymentIntentClientSecret:
+        data.clientSecret ?? data.paymentIntentClientSecret,
+      ephemeralKey: data.ephemeralKey,
+      customer: data.customerId ?? data.customer,
     };
   };
 
@@ -113,6 +133,36 @@ const PaymentScreen = () => {
         paymentIntentClientSecret,
         merchantDisplayName: "Georim",
         allowsDelayedPaymentMethods: true,
+        returnURL: "georim://stripe-redirect",
+        appearance: {
+          colors: {
+            primary: "#932FF8",
+            background: "#05031B",
+            componentBackground: "#1E1E3F",
+            componentBorder: "#E5E7EB",
+            componentDivider: "#6B7280",
+            primaryText: "#FFFFFF",
+            secondaryText: "#8F8E9B",
+            componentText: "#FFFFFF",
+            placeholderText: "#8F8E9B",
+            icon: "#FFFFFF",
+            error: "#EF4444",
+          },
+          shapes: {
+            borderRadius: 12,
+            borderWidth: 1,
+          },
+          primaryButton: {
+            colors: {
+              background: "#932FF8",
+              text: "#FFFFFF",
+              border: "#932FF8",
+            },
+            shapes: {
+              borderRadius: 15,
+            },
+          },
+        },
       });
 
       if (initError) {
@@ -123,7 +173,21 @@ const PaymentScreen = () => {
       const { error } = await presentPaymentSheet();
 
       if (error) {
-        if (error.code !== "Canceled") {
+        if (error.code === "Canceled") {
+          navigation.navigate("RegisterEvent", {
+            eventId: eventId ?? "",
+            event,
+            selectedTier:
+              ticketTierId && ticketTierName && ticketPrice
+                ? {
+                    id: ticketTierId,
+                    title: ticketTierName,
+                    price: ticketPrice,
+                  }
+                : undefined,
+            openOrderSummary: true,
+          });
+        } else {
           Alert.alert("Payment canceled", error.message);
         }
         return;
@@ -155,7 +219,7 @@ const PaymentScreen = () => {
 
       <View style={styles.content}>
         {loading ? (
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <PurpleGradientSpinner size={56} duration={2000} />
         ) : (
           <PrimaryButton title="Pay now" onPress={openPaymentSheet} />
         )}

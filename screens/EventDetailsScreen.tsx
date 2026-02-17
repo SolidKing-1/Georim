@@ -1531,8 +1531,10 @@ export default function EventDetailsScreen() {
         eventDescription={(event as any)?.description}
         onSelectTicket={(tier) => {
           ticketModalRef.current?.dismiss();
+          // Prefer backend UUID so checkout API accepts it
+          const id = (event as any)?.uuid ?? eventId ?? (event as any)?.id ?? "";
           navigation.navigate("RegisterEvent", {
-            eventId: eventId ?? "",
+            eventId: String(id),
             event,
             selectedTier: tier,
           });
