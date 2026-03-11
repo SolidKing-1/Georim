@@ -14,7 +14,12 @@ import {
   ViewToken,
   Platform,
 } from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import {
+  useNavigation,
+  useRoute,
+  RouteProp,
+  useFocusEffect,
+} from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -84,7 +89,16 @@ function RegisterEventScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<RegisterEventRoute>();
   const insets = useSafeAreaInsets();
-  const { eventId, event, selectedTier } = route.params ?? {};
+  const { eventId, event, selectedTier, openOrderSummary } = route.params ?? {};
+
+  useFocusEffect(
+    useCallback(() => {
+      if (openOrderSummary) {
+        orderSummaryModalRef.current?.present();
+        navigation.setParams({ openOrderSummary: false } as any);
+      }
+    }, [openOrderSummary, navigation])
+  );
 
   const [registrationType, setRegistrationType] = useState("");
   const [selectedCohort, setSelectedCohort] = useState<string | null>(null);
@@ -662,19 +676,21 @@ function RegisterEventScreen() {
         ticketPrice={(selectedTier as any)?.price}
         ticketTierId={(selectedTier as any)?.id}
         eventId={eventId}
-        onContinue={(orderData) =>
+        onContinue={(orderData) => {
+          const tier = selectedTier as any;
           navigation.navigate("PaymentScreen", {
-            eventId,
-            ticketTierId: (selectedTier as any)?.id,
-            ticketTierName: (selectedTier as any)?.title,
-            ticketPrice: (selectedTier as any)?.price,
+            eventId: event?.uuid ?? eventId,
+            event,
+            ticketTierId: tier?.uuid ?? tier?.id,
+            ticketTierName: tier?.title,
+            ticketPrice: tier?.price,
             quantity: orderData.quantity,
             subtotal: orderData.subtotal,
             fees: orderData.fees,
             total: orderData.total,
             promoCode: orderData.promoCode,
-          })
-        }
+          });
+        }}
       />
     </View>
   );
