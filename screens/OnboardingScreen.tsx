@@ -12,7 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../App";
-import { Video, ResizeMode } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
 
 const { width, height } = Dimensions.get("window");
 
@@ -58,6 +58,22 @@ type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   "Onboarding"
 >;
+
+function OnboardingVideoSlide({ source }: { source: any }) {
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  return (
+    <VideoView
+      player={player}
+      style={styles.fullImage}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+}
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -164,14 +180,7 @@ export default function OnboardingScreen() {
     index: number;
   }) => (
     <View style={styles.slide}>
-      <Video
-        source={item.video}
-        style={styles.fullImage}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay
-        isLooping
-        isMuted
-      />
+      <OnboardingVideoSlide source={item.video} />
     </View>
   );
 

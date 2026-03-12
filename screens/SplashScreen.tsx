@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { StyleSheet, Animated, Easing } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { Audio } from "expo-av";
+import { useAudioPlayer } from "expo-audio";
 
 const CHEVRON_SIZE = 34;
 const STACK_GAP_Y = 7;
@@ -33,22 +33,10 @@ export default function SplashScreen() {
 
 
   /** ---------------------------- Sound reference ---------------------------- */
-  const soundRef = useRef<Audio.Sound | null>(null);
-
+  const pingPlayer = useAudioPlayer(require("../assets/sounds/ping.mp3"));
   useEffect(() => {
-    async function loadPing() {
-      const { sound } = await Audio.Sound.createAsync(
-        require("../assets/sounds/ping.mp3"),
-        { volume: 0.25 },
-      );
-      soundRef.current = sound;
-    }
-    loadPing();
-
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
-  }, []);
+    pingPlayer.volume = 0.25;
+  }, [pingPlayer]);
 
   /** ---------------------------- Reset animations ---------------------------- */
   const resetAnimations = () => {
@@ -141,8 +129,8 @@ export default function SplashScreen() {
             useNativeDriver: true,
           }),
         ]).start(async () => {
-          // Play ping sound
-          await soundRef.current?.replayAsync();
+          pingPlayer.seekTo(0);
+          pingPlayer.play();
 
 
           setTimeout(() => {

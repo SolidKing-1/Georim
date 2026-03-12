@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   Modal,
   TextInput,
   FlatList,
@@ -14,6 +13,7 @@ import {
   Share,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import GaugeChart from "../components/GaugeChart";
 import Icon from "react-native-vector-icons/Ionicons";
 import QRCode from "react-native-qrcode-svg";

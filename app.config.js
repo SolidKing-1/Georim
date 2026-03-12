@@ -15,7 +15,7 @@ export default {
       package: "com.yourcompany.georimapp",
     },
 
-    plugins: ["expo-secure-store", "expo-web-browser"],
+    plugins: ["expo-secure-store", "expo-web-browser", "expo-video", "expo-audio"],
 
     extra: {
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,

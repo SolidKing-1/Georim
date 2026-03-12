@@ -18,7 +18,7 @@ import LikeIcon from "../assets/explore_page/like.png";
 import SendIcon from "../assets/explore_page/send.png";
 import * as Sharing from "expo-sharing";
 import * as Animatable from "react-native-animatable";
-import { Video, ResizeMode } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
 import Icon from "react-native-vector-icons/Ionicons";
 
 const { width } = Dimensions.get("window");
@@ -111,6 +111,49 @@ type RootStackParamList = {
   AccountScreen: undefined;
 };
 
+function PreviewVideo({ source }: { source: any }) {
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+  return (
+    <VideoView
+      player={player}
+      style={styles.videoPreview}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+}
+
+function FullscreenVideoItem({
+  source,
+  shouldPlay,
+}: {
+  source: any;
+  shouldPlay: boolean;
+}) {
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.muted = false;
+  });
+
+  React.useEffect(() => {
+    if (shouldPlay) player.play();
+    else player.pause();
+  }, [shouldPlay, player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.fullscreenVideo}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+}
+
 export default function ExploreScreen() {
   const navSlideAnim = useRef(new Animated.Value(100)).current;
   useEffect(() => {
@@ -133,8 +176,6 @@ export default function ExploreScreen() {
   const [pausedVideos, setPausedVideos] = useState<{ [key: string]: boolean }>(
     {}
   );
-  const previewVideoRef = useRef<Video>(null);
-  const fullscreenVideoRefs = useRef<{ [key: string]: Video | null }>({});
 
   type EventCard = {
     id: string;
@@ -267,15 +308,8 @@ export default function ExploreScreen() {
   };
 
   const handleVideoPress = (index: number) => {
-    if (expandedDescIndex === index) return; // Don't toggle play/pause if description is expanded
+    if (expandedDescIndex === index) return;
     setIsVideoPlaying((prev) => !prev);
-    if (fullscreenVideoRefs.current[videoData[index].id]) {
-      if (isVideoPlaying) {
-        fullscreenVideoRefs.current[videoData[index].id]?.pauseAsync();
-      } else {
-        fullscreenVideoRefs.current[videoData[index].id]?.playAsync();
-      }
-    }
   };
 
   const handleDescPress = (index: number) => {
@@ -300,28 +334,6 @@ export default function ExploreScreen() {
     }
   };
 
-  // Unload preview video when leaving screen
-  useEffect(() => {
-    return () => {
-      // Unload preview video
-      if (previewVideoRef.current) {
-        previewVideoRef.current.unloadAsync();
-      }
-      // Unload all fullscreen videos
-      Object.values(fullscreenVideoRefs.current).forEach((video) => {
-        if (video) video.unloadAsync();
-      });
-    };
-  }, []);
-
-  // Unload all fullscreen videos when modal closes
-  useEffect(() => {
-    if (!videoModalVisible) {
-      Object.values(fullscreenVideoRefs.current).forEach((video) => {
-        if (video) video.unloadAsync();
-      });
-    }
-  }, [videoModalVisible]);
 
   const [expandedDescIndex, setExpandedDescIndex] = useState<number | null>(
     null
@@ -400,15 +412,7 @@ export default function ExploreScreen() {
         onPress={() => setVideoModalVisible(true)}
         style={styles.videoPreviewBox}
       >
-        <Video
-          ref={previewVideoRef}
-          source={videoData[0].source}
-          style={styles.videoPreview}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={true}
-          isLooping
-          isMuted={true} // <-- Mute the preview video!
-        />
+        <PreviewVideo source={videoData[0].source} />
       </TouchableOpacity>
 
       {/* Fullscreen video modal (like Reels/Shorts) */}
@@ -425,21 +429,14 @@ export default function ExploreScreen() {
                 style={{ flex: 1, width: "100%", height: "100%" }}
                 onPress={() => handleVideoPress(index)}
               >
-                <Video
-                  ref={(ref) => {
-                    fullscreenVideoRefs.current[item.id] = ref;
-                  }}
+                <FullscreenVideoItem
                   source={item.source}
-                  style={styles.fullscreenVideo}
-                  resizeMode={ResizeMode.COVER}
                   shouldPlay={
                     isVideoPlaying &&
                     expandedDescIndex !== index &&
                     currentVideoIndex === index &&
                     !pausedVideos[item.id]
                   }
-                  isLooping
-                  isMuted={false}
                 />
                 {/* Description Preview/Expanded */}
                 {expandedDescIndex === index ? (

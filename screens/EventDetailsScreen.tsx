@@ -18,7 +18,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
-import { Video, ResizeMode } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
 import MapView, { Marker } from "react-native-maps";
 import type { RootStackParamList } from "../App";
@@ -40,6 +40,35 @@ const FORM_NEGATIVE_MARGIN = 300;
 type CarouselItem =
   | { type: "image"; source: ImageSourcePropType | { uri: string } }
   | { type: "video"; source: ReturnType<typeof require> };
+
+function CarouselVideoItem({
+  source,
+  shouldPlay,
+  style,
+}: {
+  source: any;
+  shouldPlay: boolean;
+  style: any;
+}) {
+  const player = useVideoPlayer(source, (p) => {
+    p.loop = true;
+    p.muted = true;
+  });
+
+  React.useEffect(() => {
+    if (shouldPlay) player.play();
+    else player.pause();
+  }, [shouldPlay, player]);
+
+  return (
+    <VideoView
+      player={player}
+      style={style}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+}
 
 const DEFAULT_CAROUSEL: CarouselItem[] = [
   { type: "image", source: require("../assets/Home/event-1.jpg") },
@@ -119,12 +148,9 @@ export default function EventDetailsScreen() {
             resizeMode="cover"
           />
         ) : (
-          <Video
+          <CarouselVideoItem
             source={item.source}
             style={[styles.carouselContent, { height: CAROUSEL_HEIGHT }]}
-            resizeMode={ResizeMode.COVER}
-            isLooping
-            isMuted
             shouldPlay={index === heroIndex}
           />
         )}

@@ -17,6 +17,7 @@ export type RootStackParamList = {
 
   VerifyLocation: undefined;
   CheckinScreen: undefined;
+  EventsSchedule: undefined;
   Cancelpage: undefined;
 
   ExploreScreen: undefined;

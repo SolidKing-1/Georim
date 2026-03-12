@@ -15,26 +15,20 @@ type Props = {
   onPress?: (e: GestureResponderEvent) => void;
   borderRadius?: number;
   disabled?: boolean;
+  style?: any;
 };
-
-const gradientSize = Image.resolveAssetSource(GradientEffect);
 
 export default function PrimaryButton({
   title,
   onPress,
-  borderRadius,
+  borderRadius = 25,
   disabled = false,
+  style,
 }: Props) {
-  const resolvedBorderRadius =
-    borderRadius ?? Math.round(gradientSize.height / 2);
   return (
     <GlassButton
-      style={{
-        ...styles.wrapper,
-        width: gradientSize.width,
-        height: gradientSize.height,
-      }}
-      borderRadius={resolvedBorderRadius}
+      style={[styles.wrapper, style]}
+      borderRadius={borderRadius}
       useGradient={true}
     >
       <TouchableOpacity
@@ -42,22 +36,11 @@ export default function PrimaryButton({
         disabled={disabled}
         activeOpacity={0.8}
       >
-        <View
-          style={[
-            styles.button,
-            {
-              borderRadius: resolvedBorderRadius,
-              width: gradientSize.width,
-              height: gradientSize.height,
-            },
-          ]}
-        >
+        <View style={[styles.button, { borderRadius }]}>
           <Image
             source={GradientEffect}
-            style={[
-              styles.gradientOverlay,
-              { borderRadius: resolvedBorderRadius },
-            ]}
+            style={styles.gradientOverlay}
+            pointerEvents="none"
           />
           <Text style={styles.text}>{title}</Text>
         </View>
@@ -70,9 +53,10 @@ const styles = StyleSheet.create({
   wrapper: {
     borderWidth: 0,
     borderColor: "transparent",
-    alignSelf: "center",
   },
   button: {
+    padding: 16,
+    borderRadius: 25,
     position: "relative",
     overflow: "hidden",
     alignItems: "center",
@@ -87,9 +71,17 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    resizeMode: "stretch",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: undefined,
+    height: undefined,
+    alignSelf: "stretch",
+    resizeMode: "cover",
     zIndex: 1,
     opacity: 1,
+    borderRadius: 25,
   },
 });

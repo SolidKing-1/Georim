@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import { FontAwesome } from "@expo/vector-icons";
-import { Video, ResizeMode } from "expo-av";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -19,6 +19,13 @@ type Nav = NativeStackNavigationProp<RootStackParamList, "Dashboard">;
 
 const DashboardScreen = () => {
   const navigation = useNavigation<Nav>();
+  const featuredPlayer = useVideoPlayer(
+    require("../assets/Home/play.mp4"),
+    (player) => {
+      player.loop = true;
+      player.play();
+    }
+  );
 
   const userName = "John Doe"; // Replace with dynamic user data
   const firstName = userName.split(" ")[0];
@@ -115,7 +122,7 @@ const DashboardScreen = () => {
             <Image
               source={require("../assets/Home/arrow.jpg")}
               style={styles.arrowImage}
-              resizeMode="contain"
+              contentFit="contain"
             />
           </View>
 
@@ -140,12 +147,11 @@ const DashboardScreen = () => {
 
         {/* Video Section */}
         <View style={styles.videoSection}>
-          <Video
-            source={require("../assets/Home/play.mp4")} // Updated to use play.mp4 from assets/Home
+          <VideoView
+            player={featuredPlayer}
             style={styles.video}
-            isLooping
-            shouldPlay
-            resizeMode={ResizeMode.COVER}
+            contentFit="cover"
+            nativeControls={false}
           />
 
           <TouchableOpacity style={styles.bookNowButton}>

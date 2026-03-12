@@ -90,7 +90,7 @@ export default function Navbar({
         navigation.navigate("ExploreScreen");
         break;
       case "Community":
-        navigation.navigate("CheckinScreen");
+        navigation.navigate("EventsSchedule");
         break;
       case "Profile":
         navigation.navigate("Profile");

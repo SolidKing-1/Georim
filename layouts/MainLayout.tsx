@@ -21,6 +21,7 @@ import CreateEventScreen from "../screens/CreateEvent";
 import EventSuccessScreen from "../screens/EventSuccessScreen";
 import VerifyLocation from "../screens/VerifyLocation";
 import CheckinScreen from "../screens/CheckinScreen";
+import EventsScheduleScreen from "../screens/EventsScheduleScreen";
 import CancelScreen from "../screens/CancelScreen";
 import EventDetailsScreen from "../screens/EventDetailsScreen";
 import RegisterEventScreen from "../screens/RegisterEventScreen";
@@ -100,6 +101,7 @@ function routeToNavbarMeta(routeName?: string) {
       activeTab = "Explore";
       break;
     case "CheckinScreen":
+    case "EventsSchedule":
       activeTab = "Community";
       break;
     case "Profile":
@@ -154,6 +156,7 @@ export default function MainLayout({ initialRoute }: Props) {
             <Stack.Screen name="EventSuccess" component={EventSuccessScreen} />
             <Stack.Screen name="VerifyLocation" component={VerifyLocation} />
             <Stack.Screen name="CheckinScreen" component={CheckinScreen} />
+            <Stack.Screen name="EventsSchedule" component={EventsScheduleScreen} />
             <Stack.Screen name="Cancelpage" component={CancelScreen} />
             <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
             <Stack.Screen
