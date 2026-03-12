@@ -146,6 +146,8 @@ export default function SignUpScreen() {
       navigation.navigate("Login");
     } catch (err) {
       alert("Network error. Please try again.");
+      console.log(err)
+      console.log(BACKEND_URL)
       console.error("Network error:", err);
     }
   };
