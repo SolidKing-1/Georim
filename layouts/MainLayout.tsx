@@ -81,6 +81,7 @@ function routeToNavbarMeta(routeName?: string) {
     "RegisterEvent",
     "ReviewsScreen",
     "EventDetails",
+    "Search", // SearchScreen has its own SearchNavBar
   ]);
 
   const searchVariantRoutes = new Set([

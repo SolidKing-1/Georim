@@ -413,7 +413,7 @@ export default function SearchScreen() {
         )}
       </ScrollView>
 
-      {/* Bottom Search Bar - visible when not searching */}
+      {/* Bottom Search Bar - visible when not searching (global Navbar hidden on Search) */}
       {!isFocused && (
         <View style={styles.bottomBarContainer}>
           <SearchNavBar
